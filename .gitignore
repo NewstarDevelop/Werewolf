@@ -28,8 +28,13 @@
 
   # Environment
   .env
+  .env.*
+  *.env
   .env.local
   .env.*.local
+  *.backup
+  *.bak
+  *_backup
 
   # OS
   .DS_Store

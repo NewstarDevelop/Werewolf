@@ -63,13 +63,14 @@ def get_game_state(game_id: str) -> GameState:
     if not human_player:
         raise HTTPException(status_code=500, detail="Human player not found")
 
-    # Build player list
+    # Build player list (include roles if game is finished)
     players = [
         PlayerPublic(
             seat_id=p.seat_id,
             is_alive=p.is_alive,
             is_human=p.is_human,
-            name=p.personality.name if p.personality else None
+            name=p.personality.name if p.personality else None,
+            role=p.role if game.status == GameStatus.FINISHED else None
         )
         for p in game.players.values()
     ]

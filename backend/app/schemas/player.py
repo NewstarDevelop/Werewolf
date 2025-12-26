@@ -32,6 +32,7 @@ class PlayerPublic(BaseModel):
     is_human: bool
     avatar: Optional[str] = None
     name: Optional[str] = None
+    role: Optional[Role] = None  # Only shown when game is finished
 
 
 class PlayerPrivate(PlayerPublic):

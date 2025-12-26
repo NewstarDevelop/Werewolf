@@ -147,7 +147,7 @@ const PlayerCard = ({
         )}
 
         {/* Role badge for user */}
-        {isUser && role && (
+        {role && (
           <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-card border border-border">
             {getRoleIcon()}
           </div>
@@ -167,7 +167,7 @@ const PlayerCard = ({
         >
           {name}
         </p>
-        {isUser && role && (
+        {role && (
           <span className="text-[10px] text-accent uppercase tracking-wider">
             {getRoleDisplayName(role as any)}
           </span>

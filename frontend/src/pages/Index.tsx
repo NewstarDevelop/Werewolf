@@ -4,6 +4,7 @@ import ChatLog from "@/components/game/ChatLog";
 import PlayerGrid from "@/components/game/PlayerGrid";
 import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
+import DebugLog from "@/components/game/DebugLog";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
 import {
@@ -44,7 +45,8 @@ const Index = () => {
       name: p.is_human ? "You" : p.name || `Player ${p.seat_id}`,
       isUser: p.is_human,
       isAlive: p.is_alive,
-      role: p.is_human ? gameState.my_role : undefined,
+      // Show role for: 1) Human player always, 2) All players when game is finished
+      role: p.role || (p.is_human ? gameState.my_role : undefined),
       seatId: p.seat_id,
     }));
   }, [gameState]);
@@ -70,6 +72,86 @@ const Index = () => {
         day: m.day,
       };
     });
+  }, [gameState]);
+
+  // Transform debug logs from game actions and phases
+  const debugLogs = useMemo(() => {
+    if (!gameState) return [];
+
+    const logs: any[] = [];
+    let logId = 1;
+
+    // Add phase changes
+    logs.push({
+      id: logId++,
+      timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+      type: "phase",
+      message: `当前阶段: ${getPhaseDisplayName(gameState.phase)} | 第${gameState.day}天`,
+    });
+
+    // Add game status
+    logs.push({
+      id: logId++,
+      timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+      type: "info",
+      message: `游戏状态: ${gameState.status} | 存活玩家: ${gameState.players.filter(p => p.is_alive).length}/${gameState.players.length}`,
+    });
+
+    // Add pending action info
+    if (gameState.pending_action) {
+      logs.push({
+        id: logId++,
+        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+        type: "action",
+        message: `等待行动: ${gameState.pending_action.message}\n可选目标: [${gameState.pending_action.choices.join(", ")}]`,
+      });
+    }
+
+    // Add role-specific info
+    if (gameState.my_role) {
+      logs.push({
+        id: logId++,
+        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+        type: "info",
+        message: `你的身份: ${getRoleDisplayName(gameState.my_role)} | 座位号: ${gameState.my_seat}`,
+      });
+    }
+
+    // Add wolf teammates info
+    if (gameState.wolf_teammates && gameState.wolf_teammates.length > 0) {
+      logs.push({
+        id: logId++,
+        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+        type: "info",
+        message: `狼队友: ${gameState.wolf_teammates.join(", ")}号`,
+      });
+    }
+
+    // Add seer verification results
+    if (gameState.verified_results && Object.keys(gameState.verified_results).length > 0) {
+      const verifications = Object.entries(gameState.verified_results)
+        .map(([seat, isWolf]) => `${seat}号: ${isWolf ? "狼人" : "好人"}`)
+        .join(", ");
+      logs.push({
+        id: logId++,
+        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+        type: "info",
+        message: `查验结果: ${verifications}`,
+      });
+    }
+
+    // Add recent messages as debug info
+    const recentMessages = gameState.message_log.slice(-5);
+    recentMessages.forEach((msg) => {
+      logs.push({
+        id: logId++,
+        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
+        type: msg.type === "system" ? "phase" : "ai",
+        message: `[${msg.seat_id === 0 ? "系统" : `${msg.seat_id}号`}] ${msg.text}`,
+      });
+    });
+
+    return logs;
   }, [gameState]);
 
   const playersAlive = players.filter((p) => p.isAlive).length;
@@ -249,18 +331,26 @@ const Index = () => {
           <ChatLog messages={messages} isLoading={isLoading} />
         </div>
 
-        {/* Players Sidebar */}
-        <div className="w-80 shrink-0">
-          <PlayerGrid
-            players={players}
-            selectedPlayerId={selectedPlayerId}
-            onSelectPlayer={handleSelectPlayer}
-            currentActor={gameState?.current_actor}
-            pendingAction={gameState?.pending_action}
-            wolfTeammates={gameState?.wolf_teammates}
-            verifiedResults={gameState?.verified_results}
-            myRole={gameState?.my_role}
-          />
+        {/* Right Sidebar: Players + Debug Log */}
+        <div className="w-80 shrink-0 flex flex-col gap-4">
+          {/* Players Grid */}
+          <div className="flex-shrink-0">
+            <PlayerGrid
+              players={players}
+              selectedPlayerId={selectedPlayerId}
+              onSelectPlayer={handleSelectPlayer}
+              currentActor={gameState?.current_actor}
+              pendingAction={gameState?.pending_action}
+              wolfTeammates={gameState?.wolf_teammates}
+              verifiedResults={gameState?.verified_results}
+              myRole={gameState?.my_role}
+            />
+          </div>
+
+          {/* Debug Log Panel */}
+          <div className="flex-1 min-h-0">
+            <DebugLog entries={debugLogs} isLoading={isLoading} />
+          </div>
         </div>
       </div>
 

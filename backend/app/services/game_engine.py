@@ -1,4 +1,5 @@
 """Game engine - core game logic and state machine."""
+import logging
 import random
 from typing import Optional
 
@@ -7,6 +8,8 @@ from app.schemas.enums import (
     GamePhase, GameStatus, Role, ActionType, MessageType, Winner
 )
 from app.services.llm import LLMService
+
+logger = logging.getLogger(__name__)
 
 
 class GameEngine:
@@ -284,20 +287,34 @@ class GameEngine:
                     for a in game.actions
                 )
 
+                # Phase 1: Save decision
                 if not game.witch_save_decided:
                     can_save = bool(witch.has_save_potion and game.night_kill_target)
                     if can_save:
+                        # Wait for human witch to decide on save potion
                         return {"status": "waiting_for_human", "phase": game.phase}
-                    game.witch_save_decided = True
 
+                    # Auto-skip save if no potion or no kill target
+                    game.witch_save_decided = True
+                    logger.info(f"Witch save phase auto-skipped (has_potion={witch.has_save_potion}, kill_target={game.night_kill_target})")
+
+                # If used save this night, auto-skip poison (game rule)
                 if used_save_this_night:
                     game.witch_poison_decided = True
+                    logger.info("Witch poison phase auto-skipped (used save this night)")
 
+                # If no poison potion, auto-skip poison
                 if not witch.has_poison_potion:
                     game.witch_poison_decided = True
+                    logger.info("Witch poison phase auto-skipped (no poison potion)")
 
+                # Phase 2: Poison decision
                 if not game.witch_poison_decided:
+                    # Wait for human witch to decide on poison potion
                     return {"status": "waiting_for_human", "phase": game.phase}
+
+                # Both decisions complete, move to next phase
+                logger.info("Witch phase complete")
             else:
                 # AI witch decision
                 decision = self.llm.decide_witch_action(witch, game)

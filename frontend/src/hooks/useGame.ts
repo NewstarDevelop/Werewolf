@@ -93,8 +93,13 @@ export function useGame(options: UseGameOptions = {}) {
       });
     },
     onSuccess: async () => {
-      // Refetch state and continue stepping
+      // CRITICAL FIX: Wait for state to update before scheduling next step
+      // This prevents race conditions in witch two-phase decision (save -> poison)
       await refetchState();
+
+      // Add a small delay to ensure React query cache is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       if (autoStep) {
         scheduleNextStep();
       }

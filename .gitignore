@@ -26,6 +26,10 @@
   *.swp
   *.swo
 
+  # Tools
+  .claude/
+  .spec-workflow/
+
   # Environment
   .env
   .env.*

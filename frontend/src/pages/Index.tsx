@@ -45,7 +45,7 @@ const Index = () => {
       isUser: p.is_human,
       isAlive: p.is_alive,
       // Show role for: 1) Human player always, 2) All players when game is finished
-      role: p.is_human ? gameState.my_role : (isGameOver ? p.role : undefined),
+      role: p.is_human ? gameState.my_role : (isGameOver ? (p.role ?? undefined) : undefined),
       seatId: p.seat_id,
     }));
   }, [gameState, isGameOver]);

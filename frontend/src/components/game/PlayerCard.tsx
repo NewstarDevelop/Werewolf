@@ -1,5 +1,5 @@
 import { User, Skull, Shield, Search, Crosshair, FlaskConical, Target } from "lucide-react";
-import { getRoleDisplayName } from "@/services/api";
+import { getRoleDisplayName, type Role } from "@/services/api";
 
 interface PlayerCardProps {
   seatId: number;
@@ -7,7 +7,7 @@ interface PlayerCardProps {
   isUser: boolean;
   isAlive: boolean;
   isSelected: boolean;
-  role?: string;
+  role?: Role;
   avatar?: string;
   onSelect: () => void;
   isCurrentActor?: boolean;
@@ -169,7 +169,7 @@ const PlayerCard = ({
         </p>
         {role && (
           <span className="text-[10px] text-accent uppercase tracking-wider">
-            {getRoleDisplayName(role as any)}
+            {getRoleDisplayName(role)}
           </span>
         )}
       </div>

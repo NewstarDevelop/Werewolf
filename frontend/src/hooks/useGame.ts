@@ -12,6 +12,7 @@ import {
   GameStartResponse,
   StepResponse,
   ActionType,
+  Role,
   isNightPhase,
   needsHumanAction,
 } from '@/services/api';
@@ -115,13 +116,13 @@ export function useGame(options: UseGameOptions = {}) {
 
   // Start a new game
   const handleStartGame = useCallback(
-    async (humanSeat?: number, humanRole?: string) => {
+    async (humanSeat?: number, humanRole?: Role) => {
       setIsStarting(true);
       setError(null);
       try {
         await startGameMutation.mutateAsync({
           human_seat: humanSeat,
-          human_role: humanRole as any,
+          human_role: humanRole,
         });
       } finally {
         setIsStarting(false);

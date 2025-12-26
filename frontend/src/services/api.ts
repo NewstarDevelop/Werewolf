@@ -33,6 +33,7 @@ export interface PlayerPublic {
   is_human: boolean;
   avatar?: string | null;
   name?: string | null;
+  role?: Role | null; // only shown when game is finished
 }
 
 export interface MessageInGame {

@@ -7,7 +7,7 @@ interface Player {
   name: string;
   isUser: boolean;
   isAlive: boolean;
-  role?: string;
+  role?: Role;
   seatId: number;
 }
 

@@ -35,6 +35,13 @@
 
 ### 使用 Docker 启动（推荐）
 
+```bash
+git clone https://github.com/NewstarDevelop/Werewolf.git
+cd Werewolf
+cp .env.example .env
+nano .env
+```
+
 1. **克隆仓库**
 ```bash
 git clone https://github.com/NewstarDevelop/Werewolf.git

@@ -22,7 +22,7 @@
 |------|------|------|
 | 🐺 狼人 | 狼人阵营 | 每晚可以杀死一名玩家 |
 | 🔮 预言家 | 好人阵营 | 每晚可以查验一名玩家的身份 |
-| 💊 女巫 | 好人阵营 | 拥有解药和毒药各一瓶 |
+| 💊 女巫 | 好人阵营 | 拥有解药和毒药各一瓶，同一晚使用解药后无法使用毒药 |
 | 🏹 猎人 | 好人阵营 | 被淘汰时可以开枪带走一名玩家 |
 | 👤 村民 | 好人阵营 | 普通村民，无特殊能力 |
 
@@ -43,11 +43,10 @@ cd Werewolf
 
 2. **配置环境变量**
 ```bash
-# 复制环境变量模板
-cp backend/.env.example .env
-
-# 编辑 .env 文件，添加你的 OpenAI API Key
-# OPENAI_API_KEY=your_api_key_here
+# 在项目根目录创建 .env 文件
+# 添加你的 OpenAI API Key
+echo "OPENAI_API_KEY=your_api_key_here" > .env
+echo "OPENAI_MODEL=gpt-4o-mini" >> .env
 ```
 
 3. **启动服务**
@@ -130,7 +129,7 @@ Werewolf/
 3. **夜晚阶段**：
    - 狼人选择击杀目标
    - 预言家查验玩家身份
-   - 女巫选择救人或毒人
+   - 女巫先决策是否使用解药，再决策是否使用毒药（同一晚使用解药后无法使用毒药）
 4. **白天阶段**：
    - 所有玩家依次发言
    - 投票淘汰可疑玩家
@@ -169,7 +168,7 @@ Werewolf/
 
 ### 环境变量
 
-在 `backend/.env` 文件中配置：
+在项目根目录创建 `.env` 文件进行配置：
 
 ```env
 # OpenAI API 配置
@@ -180,6 +179,37 @@ OPENAI_MODEL=gpt-4o-mini
 DEBUG=false
 CORS_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
 ```
+
+### 玩家级别的 LLM 配置
+
+你可以为每个 AI 玩家（座位 2-9）配置独立的 LLM 提供商和参数。在 `.env` 文件中添加：
+
+```env
+# 为玩家 2 配置专属 LLM
+AI_PLAYER_2_NAME=player2
+AI_PLAYER_2_API_KEY=your_api_key
+AI_PLAYER_2_BASE_URL=https://api.openai.com/v1
+AI_PLAYER_2_MODEL=gpt-4o-mini
+AI_PLAYER_2_TEMPERATURE=0.7
+AI_PLAYER_2_MAX_TOKENS=500
+
+# 为玩家 3 配置不同的模型
+AI_PLAYER_3_NAME=player3
+AI_PLAYER_3_API_KEY=your_api_key
+AI_PLAYER_3_MODEL=gpt-4o
+# ... 其他配置
+```
+
+**支持的配置项**：
+- `AI_PLAYER_X_NAME`：玩家名称（可选）
+- `AI_PLAYER_X_API_KEY`：API 密钥
+- `AI_PLAYER_X_BASE_URL`：API 基础 URL（可选，默认使用 OpenAI）
+- `AI_PLAYER_X_MODEL`：模型名称（默认：gpt-4o-mini）
+- `AI_PLAYER_X_TEMPERATURE`：温度参数（默认：0.7）
+- `AI_PLAYER_X_MAX_TOKENS`：最大 token 数（默认：500）
+- `AI_PLAYER_X_MAX_RETRIES`：最大重试次数（默认：2）
+
+其中 `X` 为玩家座位号（2-9，座位 1 为人类玩家）。
 
 ### Mock 模式
 

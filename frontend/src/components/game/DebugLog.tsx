@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState } from "react";
-import { Bug, Maximize2, Minimize2 } from "lucide-react";
+import { useRef, useEffect } from "react";
+import { Bug } from "lucide-react";
 
 interface DebugLogEntry {
   id: number;
@@ -15,7 +15,6 @@ interface DebugLogProps {
 
 const DebugLog = ({ entries, isLoading }: DebugLogProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -54,13 +53,7 @@ const DebugLog = ({ entries, isLoading }: DebugLogProps) => {
   };
 
   return (
-    <div
-      className={`flex flex-col bg-card/50 rounded-xl border border-border overflow-hidden transition-all duration-300 ${
-        isMaximized
-          ? "fixed inset-4 z-50 shadow-2xl"
-          : "h-full"
-      }`}
-    >
+    <div className="flex flex-col h-full bg-card/50 rounded-xl border border-border overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
         <Bug className="w-4 h-4 text-orange-400" />
@@ -70,17 +63,6 @@ const DebugLog = ({ entries, isLoading }: DebugLogProps) => {
         <span className="ml-auto text-xs text-muted-foreground">
           {entries.length} 条记录
         </span>
-        <button
-          onClick={() => setIsMaximized(!isMaximized)}
-          className="p-1 rounded hover:bg-muted/50 transition-colors"
-          title={isMaximized ? "最小化" : "最大化"}
-        >
-          {isMaximized ? (
-            <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-          ) : (
-            <Maximize2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-          )}
-        </button>
       </div>
 
       {/* Log entries */}

@@ -1,0 +1,25 @@
+--- a/frontend/src/components/game/PlayerCard.tsx
++++ b/frontend/src/components/game/PlayerCard.tsx
+@@ -55,14 +55,16 @@ const PlayerCard = ({
+   };
+ 
+   // Determine border color based on special status
+   const getBorderClass = () => {
+-    // Current actor (speaking/acting) has highest priority for user's own card
+-    if (isCurrentActor && isUser) return "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse";
++    // Speaking/acting has absolute highest priority - must be checked first!
++    if (isCurrentActor && isUser) return "border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] animate-pulse z-50";
++    if (isCurrentActor) return "border-2 border-accent animate-pulse z-50";
++
++    // Selection state (second priority)
+     if (isSelected) return "border-2 border-werewolf shadow-glow-red";
++
++    // Team/verification states (lower priority, only show when NOT speaking)
+     if (isWolfTeammate) return "border-2 border-werewolf/50";
+     if (verificationResult === true) return "border-2 border-werewolf/70";
+     if (verificationResult === false) return "border-2 border-villager/70";
+-    if (isCurrentActor) return "border-2 border-accent animate-pulse";
++
++    // Default state
+     return "border border-border hover:border-accent/50";
+   };

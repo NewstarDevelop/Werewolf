@@ -7,6 +7,7 @@ import GameLobby from "@/components/game/GameLobby";
 import DebugLog from "@/components/game/DebugLog";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
+import { Bug } from "lucide-react";
 import {
   getRoleDisplayName,
   getPhaseDisplayName,
@@ -36,6 +37,7 @@ const Index = () => {
   } = useGame({ autoStep: true, stepInterval: 1000 });
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [showDebugLog, setShowDebugLog] = useState(false);
 
   // Transform game state to UI format
   const players = useMemo(() => {
@@ -331,28 +333,56 @@ const Index = () => {
           <ChatLog messages={messages} isLoading={isLoading} />
         </div>
 
-        {/* Right Sidebar: Players + Debug Log */}
-        <div className="w-80 shrink-0 flex flex-col gap-4">
-          {/* Players Grid */}
-          <div className="flex-shrink-0">
-            <PlayerGrid
-              players={players}
-              selectedPlayerId={selectedPlayerId}
-              onSelectPlayer={handleSelectPlayer}
-              currentActor={gameState?.current_actor}
-              pendingAction={gameState?.pending_action}
-              wolfTeammates={gameState?.wolf_teammates}
-              verifiedResults={gameState?.verified_results}
-              myRole={gameState?.my_role}
-            />
-          </div>
-
-          {/* Debug Log Panel */}
-          <div className="flex-1 min-h-0">
-            <DebugLog entries={debugLogs} isLoading={isLoading} />
-          </div>
+        {/* Players Sidebar */}
+        <div className="w-80 shrink-0">
+          <PlayerGrid
+            players={players}
+            selectedPlayerId={selectedPlayerId}
+            onSelectPlayer={handleSelectPlayer}
+            currentActor={gameState?.current_actor}
+            pendingAction={gameState?.pending_action}
+            wolfTeammates={gameState?.wolf_teammates}
+            verifiedResults={gameState?.verified_results}
+            myRole={gameState?.my_role}
+          />
         </div>
       </div>
+
+      {/* Debug Log Button - Fixed position */}
+      <button
+        onClick={() => setShowDebugLog(!showDebugLog)}
+        className="fixed bottom-20 right-6 z-40 p-3 rounded-full bg-orange-500/90 hover:bg-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 group"
+        title="调试日志"
+      >
+        <Bug className="w-5 h-5" />
+        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+          调试日志
+        </span>
+      </button>
+
+      {/* Debug Log Panel - Modal */}
+      {showDebugLog && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setShowDebugLog(false)}
+          />
+          {/* Debug Log Panel */}
+          <div className="fixed inset-4 z-50 md:inset-8 lg:inset-16">
+            <div className="relative h-full">
+              <DebugLog entries={debugLogs} isLoading={isLoading} />
+              {/* Close button */}
+              <button
+                onClick={() => setShowDebugLog(false)}
+                className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg z-10"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Actions Bar */}
       <div className="relative z-10">

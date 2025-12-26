@@ -41,27 +41,12 @@ cd Werewolf
 cp .env.example .env
 nano .env
 ```
-
-1. **克隆仓库**
+**填入真实模型商、密钥、模型之后**
 ```bash
-git clone https://github.com/NewstarDevelop/Werewolf.git
-cd Werewolf
+docker compose up
 ```
 
-2. **配置环境变量**
-```bash
-# 在项目根目录创建 .env 文件
-# 添加你的 OpenAI API Key
-echo "OPENAI_API_KEY=your_api_key_here" > .env
-echo "OPENAI_MODEL=gpt-4o-mini" >> .env
-```
-
-3. **启动服务**
-```bash
-docker-compose up -d
-```
-
-4. **访问游戏**
+ **访问游戏**
 - 前端页面：http://localhost:8081
 - 后端 API：http://localhost:8082
 - API 文档：http://localhost:8082/docs

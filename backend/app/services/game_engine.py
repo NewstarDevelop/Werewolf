@@ -96,10 +96,19 @@ class GameEngine:
         # Night seer phase
         elif phase == GamePhase.NIGHT_SEER and player.role == Role.SEER:
             if action_type == ActionType.VERIFY and target_id:
+                # Check if already verified someone this night
+                if game.seer_verified_this_night:
+                    return {"success": False, "message": "你今晚已经验过人了"}
+
+                # Check if trying to verify self
+                if target_id == player.seat_id:
+                    return {"success": False, "message": "不能验证自己"}
+
                 target = game.get_player(target_id)
                 if target:
                     is_wolf = target.role == Role.WEREWOLF
                     player.verified_players[target_id] = is_wolf
+                    game.seer_verified_this_night = True  # Mark as verified
                     game.add_action(player.seat_id, ActionType.VERIFY, target_id)
                     return {
                         "success": True,
@@ -170,6 +179,7 @@ class GameEngine:
         game.phase = GamePhase.NIGHT_WEREWOLF
         game.wolf_votes = {}
         game.pending_deaths = []
+        game.seer_verified_this_night = False  # Reset seer verification tracker
         return {"status": "updated", "new_phase": game.phase}
 
     def _handle_night_werewolf(self, game: Game) -> dict:

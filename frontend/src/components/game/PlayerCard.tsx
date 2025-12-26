@@ -155,7 +155,7 @@ const PlayerCard = ({
       </div>
 
       {/* Name */}
-      <div className="text-center">
+      <div className="text-center min-h-[32px] flex flex-col items-center justify-center">
         <p
           className={`text-xs font-medium truncate max-w-[70px] ${
             isAlive

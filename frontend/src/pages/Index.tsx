@@ -4,10 +4,8 @@ import ChatLog from "@/components/game/ChatLog";
 import PlayerGrid from "@/components/game/PlayerGrid";
 import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
-import DebugLog from "@/components/game/DebugLog";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
-import { Bug } from "lucide-react";
 import {
   getRoleDisplayName,
   getPhaseDisplayName,
@@ -37,7 +35,6 @@ const Index = () => {
   } = useGame({ autoStep: true, stepInterval: 1000 });
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  const [showDebugLog, setShowDebugLog] = useState(false);
 
   // Transform game state to UI format
   const players = useMemo(() => {
@@ -48,10 +45,10 @@ const Index = () => {
       isUser: p.is_human,
       isAlive: p.is_alive,
       // Show role for: 1) Human player always, 2) All players when game is finished
-      role: p.role || (p.is_human ? gameState.my_role : undefined),
+      role: p.is_human ? gameState.my_role : (isGameOver ? p.role : undefined),
       seatId: p.seat_id,
     }));
-  }, [gameState]);
+  }, [gameState, isGameOver]);
 
   // Transform messages to UI format
   const messages = useMemo(() => {
@@ -74,86 +71,6 @@ const Index = () => {
         day: m.day,
       };
     });
-  }, [gameState]);
-
-  // Transform debug logs from game actions and phases
-  const debugLogs = useMemo(() => {
-    if (!gameState) return [];
-
-    const logs: any[] = [];
-    let logId = 1;
-
-    // Add phase changes
-    logs.push({
-      id: logId++,
-      timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-      type: "phase",
-      message: `当前阶段: ${getPhaseDisplayName(gameState.phase)} | 第${gameState.day}天`,
-    });
-
-    // Add game status
-    logs.push({
-      id: logId++,
-      timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-      type: "info",
-      message: `游戏状态: ${gameState.status} | 存活玩家: ${gameState.players.filter(p => p.is_alive).length}/${gameState.players.length}`,
-    });
-
-    // Add pending action info
-    if (gameState.pending_action) {
-      logs.push({
-        id: logId++,
-        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-        type: "action",
-        message: `等待行动: ${gameState.pending_action.message}\n可选目标: [${gameState.pending_action.choices.join(", ")}]`,
-      });
-    }
-
-    // Add role-specific info
-    if (gameState.my_role) {
-      logs.push({
-        id: logId++,
-        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-        type: "info",
-        message: `你的身份: ${getRoleDisplayName(gameState.my_role)} | 座位号: ${gameState.my_seat}`,
-      });
-    }
-
-    // Add wolf teammates info
-    if (gameState.wolf_teammates && gameState.wolf_teammates.length > 0) {
-      logs.push({
-        id: logId++,
-        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-        type: "info",
-        message: `狼队友: ${gameState.wolf_teammates.join(", ")}号`,
-      });
-    }
-
-    // Add seer verification results
-    if (gameState.verified_results && Object.keys(gameState.verified_results).length > 0) {
-      const verifications = Object.entries(gameState.verified_results)
-        .map(([seat, isWolf]) => `${seat}号: ${isWolf ? "狼人" : "好人"}`)
-        .join(", ");
-      logs.push({
-        id: logId++,
-        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-        type: "info",
-        message: `查验结果: ${verifications}`,
-      });
-    }
-
-    // Add recent messages as debug info
-    const recentMessages = gameState.message_log.slice(-5);
-    recentMessages.forEach((msg) => {
-      logs.push({
-        id: logId++,
-        timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }),
-        type: msg.type === "system" ? "phase" : "ai",
-        message: `[${msg.seat_id === 0 ? "系统" : `${msg.seat_id}号`}] ${msg.text}`,
-      });
-    });
-
-    return logs;
   }, [gameState]);
 
   const playersAlive = players.filter((p) => p.isAlive).length;
@@ -223,21 +140,28 @@ const Index = () => {
           }
           break;
         case "save":
-          if (selectedPlayerId === gameState.night_kill_target) {
-            await save();
-            toast.success("使用解药");
+          if (selectedPlayerId) {
+            // Only save if a player is selected (must be the kill target)
+            if (selectedPlayerId === gameState.night_kill_target) {
+              await save();
+              toast.success("使用解药");
+            } else {
+              toast.error("只能救被狼人击杀的目标");
+              return;
+            }
           } else {
+            // No selection means skip
             await skip();
-            toast.info("跳过");
+            toast.info("不使用解药");
           }
           break;
         case "poison":
-          if (selectedPlayerId && selectedPlayerId !== 0) {
+          if (selectedPlayerId) {
             await poison(selectedPlayerId);
             toast.success(`毒杀 ${selectedPlayerId}号`);
           } else {
             await skip();
-            toast.info("跳过");
+            toast.info("不使用毒药");
           }
           break;
         default:
@@ -333,7 +257,7 @@ const Index = () => {
           <ChatLog messages={messages} isLoading={isLoading} />
         </div>
 
-        {/* Players Sidebar */}
+        {/* Right Sidebar: Players */}
         <div className="w-80 shrink-0">
           <PlayerGrid
             players={players}
@@ -347,42 +271,6 @@ const Index = () => {
           />
         </div>
       </div>
-
-      {/* Debug Log Button - Fixed position */}
-      <button
-        onClick={() => setShowDebugLog(!showDebugLog)}
-        className="fixed bottom-20 right-6 z-40 p-3 rounded-full bg-orange-500/90 hover:bg-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 group"
-        title="调试日志"
-      >
-        <Bug className="w-5 h-5" />
-        <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-          调试日志
-        </span>
-      </button>
-
-      {/* Debug Log Panel - Modal */}
-      {showDebugLog && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setShowDebugLog(false)}
-          />
-          {/* Debug Log Panel */}
-          <div className="fixed inset-4 z-50 md:inset-8 lg:inset-16">
-            <div className="relative h-full">
-              <DebugLog entries={debugLogs} isLoading={isLoading} />
-              {/* Close button */}
-              <button
-                onClick={() => setShowDebugLog(false)}
-                className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg z-10"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Actions Bar */}
       <div className="relative z-10">

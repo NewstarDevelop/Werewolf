@@ -117,19 +117,49 @@ class GameEngine:
 
         # Night witch phase
         elif phase == GamePhase.NIGHT_WITCH and player.role == Role.WITCH:
+            used_save_this_night = any(
+                a.day == game.day
+                and a.player_id == player.seat_id
+                and a.action_type == ActionType.SAVE
+                for a in game.actions
+            )
+
             if action_type == ActionType.SAVE:
+                if game.witch_save_decided:
+                    return {"success": False, "message": "你今晚已经决策过解药了"}
                 if player.has_save_potion and game.night_kill_target:
                     player.has_save_potion = False
-                    game.pending_deaths.remove(game.night_kill_target)
+                    if game.night_kill_target in game.pending_deaths:
+                        game.pending_deaths.remove(game.night_kill_target)
                     game.add_action(player.seat_id, ActionType.SAVE, game.night_kill_target)
+                    game.witch_save_decided = True
+                    # 规则：同一晚使用了解药则不能再使用毒药
+                    game.witch_poison_decided = True
                     return {"success": True, "message": "已使用解药"}
+                return {"success": False, "message": "无法使用解药"}
             elif action_type == ActionType.POISON and target_id:
+                if not game.witch_save_decided:
+                    return {"success": False, "message": "请先决策解药"}
+                if game.witch_poison_decided:
+                    return {"success": False, "message": "你今晚已经决策过毒药了"}
+                if used_save_this_night:
+                    return {"success": False, "message": "你今晚已使用解药，无法再使用毒药"}
                 if player.has_poison_potion:
                     player.has_poison_potion = False
                     game.pending_deaths.append(target_id)
                     game.add_action(player.seat_id, ActionType.POISON, target_id)
+                    game.witch_poison_decided = True
                     return {"success": True, "message": "已使用毒药"}
+                return {"success": False, "message": "无法使用毒药"}
             elif action_type == ActionType.SKIP:
+                if not game.witch_save_decided:
+                    game.witch_save_decided = True
+                    return {"success": True, "message": "跳过解药"}
+
+                if not game.witch_poison_decided:
+                    game.witch_poison_decided = True
+                    return {"success": True, "message": "跳过毒药"}
+
                 return {"success": True, "message": "跳过"}
 
         # Day speech phase
@@ -180,6 +210,8 @@ class GameEngine:
         game.wolf_votes = {}
         game.pending_deaths = []
         game.seer_verified_this_night = False  # Reset seer verification tracker
+        game.witch_save_decided = False
+        game.witch_poison_decided = False
         return {"status": "updated", "new_phase": game.phase}
 
     def _handle_night_werewolf(self, game: Game) -> dict:
@@ -245,7 +277,27 @@ class GameEngine:
 
         if witch and witch.is_alive:
             if witch.is_human:
-                return {"status": "waiting_for_human", "phase": game.phase}
+                used_save_this_night = any(
+                    a.day == game.day
+                    and a.player_id == witch.seat_id
+                    and a.action_type == ActionType.SAVE
+                    for a in game.actions
+                )
+
+                if not game.witch_save_decided:
+                    can_save = bool(witch.has_save_potion and game.night_kill_target)
+                    if can_save:
+                        return {"status": "waiting_for_human", "phase": game.phase}
+                    game.witch_save_decided = True
+
+                if used_save_this_night:
+                    game.witch_poison_decided = True
+
+                if not witch.has_poison_potion:
+                    game.witch_poison_decided = True
+
+                if not game.witch_poison_decided:
+                    return {"status": "waiting_for_human", "phase": game.phase}
             else:
                 # AI witch decision
                 decision = self.llm.decide_witch_action(witch, game)
@@ -261,6 +313,9 @@ class GameEngine:
                     witch.has_poison_potion = False
                     game.pending_deaths.append(target)
                     game.add_action(witch.seat_id, ActionType.POISON, target)
+
+                game.witch_save_decided = True
+                game.witch_poison_decided = True
 
         # Process deaths
         game.last_night_deaths = list(set(game.pending_deaths))

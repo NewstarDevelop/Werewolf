@@ -148,27 +148,51 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
 
     # Night witch phase
     elif phase == GamePhase.NIGHT_WITCH and role == Role.WITCH:
-        choices = []
-        message = ""
-        if human_player.has_save_potion and game.night_kill_target:
-            message = f"今晚{game.night_kill_target}号被杀，是否使用解药？"
+        used_save_this_night = any(
+            a.day == game.day
+            and a.player_id == human_player.seat_id
+            and a.action_type == ActionType.SAVE
+            for a in game.actions
+        )
+
+        # 第一步：先决策解药（或跳过解药）
+        if not game.witch_save_decided:
+            if human_player.has_save_potion and game.night_kill_target:
+                return PendingAction(
+                    type=ActionType.SAVE,
+                    choices=[game.night_kill_target, 0],  # 0 = skip
+                    message=f"今晚{game.night_kill_target}号被杀，是否使用解药？"
+                )
+
+            no_save_reason = "今晚无人被杀" if game.night_kill_target is None else "你没有解药"
+            # 为保持前端兼容，这里仍返回 SAVE 类型；前端点“技能”按钮将发送 SKIP 来跳过。
             return PendingAction(
                 type=ActionType.SAVE,
-                choices=[game.night_kill_target, 0],  # 0 = skip
-                message=message
+                choices=[0],
+                message=f"{no_save_reason}，点击技能按钮跳过解药决策"
             )
-        elif human_player.has_poison_potion:
-            message = "是否使用毒药？选择目标或跳过"
+
+        # 第二步：再决策毒药（或跳过毒药）
+        if not game.witch_poison_decided:
+            # 规则：同一晚使用了解药则不能再用毒药
+            if used_save_this_night:
+                return PendingAction(
+                    type=ActionType.POISON,
+                    choices=[0],
+                    message="你今晚已使用解药，无法再使用毒药，点击技能按钮继续"
+                )
+
+            if human_player.has_poison_potion:
+                return PendingAction(
+                    type=ActionType.POISON,
+                    choices=other_alive + [0],  # 0 = skip
+                    message="是否使用毒药？选择目标或跳过"
+                )
+
             return PendingAction(
                 type=ActionType.POISON,
-                choices=other_alive + [0],  # 0 = skip
-                message=message
-            )
-        else:
-            return PendingAction(
-                type=ActionType.SKIP,
                 choices=[0],
-                message="你没有可用的药水"
+                message="你没有可用的毒药，点击技能按钮继续"
             )
 
     # Day speech phase

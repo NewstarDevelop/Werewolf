@@ -88,6 +88,8 @@ class Game:
     night_kill_target: Optional[int] = None
     wolf_votes: dict[int, int] = field(default_factory=dict)  # wolf_seat -> target_seat
     seer_verified_this_night: bool = False  # Track if seer verified this night
+    witch_save_decided: bool = False  # Track if witch save decision made this night
+    witch_poison_decided: bool = False  # Track if witch poison decision made this night
     # Day phase tracking
     day_votes: dict[int, int] = field(default_factory=dict)  # voter_seat -> target_seat
     speech_order: list[int] = field(default_factory=list)

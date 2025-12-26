@@ -26,7 +26,9 @@ MAX_RETRY_DELAY = 180  # Maximum delay: 3 minutes
 BACKOFF_INCREMENT = 60  # Add 1 minute on each failure
 
 # Delay between consecutive LLM calls to avoid truncation
-CALL_INTERVAL = 15  # seconds between calls
+# Reduced from 15s to 2s for better game flow
+# Most API providers allow 60 requests/minute, so 2s is safe
+CALL_INTERVAL = 2  # seconds between calls
 
 # Custom User-Agent to bypass Cloudflare bot detection
 CUSTOM_USER_AGENT = (
@@ -196,7 +198,24 @@ class LLMService:
     def _parse_response(self, raw_response: str, provider_name: str = "") -> LLMResponse:
         """Parse LLM response JSON."""
         try:
-            data = json.loads(raw_response)
+            # Clean markdown code blocks if present
+            cleaned_response = raw_response.strip()
+
+            # Remove markdown code block wrapper (```json ... ``` or ``` ... ```)
+            if cleaned_response.startswith("```"):
+                # Find the first newline after opening ```
+                first_newline = cleaned_response.find("\n")
+                if first_newline != -1:
+                    # Remove opening ``` and optional language identifier
+                    cleaned_response = cleaned_response[first_newline + 1:]
+
+                # Remove closing ```
+                if cleaned_response.endswith("```"):
+                    cleaned_response = cleaned_response[:-3]
+
+                cleaned_response = cleaned_response.strip()
+
+            data = json.loads(cleaned_response)
             # Use 'or' to handle both missing keys and null values
             thought = data.get("thought") or ""
             speak = data.get("speak") or "过。"
@@ -210,7 +229,8 @@ class LLMService:
             )
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse LLM response: {e}")
-            raise ValueError(f"Invalid JSON response: {raw_response}")
+            logger.error(f"Original response: {raw_response[:200]}...")
+            raise ValueError(f"Invalid JSON response: {raw_response[:200]}")
 
     def _get_fallback_response(
         self, player: "Player", action_type: str, targets: list[int] = None

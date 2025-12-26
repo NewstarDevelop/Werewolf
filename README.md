@@ -41,12 +41,12 @@ git clone https://github.com/NewstarDevelop/Werewolf.git
 cd Werewolf
 ```
 
-2. **配置环境变量**（可选）
+2. **配置环境变量**
 ```bash
 # 复制环境变量模板
-cp backend/.env.example backend/.env
+cp backend/.env.example .env
 
-# 编辑 .env 文件，添加你的 OpenAI API Key（可选）
+# 编辑 .env 文件，添加你的 OpenAI API Key
 # OPENAI_API_KEY=your_api_key_here
 ```
 

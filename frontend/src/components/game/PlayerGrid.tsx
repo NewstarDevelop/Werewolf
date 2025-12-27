@@ -78,7 +78,11 @@ const PlayerGrid = ({
               isSelected={selectedPlayerId === player.id}
               role={player.role}
               onSelect={() => isSelectable && onSelectPlayer(player.id)}
-              isCurrentActor={currentActor === player.seatId}
+              isCurrentActor={
+                pendingAction?.type === "speak" && player.isUser
+                  ? true
+                  : currentActor === player.seatId
+              }
               isWolfTeammate={isWolfTeammate}
               verificationResult={verificationResult}
               wolfVote={wolfVote}

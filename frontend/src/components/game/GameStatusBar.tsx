@@ -108,13 +108,6 @@ const GameStatusBar = ({
             )}
           </>
         )}
-
-        {/* Action hint */}
-        {actionHint && !isGameOver && (
-          <div className="mt-1 px-3 py-1 bg-accent/20 rounded-full">
-            <span className="text-xs text-accent">{actionHint}</span>
-          </div>
-        )}
       </div>
 
       {/* Right: Player Count */}

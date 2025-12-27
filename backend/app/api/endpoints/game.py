@@ -329,3 +329,27 @@ def get_logs(game_id: str, limit: int = 100) -> Dict[str, List[Dict]]:
 
     logs = get_game_logs(game_id, limit)
     return {"logs": logs}
+
+
+@router.get("/{game_id}/debug-messages")
+def get_debug_messages(game_id: str) -> Dict[str, List[MessageInGame]]:
+    """
+    Get all game messages including vote thoughts (for debugging).
+    GET /api/game/{game_id}/debug-messages
+    """
+    game = game_store.get_game(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    # Return all messages without filtering (including VOTE_THOUGHT)
+    all_messages = [
+        MessageInGame(
+            seat_id=m.seat_id,
+            text=m.content,
+            type=m.msg_type,
+            day=m.day
+        )
+        for m in game.messages
+    ]
+
+    return {"messages": all_messages}

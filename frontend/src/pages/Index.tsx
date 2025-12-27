@@ -5,6 +5,7 @@ import PlayerGrid from "@/components/game/PlayerGrid";
 import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
 import LogPanel from "@/components/game/LogPanel";
+import DebugPanel from "@/components/game/DebugPanel";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
 import {
@@ -37,6 +38,7 @@ const Index = () => {
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [logPanelOpen, setLogPanelOpen] = useState(false);
+  const [debugPanelOpen, setDebugPanelOpen] = useState(false);
 
   // Transform game state to UI format
   const players = useMemo(() => {
@@ -255,6 +257,7 @@ const Index = () => {
           isGameOver={isGameOver}
           winner={gameState?.winner}
           onOpenLogs={() => setLogPanelOpen(true)}
+          onOpenDebug={() => setDebugPanelOpen(true)}
         />
       </div>
 
@@ -302,6 +305,14 @@ const Index = () => {
           gameId={gameId}
           isOpen={logPanelOpen}
           onClose={() => setLogPanelOpen(false)}
+        />
+      )}
+
+      {gameId && (
+        <DebugPanel
+          gameId={gameId}
+          isOpen={debugPanelOpen}
+          onClose={() => setDebugPanelOpen(false)}
         />
       )}
     </div>

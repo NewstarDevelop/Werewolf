@@ -1,4 +1,4 @@
-import { Moon, Sun, Trophy, FileText } from "lucide-react";
+import { Moon, Sun, Trophy, FileText, Brain } from "lucide-react";
 import { GamePhase, Role, Winner, getRoleDisplayName, getPhaseDisplayName } from "@/services/api";
 
 interface GameStatusBarProps {
@@ -12,6 +12,7 @@ interface GameStatusBarProps {
   isGameOver?: boolean;
   winner?: Winner | null;
   onOpenLogs?: () => void;
+  onOpenDebug?: () => void;
 }
 
 const GameStatusBar = ({
@@ -25,6 +26,7 @@ const GameStatusBar = ({
   isGameOver,
   winner,
   onOpenLogs,
+  onOpenDebug,
 }: GameStatusBarProps) => {
   return (
     <header className="relative flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-sm border-b border-border">
@@ -121,6 +123,18 @@ const GameStatusBar = ({
             aria-label="系统日志"
           >
             <FileText className="w-4 h-4 text-foreground" />
+          </button>
+        )}
+
+        {onOpenDebug && (
+          <button
+            type="button"
+            onClick={onOpenDebug}
+            className="inline-flex items-center justify-center rounded-full p-2 bg-muted/60 hover:bg-muted transition-colors"
+            title="AI思考调试"
+            aria-label="AI思考调试"
+          >
+            <Brain className="w-4 h-4 text-purple-400" />
           </button>
         )}
 

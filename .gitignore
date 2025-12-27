@@ -40,6 +40,8 @@ build/
 *.backup
 *.bak
 *_backup
+*.patch
+temp_*
 
 # OS
 .DS_Store

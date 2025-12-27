@@ -215,7 +215,9 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 
             # 区分消息类型
             if msg.msg_type.value == "wolf_chat":
-                chat_history.append(f"【狼人私聊】{sender}：{msg.content}")
+                # 只有狼人才能看到狼人私聊
+                if player.role.value == "werewolf":
+                    chat_history.append(f"【狼人私聊】{sender}：{msg.content}")
             else:
                 chat_history.append(f"{sender}：{msg.content}")
 

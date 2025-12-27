@@ -111,8 +111,8 @@ class Game:
         return [p for p in self.players.values() if p.is_alive]
 
     def get_alive_seats(self) -> list[int]:
-        """Get all alive player seat IDs."""
-        return [p.seat_id for p in self.get_alive_players()]
+        """Get all alive player seat IDs, sorted by seat_id."""
+        return sorted([p.seat_id for p in self.get_alive_players()])
 
     def get_werewolves(self) -> list[Player]:
         """Get all werewolf players."""

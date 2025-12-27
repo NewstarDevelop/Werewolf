@@ -41,15 +41,17 @@ const Index = () => {
   // Transform game state to UI format
   const players = useMemo(() => {
     if (!gameState) return [];
-    return gameState.players.map((p) => ({
-      id: p.seat_id,
-      name: p.is_human ? "You" : p.name || `Player ${p.seat_id}`,
-      isUser: p.is_human,
-      isAlive: p.is_alive,
-      // Show role for: 1) Human player always, 2) All players when game is finished
-      role: p.is_human ? gameState.my_role : (isGameOver ? (p.role ?? undefined) : undefined),
-      seatId: p.seat_id,
-    }));
+    return gameState.players
+      .sort((a, b) => a.seat_id - b.seat_id)  // Sort by seat_id to fix border highlighting
+      .map((p) => ({
+        id: p.seat_id,
+        name: p.is_human ? "You" : p.name || `Player ${p.seat_id}`,
+        isUser: p.is_human,
+        isAlive: p.is_alive,
+        // Show role for: 1) Human player always, 2) All players when game is finished
+        role: p.is_human ? gameState.my_role : (isGameOver ? (p.role ?? undefined) : undefined),
+        seatId: p.seat_id,
+      }));
   }, [gameState, isGameOver]);
 
   // Transform messages to UI format

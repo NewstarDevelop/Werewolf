@@ -30,6 +30,18 @@ class GameEngine:
         if game.status == GameStatus.FINISHED:
             return {"status": "game_over", "winner": game.winner}
 
+        start_day = game.day
+        start_phase = game.phase.value
+        start_status = game.status.value
+
+        logger.info(
+            "Step start: day=%s phase=%s status=%s",
+            start_day,
+            start_phase,
+            start_status,
+            extra={"game_id": game.id},
+        )
+
         # Route to appropriate phase handler
         phase_handlers = {
             GamePhase.NIGHT_START: self._handle_night_start,
@@ -47,7 +59,21 @@ class GameEngine:
 
         handler = phase_handlers.get(game.phase)
         if handler:
-            return handler(game)
+            result = handler(game)
+            new_phase = result.get("new_phase")
+            if hasattr(new_phase, "value"):
+                new_phase_value = new_phase.value
+            elif new_phase is None and hasattr(game.phase, "value"):
+                new_phase_value = game.phase.value
+            else:
+                new_phase_value = new_phase
+            logger.info(
+                "Step end: status=%s new_phase=%s",
+                result.get("status"),
+                new_phase_value,
+                extra={"game_id": game.id},
+            )
+            return result
 
         return {"status": "error", "message": f"Unknown phase: {game.phase}"}
 
@@ -70,6 +96,13 @@ class GameEngine:
 
         if not player.is_alive:
             return {"success": False, "message": "Player is dead"}
+
+        logger.info(
+            "Human action received: seat_id=%s action_type=%s",
+            seat_id,
+            action_type.value,
+            extra={"game_id": game.id},
+        )
 
         # Validate action based on current phase
         result = self._validate_and_execute_action(

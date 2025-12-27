@@ -1,45 +1,46 @@
-  # Python
-  __pycache__/
-  *.py[cod]
-  *$py.class
-  *.so
-  .Python
-  env/
-  venv/
-  .venv
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
 
-  # Node
-  node_modules/
-  npm-debug.log*
-  yarn-debug.log*
-  yarn-error.log*
-  .pnpm-debug.log*
-  dist/
-  build/
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
 
-  # Docker
-  .docker/
+# Docker
+.docker/
 
-  # IDE
-  .vscode/
-  .idea/
-  *.swp
-  *.swo
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-  # Tools
-  .claude/
-  .spec-workflow/
+# Tools
+.claude/
+.spec-workflow/
+.playwright-mcp/
 
-  # Environment
-  .env
-  .env.*
-  *.env
-  .env.local
-  .env.*.local
-  *.backup
-  *.bak
-  *_backup
+# Environment
+.env
+.env.*
+*.env
+.env.local
+.env.*.local
+*.backup
+*.bak
+*_backup
 
-  # OS
-  .DS_Store
-  Thumbs.db
+# OS
+.DS_Store
+Thumbs.db

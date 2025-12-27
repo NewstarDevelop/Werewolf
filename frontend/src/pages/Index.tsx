@@ -5,7 +5,6 @@ import PlayerGrid from "@/components/game/PlayerGrid";
 import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
 import LogPanel from "@/components/game/LogPanel";
-import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
 import {
@@ -253,6 +252,7 @@ const Index = () => {
           actionHint={actionHint}
           isGameOver={isGameOver}
           winner={gameState?.winner}
+          onOpenLogs={() => setLogPanelOpen(true)}
         />
       </div>
 
@@ -293,15 +293,6 @@ const Index = () => {
           pendingAction={gameState?.pending_action}
         />
       </div>
-
-      {/* Floating Log Button */}
-      <button
-        onClick={() => setLogPanelOpen(true)}
-        className="fixed bottom-20 right-4 z-40 p-3 rounded-full bg-muted/80 hover:bg-muted shadow-lg transition-all hover:scale-105"
-        title="View System Logs"
-      >
-        <FileText className="w-5 h-5 text-foreground" />
-      </button>
 
       {/* Log Panel */}
       {gameId && (

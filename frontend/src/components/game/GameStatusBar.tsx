@@ -1,4 +1,4 @@
-import { Moon, Sun, Trophy, Skull } from "lucide-react";
+import { Moon, Sun, Trophy, FileText } from "lucide-react";
 import { GamePhase, Role, Winner, getRoleDisplayName, getPhaseDisplayName } from "@/services/api";
 
 interface GameStatusBarProps {
@@ -11,6 +11,7 @@ interface GameStatusBarProps {
   actionHint?: string;
   isGameOver?: boolean;
   winner?: Winner | null;
+  onOpenLogs?: () => void;
 }
 
 const GameStatusBar = ({
@@ -23,6 +24,7 @@ const GameStatusBar = ({
   actionHint,
   isGameOver,
   winner,
+  onOpenLogs,
 }: GameStatusBarProps) => {
   return (
     <header className="relative flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-sm border-b border-border">
@@ -116,13 +118,27 @@ const GameStatusBar = ({
       </div>
 
       {/* Right: Player Count */}
-      <div className="relative z-10 text-right">
-        <p className="text-sm text-muted-foreground">存活玩家</p>
-        <p className="font-display text-xl">
-          <span className="text-villager">{playersAlive}</span>
-          <span className="text-muted-foreground mx-1">/</span>
-          <span className="text-foreground">{totalPlayers}</span>
-        </p>
+      <div className="relative z-10 flex items-center gap-3">
+        {onOpenLogs && (
+          <button
+            type="button"
+            onClick={onOpenLogs}
+            className="inline-flex items-center justify-center rounded-full p-2 bg-muted/60 hover:bg-muted transition-colors"
+            title="系统日志"
+            aria-label="系统日志"
+          >
+            <FileText className="w-4 h-4 text-foreground" />
+          </button>
+        )}
+
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">存活玩家</p>
+          <p className="font-display text-xl">
+            <span className="text-villager">{playersAlive}</span>
+            <span className="text-muted-foreground mx-1">/</span>
+            <span className="text-foreground">{totalPlayers}</span>
+          </p>
+        </div>
       </div>
     </header>
   );

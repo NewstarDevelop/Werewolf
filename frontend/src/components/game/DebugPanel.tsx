@@ -77,15 +77,15 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
 
         <ScrollArea className="h-[calc(100vh-80px)] mt-4">
           {isLoading ? (
-            <div className="text-center text-muted-foreground py-8">
+            <div className="text-center text-muted-foreground py-8 text-base">
               加载中...
             </div>
           ) : data?.messages && data.messages.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {data.messages.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`p-3 rounded-lg border text-xs ${
+                  className={`p-4 rounded-lg border ${
                     msg.type === 'vote_thought'
                       ? 'bg-purple-500/10 border-purple-500/30'
                       : msg.type === 'wolf_chat'
@@ -93,26 +93,26 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
                       : 'bg-secondary/30 border-border'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-2">
                     {getMessageTypeIcon(msg.type)}
-                    <span className="font-semibold text-accent">
+                    <span className="font-semibold text-accent text-sm">
                       {msg.seat_id === 0 ? '系统' : `${msg.seat_id}号`}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       [{getMessageTypeLabel(msg.type)}]
                     </span>
-                    <span className="ml-auto text-[10px] text-muted-foreground">
+                    <span className="ml-auto text-xs text-muted-foreground">
                       第{msg.day}天
                     </span>
                   </div>
-                  <div className={`${getMessageTypeColor(msg.type)} whitespace-pre-wrap`}>
+                  <div className={`${getMessageTypeColor(msg.type)} whitespace-pre-wrap text-sm leading-relaxed font-sans`}>
                     {msg.text}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
+            <div className="text-center text-muted-foreground py-8 text-base">
               暂无消息
             </div>
           )}

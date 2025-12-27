@@ -13,6 +13,7 @@ export type Role = 'werewolf' | 'villager' | 'seer' | 'witch' | 'hunter';
 export type GameStatus = 'waiting' | 'playing' | 'finished';
 export type GamePhase =
   | 'night_start'
+  | 'night_werewolf_chat'
   | 'night_werewolf'
   | 'night_seer'
   | 'night_witch'
@@ -220,6 +221,7 @@ export function getRoleDisplayName(role: Role): string {
 export function getPhaseDisplayName(phase: GamePhase): string {
   const phaseNames: Record<GamePhase, string> = {
     night_start: '夜晚开始',
+    night_werewolf_chat: '狼人队内讨论',
     night_werewolf: '狼人行动',
     night_seer: '预言家查验',
     night_witch: '女巫行动',

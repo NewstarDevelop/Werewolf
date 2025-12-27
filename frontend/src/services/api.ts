@@ -71,6 +71,7 @@ export interface GameState {
 export interface GameStartRequest {
   human_seat?: number | null;
   human_role?: Role | null;
+  language?: string;  // Game language: "zh" or "en"
 }
 
 export interface GameStartResponse {
@@ -148,6 +149,11 @@ async function fetchApi<T>(
  * Start a new game
  */
 export async function startGame(request: GameStartRequest = {}): Promise<GameStartResponse> {
+  // Auto-detect current language if not provided
+  if (!request.language) {
+    request.language = i18n.language || 'zh';
+  }
+
   return fetchApi<GameStartResponse>('/api/game/start', {
     method: 'POST',
     body: JSON.stringify(request),

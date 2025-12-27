@@ -20,12 +20,29 @@
     "players": "玩家",
     "player_count": "{{count}} 玩家",
     "roles": "3狼人 · 3村民 · 预言家 · 女巫 · 猎人",
-    "instructions": "你将与 8 个 AI 玩家进行对战。根据你的角色，在白天发言投票，在夜晚使用技能。找出狼人，或者隐藏身份存活到最后！"
+    "instructions": "你将与 8 个 AI 玩家进行对战。根据你的角色,在白天发言投票,在夜晚使用技能。找出狼人,或者隐藏身份存活到最后!"
+  },
+  "player": {
+    "eliminated": "出局",
+    "messages_count": "{{count}} 条消息",
+    "waiting": "等待游戏开始...",
+    "no_messages": "暂无消息",
+    "seat": "{{id}}号",
+    "system": "系统",
+    "day": "第{{count}}天"
   },
   "ui": {
     "system_log": "系统日志",
+    "game_log": "游戏日志",
     "ai_debug": "AI思考调试",
     "expand": "展开",
     "collapse": "收起"
+  },
+  "message_type": {
+    "vote_thought": "投票思考",
+    "wolf_chat": "狼人私聊",
+    "system": "系统",
+    "speech": "发言",
+    "last_words": "遗言"
   }
 }

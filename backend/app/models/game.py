@@ -79,6 +79,7 @@ class Game:
     day: int = 1
     phase: GamePhase = GamePhase.NIGHT_START
     winner: Optional[Winner] = None
+    language: str = "zh"  # Game language: "zh" or "en"
     players: dict[int, Player] = field(default_factory=dict)
     messages: list[Message] = field(default_factory=list)
     actions: list[Action] = field(default_factory=list)
@@ -203,11 +204,12 @@ class GameStore:
     def create_game(
         self,
         human_seat: Optional[int] = None,
-        human_role: Optional[Role] = None
+        human_role: Optional[Role] = None,
+        language: str = "zh"
     ) -> Game:
         """Create a new game with random role assignment."""
         game_id = str(uuid.uuid4())[:8]
-        game = Game(id=game_id)
+        game = Game(id=game_id, language=language)
 
         # Role distribution: 3 werewolves, 3 villagers, 1 seer, 1 witch, 1 hunter
         roles = [

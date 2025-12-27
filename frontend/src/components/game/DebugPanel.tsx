@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { Brain, Users, MessageSquare } from "lucide-react";
 import { MessageInGame } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 interface DebugPanelProps {
   gameId: string;
@@ -11,6 +12,8 @@ interface DebugPanelProps {
 }
 
 const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
+  const { t } = useTranslation('common');
+
   const { data, isLoading } = useQuery({
     queryKey: ['debugMessages', gameId],
     queryFn: async () => {
@@ -49,20 +52,7 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
   };
 
   const getMessageTypeLabel = (type: string) => {
-    switch (type) {
-      case 'vote_thought':
-        return '投票思考';
-      case 'wolf_chat':
-        return '狼人私聊';
-      case 'system':
-        return '系统';
-      case 'speech':
-        return '发言';
-      case 'last_words':
-        return '遗言';
-      default:
-        return type;
-    }
+    return t(`message_type.${type}`, { defaultValue: type });
   };
 
   return (
@@ -71,14 +61,14 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5 text-purple-400" />
-            AI思考调试
+            {t('ui.ai_debug')}
           </SheetTitle>
         </SheetHeader>
 
         <ScrollArea className="h-[calc(100vh-80px)] mt-4">
           {isLoading ? (
             <div className="text-center text-muted-foreground py-8 text-base">
-              加载中...
+              {t('app.loading')}
             </div>
           ) : data?.messages && data.messages.length > 0 ? (
             <div className="space-y-3">
@@ -96,13 +86,13 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
                   <div className="flex items-center gap-2 mb-2">
                     {getMessageTypeIcon(msg.type)}
                     <span className="font-semibold text-accent text-sm">
-                      {msg.seat_id === 0 ? '系统' : `${msg.seat_id}号`}
+                      {msg.seat_id === 0 ? t('player.system') : t('player.seat', { id: msg.seat_id })}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       [{getMessageTypeLabel(msg.type)}]
                     </span>
                     <span className="ml-auto text-xs text-muted-foreground">
-                      第{msg.day}天
+                      {t('player.day', { count: msg.day })}
                     </span>
                   </div>
                   <div className={`${getMessageTypeColor(msg.type)} whitespace-pre-wrap text-sm leading-relaxed font-sans`}>
@@ -113,7 +103,7 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8 text-base">
-              暂无消息
+              {t('player.no_messages')}
             </div>
           )}
         </ScrollArea>

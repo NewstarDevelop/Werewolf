@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import ChatMessage from "./ChatMessage";
 import { MessageCircle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   id: number;
@@ -19,6 +20,7 @@ interface ChatLogProps {
 
 const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,10 +34,10 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
         <MessageCircle className="w-4 h-4 text-accent" />
         <h2 className="font-display text-sm uppercase tracking-wider text-foreground">
-          游戏日志
+          {t('ui.game_log')}
         </h2>
         <span className="ml-auto text-xs text-muted-foreground">
-          {messages.length} 条消息
+          {t('player.messages_count', { count: messages.length })}
         </span>
         {isLoading && (
           <Loader2 className="w-4 h-4 text-accent animate-spin" />
@@ -49,7 +51,7 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
       >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-            等待游戏开始...
+            {t('player.waiting')}
           </div>
         ) : (
           messages.map((msg) => (

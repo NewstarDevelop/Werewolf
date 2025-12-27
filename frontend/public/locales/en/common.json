@@ -20,12 +20,29 @@
     "players": "Players",
     "player_count": "{{count}} Players",
     "roles": "3 Werewolves · 3 Villagers · Seer · Witch · Hunter",
-    "instructions": "You will play against 8 AI players. Depending on your role, speak and vote during the day, use abilities at night. Find the werewolves, or hide your identity to survive!"
+    "instructions": "You will play with 8 AI players. Use your role's abilities at night and speak/vote during the day. Find the werewolves or survive as one!"
+  },
+  "player": {
+    "eliminated": "OUT",
+    "messages_count": "{{count}} messages",
+    "waiting": "Waiting for game to start...",
+    "no_messages": "No messages yet",
+    "seat": "#{{id}}",
+    "system": "System",
+    "day": "Day {{count}}"
   },
   "ui": {
     "system_log": "System Log",
-    "ai_debug": "AI Reasoning Debug",
+    "game_log": "Game Log",
+    "ai_debug": "AI Debug",
     "expand": "Expand",
     "collapse": "Collapse"
+  },
+  "message_type": {
+    "vote_thought": "Vote Thought",
+    "wolf_chat": "Wolf Chat",
+    "system": "System",
+    "speech": "Speech",
+    "last_words": "Last Words"
   }
 }

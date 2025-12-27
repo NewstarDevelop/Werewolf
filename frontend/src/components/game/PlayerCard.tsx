@@ -1,5 +1,6 @@
 import { User, Skull, Shield, Search, Crosshair, FlaskConical, Target } from "lucide-react";
 import { getRoleDisplayName, type Role } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 interface PlayerCardProps {
   seatId: number;
@@ -31,6 +32,8 @@ const PlayerCard = ({
   wolfVote,
   isSelectable = true,
 }: PlayerCardProps) => {
+  const { t } = useTranslation('common');
+
   const getRoleIcon = () => {
     if (!role) return null;
     switch (role) {
@@ -186,7 +189,7 @@ const PlayerCard = ({
       {!isAlive && (
         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/30 backdrop-blur-[1px]">
           <span className="text-xs text-werewolf font-display uppercase tracking-wider">
-            出局
+            {t('player.eliminated')}
           </span>
         </div>
       )}

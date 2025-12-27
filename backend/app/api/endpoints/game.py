@@ -26,7 +26,8 @@ def start_game(request: GameStartRequest) -> GameStartResponse:
     """
     game = game_store.create_game(
         human_seat=request.human_seat,
-        human_role=request.human_role
+        human_role=request.human_role,
+        language=request.language
     )
 
     human_player = game.get_player(game.human_seat)

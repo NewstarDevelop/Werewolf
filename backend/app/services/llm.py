@@ -290,8 +290,8 @@ class LLMService:
             logger.warning(f"No LLM client available for player {player.seat_id}, using fallback")
             return self._get_fallback_response(player, action_type, targets)
 
-        # Build prompts
-        system_prompt = build_system_prompt(player, game)
+        # Build prompts (use game's language setting)
+        system_prompt = build_system_prompt(player, game, language=game.language)
         context_prompt = build_context_prompt(player, game, action_type)
 
         # Add wolf strategy for werewolves

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Message } from '@/types/game';
+import { useTranslation } from 'react-i18next';
 
 export default function LogWindow({ messages }: { messages: Message[] }) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     // 自动滚动到底部
@@ -15,7 +17,7 @@ export default function LogWindow({ messages }: { messages: Message[] }) {
         <div key={idx} className={`mb-3 ${msg.seat_id === 0 ? 'text-center text-yellow-400 text-sm' : ''}`}>
           {msg.seat_id !== 0 && (
             <span className="font-bold text-blue-400 mr-2">
-              {msg.seat_id}号:
+              {i18n.language === 'zh' ? `${msg.seat_id}号:` : `#${msg.seat_id}:`}
             </span>
           )}
           <span className="text-gray-200">{msg.content}</span>

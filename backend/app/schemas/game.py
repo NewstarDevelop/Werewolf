@@ -11,6 +11,7 @@ class GameStartRequest(BaseModel):
     """Request schema for starting a new game."""
     human_seat: Optional[int] = None  # If None, random seat
     human_role: Optional[Role] = None  # If None, random role
+    language: str = "zh"  # Game language: "zh" or "en"
 
 
 class GameStartResponse(BaseModel):

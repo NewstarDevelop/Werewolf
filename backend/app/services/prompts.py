@@ -1,57 +1,33 @@
 """Prompt templates for AI players in Werewolf game."""
 
 from typing import TYPE_CHECKING
+from app.i18n import t
 
 if TYPE_CHECKING:
     from app.models.game import Game, Player
     from app.schemas.enums import GamePhase, MessageType
 
-# Role descriptions in Chinese
-ROLE_DESCRIPTIONS = {
-    "werewolf": "狼人 - 你是狼人阵营，夜晚可以和狼队友一起杀人，白天需要伪装成好人",
-    "villager": "村民 - 你是好人阵营，没有特殊技能，需要通过逻辑分析找出狼人",
-    "seer": "预言家 - 你是好人阵营的神职，每晚可以查验一名玩家的身份（好人/狼人）",
-    "witch": "女巫 - 你是好人阵营的神职，拥有一瓶解药（救人）和一瓶毒药（杀人），全场各只能用一次",
-    "hunter": "猎人 - 你是好人阵营的神职，死亡时可以开枪带走一名玩家（被毒死除外）",
-}
 
-# Personality traits and speaking styles
-PERSONALITY_TRAITS = {
-    "激进": "你性格激进，说话直接，喜欢主动发起攻击和质疑他人",
-    "保守": "你性格保守，说话谨慎，倾向于观察和跟随大多数人的意见",
-    "逻辑流": "你擅长逻辑分析，说话有条理，喜欢用推理来说服他人",
-    "直觉流": "你相信直觉，说话感性，经常根据第一印象做判断",
-    "随波逐流": "你不喜欢出头，倾向于跟随场上主流意见",
-}
-
-SPEAKING_STYLES = {
-    "口语化": "用口语化的方式说话，可以用一些语气词",
-    "严谨": "用严谨正式的方式说话，逻辑清晰",
-    "幽默": "说话带点幽默感，偶尔开玩笑",
-    "简短": "说话简洁，不废话，直奔主题",
-}
-
-
-def build_system_prompt(player: "Player", game: "Game") -> str:
+def build_system_prompt(player: "Player", game: "Game", language: str = "zh") -> str:
     """Build the system prompt for an AI player."""
-    role_desc = ROLE_DESCRIPTIONS.get(player.role.value, "未知角色")
+    role_desc = t(f"roles.descriptions.{player.role.value}", language=language)
 
     # Personality description
     personality_desc = ""
     if player.personality:
-        trait_desc = PERSONALITY_TRAITS.get(player.personality.trait, "")
-        style_desc = SPEAKING_STYLES.get(player.personality.speaking_style, "")
+        trait_desc = t(f"personality.traits.{player.personality.trait}", language=language)
+        style_desc = t(f"personality.styles.{player.personality.speaking_style}", language=language)
         personality_desc = f"""
-你的名字是：{player.personality.name}
-性格特征：{trait_desc}
-说话风格：{style_desc}
+{t('prompts.your_name', language=language, name=player.personality.name)}
+{t('prompts.personality_trait', language=language, trait=trait_desc)}
+{t('prompts.speaking_style', language=language, style=style_desc)}
 """
 
     # Wolf teammates info (only for werewolves)
     wolf_info = ""
     if player.role.value == "werewolf" and player.teammates:
-        teammates_str = "、".join([f"{t}号" for t in player.teammates])
-        wolf_info = f"\n你的狼队友是：{teammates_str}\n**重要**：你们从游戏开始第一晚就知道彼此的狼人身份，夜间可以私下讨论击杀目标，白天需要互相掩护、配合演戏。"
+        teammates_str = "、".join([f"{t}号" for t in player.teammates]) if language == "zh" else ", ".join([f"#{t}" for t in player.teammates])
+        wolf_info = f"\n{t('prompts.wolf_teammates', language=language, teammates=teammates_str)}\n{t('prompts.wolf_info_note', language=language)}"
 
     # Seer verification info
     seer_info = ""
@@ -75,12 +51,17 @@ def build_system_prompt(player: "Player", game: "Game") -> str:
         else:
             witch_info = "\n你的药水已用完"
 
-    system_prompt = f"""# 角色设定
-你正在参与一场9人《狼人杀》文字游戏。
-你的身份是：{role_desc}
-你的座位号是：{player.seat_id}号
+    # Language instruction (for English mode)
+    language_instruction = ""
+    if language == "en":
+        language_instruction = f"\n\n{t('prompts.language_instruction', language=language)}"
+
+    system_prompt = f"""{t('prompts.game_intro', language=language)}
+{t('prompts.your_role', language=language, role=role_desc)}
+{t('prompts.your_seat', language=language, seat_id=player.seat_id)}
 {personality_desc}
 # 私有信息（只有你知道）{wolf_info}{seer_info}{witch_info}
+{language_instruction}
 
 # 游戏规则
 - 板子配置：3狼人、3村民、1预言家、1女巫、1猎人

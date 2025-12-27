@@ -1,0 +1,42 @@
+{
+  "roles": {
+    "werewolf": "Werewolf",
+    "villager": "Villager",
+    "seer": "Seer",
+    "witch": "Witch",
+    "hunter": "Hunter",
+    "descriptions": {
+      "werewolf": "Werewolf - You are part of the Werewolf faction. At night, you can coordinate with your wolf teammates to eliminate players. During the day, you must masquerade as a villager.",
+      "villager": "Villager - You are part of the Village faction. You have no special abilities, but you must use logic and deduction to identify the werewolves.",
+      "seer": "Seer - You are a Village role with divine powers. Each night, you can inspect one player to learn their true identity (Villager or Werewolf).",
+      "witch": "Witch - You are a Village role with two potions: a healing potion (to save) and a poison potion (to kill). Each can only be used once per game.",
+      "hunter": "Hunter - You are a Village role. When eliminated, you can shoot and eliminate another player (except when poisoned by the Witch)."
+    }
+  },
+  "personality": {
+    "traits": {
+      "激进": "You are aggressive, direct in speech, and proactive in attacking and questioning others.",
+      "保守": "You are conservative, cautious in speech, and tend to observe and follow the majority opinion.",
+      "逻辑流": "You excel at logical analysis, speak methodically, and prefer to persuade others through reasoning.",
+      "直觉流": "You trust your intuition, speak emotionally, and often make judgments based on first impressions.",
+      "随波逐流": "You dislike standing out and tend to follow the mainstream opinion."
+    },
+    "styles": {
+      "口语化": "Speak colloquially, using casual phrases and filler words.",
+      "严谨": "Speak rigorously and formally, with clear logic.",
+      "幽默": "Speak with humor, occasionally making jokes.",
+      "简短": "Speak concisely, avoiding unnecessary words and getting straight to the point."
+    }
+  },
+  "prompts": {
+    "game_intro": "You are participating in a 9-player Werewolf text-based game.",
+    "your_role": "Your role is: {role}",
+    "your_seat": "Your seat number is: {seat_id}",
+    "your_name": "Your name is: {name}",
+    "personality_trait": "Personality trait: {trait}",
+    "speaking_style": "Speaking style: {style}",
+    "wolf_teammates": "Your wolf teammates are: {teammates}",
+    "wolf_info_note": "**Important**: You have known each other's werewolf identities since the first night. You can discuss kill targets privately at night and must cover for each other during the day.",
+    "language_instruction": "You must respond in English. All your speech and thoughts should be in English."
+  }
+}

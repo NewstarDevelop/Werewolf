@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Moon, Users, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface GameLobbyProps {
   onStartGame: () => void;
@@ -8,11 +10,18 @@ interface GameLobbyProps {
 }
 
 const GameLobby = ({ onStartGame, isLoading, error }: GameLobbyProps) => {
+  const { t } = useTranslation('common');
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       {/* Background effects */}
       <div className="fixed inset-0 bg-gradient-to-b from-night via-background to-background pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-3xl bg-moonlight/5 pointer-events-none" />
+
+      {/* Language Switcher - Top Right */}
+      <div className="fixed top-6 right-6 z-20">
+        <LanguageSwitcher />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 p-8">
@@ -23,7 +32,7 @@ const GameLobby = ({ onStartGame, isLoading, error }: GameLobbyProps) => {
             <div className="absolute inset-0 w-24 h-24 bg-moonlight/20 rounded-full blur-xl" />
           </div>
           <h1 className="font-display text-5xl text-foreground tracking-wider">
-            狼人杀
+            {t('app.title')}
           </h1>
         </div>
 
@@ -31,10 +40,10 @@ const GameLobby = ({ onStartGame, isLoading, error }: GameLobbyProps) => {
         <div className="flex items-center gap-6 text-muted-foreground">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            <span>9 玩家</span>
+            <span>{t('lobby.player_count', { count: 9 })}</span>
           </div>
           <div className="text-sm">
-            3狼人 · 3村民 · 预言家 · 女巫 · 猎人
+            {t('lobby.roles')}
           </div>
         </div>
 
@@ -49,10 +58,10 @@ const GameLobby = ({ onStartGame, isLoading, error }: GameLobbyProps) => {
           {isLoading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              创建游戏中...
+              {t('game.creating')}
             </>
           ) : (
-            "开始游戏"
+            t('game.start')
           )}
         </Button>
 
@@ -65,13 +74,7 @@ const GameLobby = ({ onStartGame, isLoading, error }: GameLobbyProps) => {
 
         {/* Instructions */}
         <div className="max-w-md text-center text-sm text-muted-foreground mt-4">
-          <p>
-            你将与 8 个 AI 玩家进行对战。
-            <br />
-            根据你的角色，在白天发言投票，在夜晚使用技能。
-            <br />
-            找出狼人，或者隐藏身份存活到最后！
-          </p>
+          <p>{t('lobby.instructions')}</p>
         </div>
       </div>
     </div>

@@ -201,39 +201,20 @@ export async function healthCheck(): Promise<{ status: string }> {
 
 // ==================== Helper Functions ====================
 
+import i18n from '@/i18n/config';
+
 /**
- * Get role display name in Chinese
+ * Get role display name (i18n-aware)
  */
 export function getRoleDisplayName(role: Role): string {
-  const roleNames: Record<Role, string> = {
-    werewolf: '狼人',
-    villager: '村民',
-    seer: '预言家',
-    witch: '女巫',
-    hunter: '猎人',
-  };
-  return roleNames[role] || role;
+  return i18n.t(`roles:${role}`);
 }
 
 /**
- * Get phase display name in Chinese
+ * Get phase display name (i18n-aware)
  */
 export function getPhaseDisplayName(phase: GamePhase): string {
-  const phaseNames: Record<GamePhase, string> = {
-    night_start: '夜晚开始',
-    night_werewolf_chat: '狼人队内讨论',
-    night_werewolf: '狼人行动',
-    night_seer: '预言家查验',
-    night_witch: '女巫行动',
-    day_announcement: '天亮公告',
-    day_last_words: '遗言阶段',
-    day_speech: '发言阶段',
-    day_vote: '投票阶段',
-    day_vote_result: '投票结果',
-    hunter_shoot: '猎人开枪',
-    game_over: '游戏结束',
-  };
-  return phaseNames[phase] || phase;
+  return i18n.t(`game:phase.${phase}`);
 }
 
 /**

@@ -1,5 +1,7 @@
 import { Moon, Sun, Trophy, FileText, Brain } from "lucide-react";
 import { GamePhase, Role, Winner, getRoleDisplayName, getPhaseDisplayName } from "@/services/api";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface GameStatusBarProps {
   isNight: boolean;
@@ -28,6 +30,8 @@ const GameStatusBar = ({
   onOpenLogs,
   onOpenDebug,
 }: GameStatusBarProps) => {
+  const { t } = useTranslation(['common', 'game', 'roles']);
+
   return (
     <header className="relative flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-sm border-b border-border">
       {/* Decorative glow */}
@@ -46,18 +50,11 @@ const GameStatusBar = ({
       {/* Left: Game Title & Role */}
       <div className="relative z-10">
         <h1 className="font-display text-2xl font-bold tracking-wide text-glow-red">
-          狼人杀
+          {t('common:app.title')}
         </h1>
         {role && (
           <p className="text-xs text-muted-foreground mt-0.5">
-            你的身份:{" "}
-            <span
-              className={
-                role === "werewolf" ? "text-werewolf" : "text-villager"
-              }
-            >
-              {getRoleDisplayName(role)}
-            </span>
+            {t('roles:your_role', { role: getRoleDisplayName(role) })}
           </p>
         )}
       </div>
@@ -68,14 +65,14 @@ const GameStatusBar = ({
           <div className="flex items-center gap-3 px-6 py-2.5 rounded-full border bg-secondary/50 border-accent/30">
             <Trophy className="w-5 h-5 text-accent animate-pulse" />
             <span className="font-display text-lg uppercase tracking-widest text-accent">
-              游戏结束
+              {t('game:game_over.title')}
             </span>
             <span
               className={`font-medium ${
                 winner === "villager" ? "text-villager" : "text-werewolf"
               }`}
             >
-              {winner === "villager" ? "好人胜利" : "狼人胜利"}
+              {winner === "villager" ? t('game:winner.villager') : t('game:winner.werewolf')}
             </span>
           </div>
         ) : (
@@ -97,10 +94,10 @@ const GameStatusBar = ({
                   isNight ? "text-moonlight text-glow-blue" : "text-day"
                 }`}
               >
-                {isNight ? "夜晚" : "白天"}
+                {isNight ? t('game:status.night') : t('game:status.day')}
               </span>
               <span className="text-muted-foreground font-medium">
-                第 {turnCount} 天
+                {t('game:status.day_count', { count: turnCount })}
               </span>
             </div>
             {phase && (
@@ -114,13 +111,15 @@ const GameStatusBar = ({
 
       {/* Right: Player Count */}
       <div className="relative z-10 flex items-center gap-3">
+        <LanguageSwitcher />
+
         {onOpenLogs && (
           <button
             type="button"
             onClick={onOpenLogs}
             className="inline-flex items-center justify-center rounded-full p-2 bg-muted/60 hover:bg-muted transition-colors"
-            title="系统日志"
-            aria-label="系统日志"
+            title={t('common:ui.system_log')}
+            aria-label={t('common:ui.system_log')}
           >
             <FileText className="w-4 h-4 text-foreground" />
           </button>
@@ -131,15 +130,15 @@ const GameStatusBar = ({
             type="button"
             onClick={onOpenDebug}
             className="inline-flex items-center justify-center rounded-full p-2 bg-muted/60 hover:bg-muted transition-colors"
-            title="AI思考调试"
-            aria-label="AI思考调试"
+            title={t('common:ui.ai_debug')}
+            aria-label={t('common:ui.ai_debug')}
           >
             <Brain className="w-4 h-4 text-purple-400" />
           </button>
         )}
 
         <div className="text-right">
-          <p className="text-sm text-muted-foreground">存活玩家</p>
+          <p className="text-sm text-muted-foreground">{t('game:status.players_alive')}</p>
           <p className="font-display text-xl">
             <span className="text-villager">{playersAlive}</span>
             <span className="text-muted-foreground mx-1">/</span>

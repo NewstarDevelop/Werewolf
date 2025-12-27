@@ -1,4 +1,6 @@
-# 🌙 月夜狼人杀 AI Game
+# 狼人杀
+
+[English](./README.en.md) | [简体中文](./README.md)
 
 一个基于 AI 的在线狼人杀游戏，支持人类玩家与多个 AI 玩家共同游戏。采用 FastAPI + React + Docker 架构，提供流畅的游戏体验和智能的 AI 对手。
 
@@ -269,17 +271,6 @@ npm install
 
 本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
-## 👥 作者
-
-- **Newstar Develop Team**
-
-## 🙏 致谢
-
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代化的 Python Web 框架
-- [React](https://react.dev/) - 用户界面库
-- [shadcn/ui](https://ui.shadcn.com/) - 精美的 UI 组件
-- [OpenAI](https://openai.com/) - AI 能力支持
-
 ---
 
-⭐ 如果这个项目对你有帮助，请给我们一个 Star！
+⭐ 如果这个项目对你有帮助，请给一个 Star！

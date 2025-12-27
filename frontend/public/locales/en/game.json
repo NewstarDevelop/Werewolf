@@ -1,0 +1,59 @@
+{
+  "phase": {
+    "night_start": "Night Falls",
+    "night_werewolf_chat": "Werewolf Team Discussion",
+    "night_werewolf": "Werewolf Phase",
+    "night_seer": "Seer Phase",
+    "night_witch": "Witch Phase",
+    "day_announcement": "Dawn Breaks",
+    "day_last_words": "Last Words",
+    "day_speech": "Discussion Phase",
+    "day_vote": "Voting Phase",
+    "day_vote_result": "Vote Results",
+    "hunter_shoot": "Hunter's Shot",
+    "game_over": "Game Over"
+  },
+  "action": {
+    "speak": "Speak",
+    "vote": "Vote",
+    "kill": "Kill",
+    "verify": "Inspect",
+    "save": "Heal",
+    "poison": "Poison",
+    "shoot": "Shoot",
+    "skip": "Skip",
+    "confirm": "Confirm",
+    "send": "Send"
+  },
+  "status": {
+    "alive": "Alive",
+    "dead": "Dead",
+    "players_alive": "Players Alive",
+    "night": "Night",
+    "day": "Day",
+    "day_count": "Day {{count}}",
+    "turn": "Turn"
+  },
+  "message": {
+    "your_turn": "Your turn",
+    "waiting": "Waiting for other players...",
+    "waiting_for_ai": "AI is thinking...",
+    "action_success": "Action successful",
+    "action_failed": "Action failed",
+    "select_player": "Select a player",
+    "select_target": "Select a target",
+    "enter_message": "Enter your message...",
+    "no_action": "No action required this round"
+  },
+  "winner": {
+    "villager": "Village Wins",
+    "werewolf": "Werewolves Win",
+    "none": "Draw"
+  },
+  "game_over": {
+    "title": "Game Over",
+    "winner_announce": "{{winner}} Victory!",
+    "all_wolves_eliminated": "All werewolves have been eliminated",
+    "wolves_win": "Werewolves have achieved victory conditions"
+  }
+}

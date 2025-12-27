@@ -1,0 +1,31 @@
+{
+  "app": {
+    "title": "狼人杀",
+    "loading": "加载中...",
+    "error": "出错了",
+    "confirm": "确认",
+    "cancel": "取消",
+    "submit": "提交",
+    "skip": "跳过",
+    "close": "关闭"
+  },
+  "game": {
+    "start": "开始游戏",
+    "restart": "重新开始",
+    "exit": "退出游戏",
+    "waiting": "等待中...",
+    "creating": "创建游戏中..."
+  },
+  "lobby": {
+    "players": "玩家",
+    "player_count": "{{count}} 玩家",
+    "roles": "3狼人 · 3村民 · 预言家 · 女巫 · 猎人",
+    "instructions": "你将与 8 个 AI 玩家进行对战。根据你的角色，在白天发言投票，在夜晚使用技能。找出狼人，或者隐藏身份存活到最后！"
+  },
+  "ui": {
+    "system_log": "系统日志",
+    "ai_debug": "AI思考调试",
+    "expand": "展开",
+    "collapse": "收起"
+  }
+}

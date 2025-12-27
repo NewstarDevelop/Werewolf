@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Vote, Sparkles, Loader2, SkipForward } from "lucide-react";
 import { PendingAction } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 interface GameActionsProps {
   onSendMessage: (message: string) => void;
@@ -27,6 +28,7 @@ const GameActions = ({
   pendingAction,
 }: GameActionsProps) => {
   const [message, setMessage] = useState("");
+  const { t } = useTranslation('game');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,33 +40,13 @@ const GameActions = ({
 
   // Get action button label based on pending action type
   const getVoteButtonLabel = () => {
-    if (!pendingAction) return "投票";
-    switch (pendingAction.type) {
-      case "vote":
-        return "投票";
-      case "kill":
-        return "击杀";
-      case "shoot":
-        return "开枪";
-      default:
-        return "确认";
-    }
+    if (!pendingAction) return t('action.vote');
+    return t(`action.${pendingAction.type}`);
   };
 
   const getSkillButtonLabel = () => {
-    if (!pendingAction) return "技能";
-    switch (pendingAction.type) {
-      case "verify":
-        return "查验";
-      case "save":
-        return "解药";
-      case "poison":
-        return "毒药";
-      case "skip":
-        return "跳过";
-      default:
-        return "技能";
-    }
+    if (!pendingAction) return t('action.confirm');
+    return t(`action.${pendingAction.type}`);
   };
 
   // Determine if we should show skip button
@@ -92,10 +74,10 @@ const GameActions = ({
               onChange={(e) => setMessage(e.target.value)}
               placeholder={
                 canSpeak
-                  ? "输入你的发言..."
+                  ? t('message.enter_message')
                   : isNight
-                  ? "夜晚无法发言..."
-                  : "等待发言轮次..."
+                  ? t('status.night')
+                  : t('message.waiting')
               }
               disabled={!canSpeak || isSubmitting}
               className="w-full px-4 py-3 rounded-xl bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -157,7 +139,7 @@ const GameActions = ({
               className="w-24"
             >
               <SkipForward className="w-4 h-4" />
-              跳过
+              {t('action.skip')}
             </Button>
           )}
         </div>

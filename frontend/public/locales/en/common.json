@@ -1,0 +1,31 @@
+{
+  "app": {
+    "title": "Werewolf",
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "skip": "Skip",
+    "close": "Close"
+  },
+  "game": {
+    "start": "Start Game",
+    "restart": "Restart",
+    "exit": "Exit Game",
+    "waiting": "Waiting...",
+    "creating": "Creating game..."
+  },
+  "lobby": {
+    "players": "Players",
+    "player_count": "{{count}} Players",
+    "roles": "3 Werewolves · 3 Villagers · Seer · Witch · Hunter",
+    "instructions": "You will play against 8 AI players. Depending on your role, speak and vote during the day, use abilities at night. Find the werewolves, or hide your identity to survive!"
+  },
+  "ui": {
+    "system_log": "System Log",
+    "ai_debug": "AI Reasoning Debug",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  }
+}

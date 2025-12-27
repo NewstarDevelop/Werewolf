@@ -53,6 +53,7 @@ class MessageType(str, Enum):
     THOUGHT = "thought"
     LAST_WORDS = "last_words"
     WOLF_CHAT = "wolf_chat"
+    VOTE_THOUGHT = "vote_thought"  # 投票阶段的内心思考（不传递给其他AI）
 
 
 class Winner(str, Enum):

@@ -523,7 +523,14 @@ class GameEngine:
         for player in alive_players:
             if not player.is_human and player.seat_id not in game.day_votes:
                 targets = [p.seat_id for p in alive_players if p.seat_id != player.seat_id]
-                target = self.llm.decide_vote_target(player, game, targets)
+                # 获取完整的 LLM 响应（包含投票思考）
+                response = self.llm.generate_response(player, game, "vote", targets + [0])
+                target = response.action_target if response.action_target is not None else targets[0] if targets else 0
+
+                # 记录投票思考为 VOTE_THOUGHT（不让其他AI看到）
+                if response.thought:
+                    game.add_message(player.seat_id, response.thought, MessageType.VOTE_THOUGHT)
+
                 game.day_votes[player.seat_id] = target
                 game.add_action(player.seat_id, ActionType.VOTE, target)
 

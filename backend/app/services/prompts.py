@@ -325,12 +325,40 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 在 action_target 中填写你要查验的座位号。
 """
     elif action_type == "witch_save":
+        # 计算当前天数和局势
+        is_first_night = game.day == 1
+        alive_count = len(game.get_alive_players())
+
         phase_instruction = f"""
 # 当前任务：女巫救人
 今晚 {game.night_kill_target}号 被狼人杀害。
 你有解药，是否要救他？
+
+**解药使用策略（非常重要）**：
+- 解药全场只能用一次，用完就永远没了
+- **第一晚强烈建议不救**：
+  - 你不知道 {game.night_kill_target}号 是什么身份，可能只是普通村民
+  - 保留解药可以在后续救预言家、猎人等关键角色
+  - 狼人可能故意自刀骗你的解药
+
+- **值得救人的情况**：
+  - {game.night_kill_target}号 在白天发言中暴露了预言家、猎人等关键身份
+  - {game.night_kill_target}号 是被预言家发过金水的玩家
+  - 场上好人数量劣势，必须救人才能保持轮次
+
+- **不建议救人的情况**：
+  - 第一晚（现在是第{game.day}天）
+  - {game.night_kill_target}号 没有明确表现出神职身份
+  - {game.night_kill_target}号 是边缘位置的可疑玩家
+  - 怀疑是狼人自刀骗解药
+
+**当前局势分析**：
+- 场上还有 {alive_count} 人存活
+- 这是第 {game.day} 天{"（第一晚，强烈建议不救）" if is_first_night else ""}
+
+**决定**：
 - 如果要救，在 action_target 中填写 {game.night_kill_target}
-- 如果不救，在 action_target 中填写 0
+- **如果不确定或是第一晚，强烈建议填写 0（不救）**
 """
     elif action_type == "witch_poison":
         alive_others = [p.seat_id for p in game.get_alive_players() if p.seat_id != player.seat_id]

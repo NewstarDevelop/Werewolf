@@ -45,6 +45,7 @@ class GameEngine:
         # Route to appropriate phase handler
         phase_handlers = {
             GamePhase.NIGHT_START: self._handle_night_start,
+            GamePhase.NIGHT_WEREWOLF_CHAT: self._handle_night_werewolf_chat,
             GamePhase.NIGHT_WEREWOLF: self._handle_night_werewolf,
             GamePhase.NIGHT_SEER: self._handle_night_seer,
             GamePhase.NIGHT_WITCH: self._handle_night_witch,
@@ -128,6 +129,14 @@ class GameEngine:
     ) -> dict:
         """Validate and execute a player action."""
         phase = game.phase
+
+        # Night werewolf chat phase
+        if phase == GamePhase.NIGHT_WEREWOLF_CHAT and player.role == Role.WEREWOLF:
+            if action_type == ActionType.SPEAK and content:
+                game.add_message(player.seat_id, content, MessageType.WOLF_CHAT)
+                game.wolf_chat_completed.add(player.seat_id)
+                game.add_action(player.seat_id, ActionType.SPEAK)
+                return {"success": True, "message": "消息已发送"}
 
         # Night werewolf phase
         if phase == GamePhase.NIGHT_WEREWOLF and player.role == Role.WEREWOLF:
@@ -255,14 +264,36 @@ class GameEngine:
     # ==================== Phase Handlers ====================
 
     def _handle_night_start(self, game: Game) -> dict:
-        """Handle night start - transition to werewolf phase."""
+        """Handle night start - transition to werewolf chat phase."""
         game.add_message(0, f"第{game.day}天夜晚降临，请闭眼。", MessageType.SYSTEM)
-        game.phase = GamePhase.NIGHT_WEREWOLF
+        game.phase = GamePhase.NIGHT_WEREWOLF_CHAT
+        game.wolf_chat_completed = set()  # Reset wolf chat tracker
         game.wolf_votes = {}
         game.pending_deaths = []
         game.seer_verified_this_night = False  # Reset seer verification tracker
         game.witch_save_decided = False
         game.witch_poison_decided = False
+        return {"status": "updated", "new_phase": game.phase}
+
+    def _handle_night_werewolf_chat(self, game: Game) -> dict:
+        """Handle werewolf chat phase - werewolves discuss before voting."""
+        alive_wolves = game.get_alive_werewolves()
+
+        # Check if human werewolf hasn't chatted yet
+        human_wolf = next((w for w in alive_wolves if w.is_human), None)
+        if human_wolf and human_wolf.seat_id not in game.wolf_chat_completed:
+            return {"status": "waiting_for_human", "phase": game.phase}
+
+        # AI werewolves chat
+        for wolf in alive_wolves:
+            if not wolf.is_human and wolf.seat_id not in game.wolf_chat_completed:
+                speech = self.llm.generate_speech(wolf, game)
+                game.add_message(wolf.seat_id, speech, MessageType.WOLF_CHAT)
+                game.wolf_chat_completed.add(wolf.seat_id)
+
+        # All werewolves have chatted, move to kill vote phase
+        game.add_message(0, "狼人讨论结束，请选择击杀目标。", MessageType.SYSTEM)
+        game.phase = GamePhase.NIGHT_WEREWOLF
         return {"status": "updated", "new_phase": game.phase}
 
     def _handle_night_werewolf(self, game: Game) -> dict:

@@ -12,6 +12,7 @@ class GameStatus(str, Enum):
 class GamePhase(str, Enum):
     """Game phase enum."""
     NIGHT_START = "night_start"
+    NIGHT_WEREWOLF_CHAT = "night_werewolf_chat"
     NIGHT_WEREWOLF = "night_werewolf"
     NIGHT_SEER = "night_seer"
     NIGHT_WITCH = "night_witch"
@@ -51,6 +52,7 @@ class MessageType(str, Enum):
     SYSTEM = "system"
     THOUGHT = "thought"
     LAST_WORDS = "last_words"
+    WOLF_CHAT = "wolf_chat"
 
 
 class Winner(str, Enum):

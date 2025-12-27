@@ -87,6 +87,7 @@ class Game:
     # Night phase tracking
     night_kill_target: Optional[int] = None
     wolf_votes: dict[int, int] = field(default_factory=dict)  # wolf_seat -> target_seat
+    wolf_chat_completed: set[int] = field(default_factory=set)  # Seats that completed wolf chat
     seer_verified_this_night: bool = False  # Track if seer verified this night
     witch_save_decided: bool = False  # Track if witch save decision made this night
     witch_poison_decided: bool = False  # Track if witch poison decision made this night

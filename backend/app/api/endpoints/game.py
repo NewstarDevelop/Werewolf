@@ -77,7 +77,7 @@ def get_game_state(game_id: str) -> GameState:
         for p in game.players.values()
     ]
 
-    # Build message log
+    # Build message log (filter wolf chat messages for non-werewolves)
     message_log = [
         MessageInGame(
             seat_id=m.seat_id,
@@ -86,6 +86,8 @@ def get_game_state(game_id: str) -> GameState:
             day=m.day
         )
         for m in game.messages
+        # Only werewolves can see wolf chat messages
+        if m.msg_type != MessageType.WOLF_CHAT or human_player.role == Role.WEREWOLF
     ]
 
     # Determine pending action for human
@@ -147,6 +149,15 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
 
     alive_seats = game.get_alive_seats()
     other_alive = [s for s in alive_seats if s != human_player.seat_id]
+
+    # Night werewolf chat phase
+    if phase == GamePhase.NIGHT_WEREWOLF_CHAT and role == Role.WEREWOLF:
+        if human_player.seat_id not in game.wolf_chat_completed:
+            return PendingAction(
+                type=ActionType.SPEAK,
+                choices=[],
+                message="与狼队友讨论今晚击杀目标（发言后自动进入投票）"
+            )
 
     # Night werewolf phase
     if phase == GamePhase.NIGHT_WEREWOLF and role == Role.WEREWOLF:

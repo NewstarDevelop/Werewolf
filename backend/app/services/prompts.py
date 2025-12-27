@@ -288,8 +288,9 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 可选目标：{alive_str}（不能投自己）
 """
     elif action_type == "kill":
-        non_wolves = [p.seat_id for p in game.get_alive_players() if p.role.value != "werewolf"]
-        targets_str = "、".join([f"{s}号" for s in non_wolves])
+        # 狼人可以击杀任何存活玩家（包括队友，实现自刀策略）
+        kill_targets = [p.seat_id for p in game.get_alive_players() if p.seat_id != player.seat_id]
+        targets_str = "、".join([f"{s}号" for s in kill_targets])
 
         # 显示队友的投票情况
         votes_info = ""
@@ -304,7 +305,12 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
         phase_instruction = f"""
 # 当前任务：狼人杀人
 现在是夜晚，你和狼队友需要选择今晚要击杀的目标。
-可选目标：{targets_str}{votes_info}
+可选目标：{targets_str}（包括狼队友，可实现自刀策略）{votes_info}
+
+**注意**：
+- 你可以击杀任何存活玩家，包括你的狼队友
+- 自刀（击杀队友）可以用来做身份、骗解药等高级策略
+- 建议与队友讨论后统一目标
 
 在 action_target 中填写你要击杀的座位号。
 """

@@ -309,9 +309,9 @@ class GameEngine:
         # AI werewolves vote
         for wolf in alive_wolves:
             if not wolf.is_human and wolf.seat_id not in game.wolf_votes:
-                # AI picks a random non-wolf target
+                # 狼人可以击杀任何存活玩家（包括队友，实现自刀策略）
                 targets = [p.seat_id for p in game.get_alive_players()
-                          if p.role != Role.WEREWOLF]
+                          if p.seat_id != wolf.seat_id]
                 if targets:
                     target = self.llm.decide_kill_target(wolf, game, targets)
                     game.wolf_votes[wolf.seat_id] = target

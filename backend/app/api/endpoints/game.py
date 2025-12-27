@@ -164,11 +164,11 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
     # Night werewolf phase
     if phase == GamePhase.NIGHT_WEREWOLF and role == Role.WEREWOLF:
         if human_player.seat_id not in game.wolf_votes:
-            non_wolves = [s for s in alive_seats if s not in human_player.teammates
-                        and s != human_player.seat_id]
+            # 狼人可以击杀任何存活玩家（包括队友，实现自刀策略）
+            kill_targets = [s for s in alive_seats if s != human_player.seat_id]
             return PendingAction(
                 type=ActionType.KILL,
-                choices=non_wolves,
+                choices=kill_targets,
                 message="请选择今晚要击杀的目标"
             )
 

@@ -94,7 +94,14 @@ class GameEngine:
         if not player or not player.is_human:
             return {"success": False, "message": "Invalid player"}
 
-        if not player.is_alive:
+        allow_dead_hunter_shoot = (
+            game.phase == GamePhase.HUNTER_SHOOT
+            and player.role == Role.HUNTER
+            and game.current_actor_seat == player.seat_id
+            and player.can_shoot
+            and action_type in (ActionType.SHOOT, ActionType.SKIP)
+        )
+        if not player.is_alive and not allow_dead_hunter_shoot:
             return {"success": False, "message": "Player is dead"}
 
         logger.info(
@@ -221,13 +228,21 @@ class GameEngine:
 
         # Hunter shoot phase
         elif phase == GamePhase.HUNTER_SHOOT and player.role == Role.HUNTER:
+            if game.current_actor_seat != player.seat_id:
+                return {"success": False, "message": "Not your turn"}
+
+            if not player.can_shoot:
+                return {"success": False, "message": "你已无法开枪"}
+
             if action_type == ActionType.SHOOT and target_id:
-                if player.can_shoot:
-                    game.pending_deaths.append(target_id)
-                    game.add_action(player.seat_id, ActionType.SHOOT, target_id)
-                    return {"success": True, "message": f"开枪带走{target_id}号"}
-            elif action_type == ActionType.SKIP:
-                return {"success": True, "message": "放弃开枪"}
+                game.add_message(0, f"{player.seat_id}号猎人开枪带走{target_id}号。", MessageType.SYSTEM)
+                game.kill_player(target_id)
+                game.add_action(player.seat_id, ActionType.SHOOT, target_id)
+                return {"success": True, "message": f"开枪带走{target_id}号", **self._continue_after_hunter(game)}
+
+            if action_type == ActionType.SKIP:
+                game.add_message(0, f"{player.seat_id}号猎人放弃开枪。", MessageType.SYSTEM)
+                return {"success": True, "message": "放弃开枪", **self._continue_after_hunter(game)}
 
         # Last words phase
         elif phase == GamePhase.DAY_LAST_WORDS:
@@ -290,6 +305,20 @@ class GameEngine:
 
         if seer and seer.is_alive:
             if seer.is_human:
+                # If human has already verified (or cannot verify anyone), move on.
+                if game.seer_verified_this_night:
+                    game.phase = GamePhase.NIGHT_WITCH
+                    return {"status": "updated", "new_phase": game.phase}
+
+                targets = [
+                    p.seat_id
+                    for p in game.get_alive_players()
+                    if p.seat_id != seer.seat_id and p.seat_id not in seer.verified_players
+                ]
+                if not targets:
+                    game.phase = GamePhase.NIGHT_WITCH
+                    return {"status": "updated", "new_phase": game.phase}
+
                 return {"status": "waiting_for_human", "phase": game.phase}
             else:
                 # AI seer picks a target to verify

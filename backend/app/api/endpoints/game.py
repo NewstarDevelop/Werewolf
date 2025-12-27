@@ -129,11 +129,22 @@ def get_game_state(game_id: str) -> GameState:
 
 def _get_pending_action(game, human_player) -> PendingAction | None:
     """Determine what action the human player needs to take."""
+    phase = game.phase
+    role = human_player.role
+
+    # Hunter can shoot after being eliminated (by vote/kill). This phase is explicitly a "last action".
+    if phase == GamePhase.HUNTER_SHOOT and role == Role.HUNTER:
+        if game.current_actor_seat == human_player.seat_id and human_player.can_shoot:
+            alive_seats = game.get_alive_seats()
+            return PendingAction(
+                type=ActionType.SHOOT,
+                choices=alive_seats + [0],  # 0 = skip
+                message="你可以开枪带走一名玩家"
+            )
+
     if not human_player.is_alive:
         return None
 
-    phase = game.phase
-    role = human_player.role
     alive_seats = game.get_alive_seats()
     other_alive = [s for s in alive_seats if s != human_player.seat_id]
 
@@ -150,7 +161,12 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
 
     # Night seer phase
     elif phase == GamePhase.NIGHT_SEER and role == Role.SEER:
+        # If already verified this night, allow auto-step to proceed.
+        if game.seer_verified_this_night:
+            return None
         unverified = [s for s in other_alive if s not in human_player.verified_players]
+        if not unverified:
+            return None
         return PendingAction(
             type=ActionType.VERIFY,
             choices=unverified,
@@ -223,15 +239,6 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
                 type=ActionType.VOTE,
                 choices=other_alive + [0],  # 0 = abstain
                 message="请投票选择要放逐的玩家，或弃票"
-            )
-
-    # Hunter shoot phase
-    elif phase == GamePhase.HUNTER_SHOOT and role == Role.HUNTER:
-        if game.current_actor_seat == human_player.seat_id and human_player.can_shoot:
-            return PendingAction(
-                type=ActionType.SHOOT,
-                choices=alive_seats + [0],  # 0 = skip
-                message="你可以开枪带走一名玩家"
             )
 
     return None

@@ -1,11 +1,14 @@
 """Application configuration with multi-AI provider support."""
 import os
 import json
+import logging
 from typing import Optional
 from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -67,9 +70,14 @@ class Settings:
 
         self._load_providers()
         self._load_player_mappings()
+        self._log_configuration_summary()
 
     def _load_providers(self):
-        """Load AI provider configurations from environment."""
+        """Load AI provider configurations from environment.
+
+        This method only loads provider definitions, does not establish player mappings.
+        Player mappings are handled separately in _load_player_mappings().
+        """
         # Default provider (OpenAI)
         default_provider = AIProviderConfig(
             name="default",
@@ -81,40 +89,7 @@ class Settings:
         if default_provider.is_valid():
             self._providers["default"] = default_provider
 
-        # Load per-player providers (座位 2-9)
-        # Format: AI_PLAYER_2_NAME, AI_PLAYER_2_API_KEY, AI_PLAYER_2_MODEL, etc.
-        for seat_id in range(2, 10):
-            prefix = f"AI_PLAYER_{seat_id}"
-            name = os.getenv(f"{prefix}_NAME")
-            api_key = os.getenv(f"{prefix}_API_KEY")
-
-            # 如果该玩家有配置（至少有 NAME 或 API_KEY）
-            if name or api_key:
-                provider_name = f"player_{seat_id}"
-                provider = AIProviderConfig(
-                    name=provider_name,
-                    api_key=api_key or self.OPENAI_API_KEY,  # 如果没配置 API_KEY，使用默认
-                    base_url=os.getenv(f"{prefix}_BASE_URL") or None,
-                    model=os.getenv(f"{prefix}_MODEL", "gpt-4o-mini"),
-                    max_retries=int(os.getenv(f"{prefix}_MAX_RETRIES", "2")),
-                    temperature=float(os.getenv(f"{prefix}_TEMPERATURE", "0.7")),
-                    max_tokens=int(os.getenv(f"{prefix}_MAX_TOKENS", "500")),
-                )
-                if provider.is_valid():
-                    self._providers[provider_name] = provider
-                    self._player_mappings[seat_id] = provider_name
-
-        # Load additional providers from AI_PROVIDERS_* env vars
-        # Format: AI_PROVIDER_1_NAME, AI_PROVIDER_1_API_KEY, etc.
-        for i in range(1, 10):  # Support up to 9 providers
-            prefix = f"AI_PROVIDER_{i}"
-            name = os.getenv(f"{prefix}_NAME")
-            if name:
-                provider = AIProviderConfig.from_env(prefix, name)
-                if provider.is_valid():
-                    self._providers[name] = provider
-
-        # Also support named providers: OPENAI_*, ANTHROPIC_*, DEEPSEEK_*, etc.
+        # Load named providers: OPENAI_*, ANTHROPIC_*, DEEPSEEK_*, etc.
         named_providers = ["OPENAI", "ANTHROPIC", "DEEPSEEK", "MOONSHOT", "QWEN", "GLM", "DOUBAO", "MINIMAX"]
         for provider_name in named_providers:
             api_key = os.getenv(f"{provider_name}_API_KEY")
@@ -129,6 +104,39 @@ class Settings:
                     max_tokens=int(os.getenv(f"{provider_name}_MAX_TOKENS", "500")),
                 )
                 self._providers[provider_name.lower()] = provider
+
+        # Load additional custom providers from AI_PROVIDER_* env vars
+        # Format: AI_PROVIDER_1_NAME, AI_PROVIDER_1_API_KEY, etc.
+        for i in range(1, 10):  # Support up to 9 custom providers
+            prefix = f"AI_PROVIDER_{i}"
+            name = os.getenv(f"{prefix}_NAME")
+            if name:
+                provider = AIProviderConfig.from_env(prefix, name)
+                if provider.is_valid():
+                    self._providers[name] = provider
+
+        # Load per-player specific providers (座位 2-9)
+        # Format: AI_PLAYER_2_API_KEY, AI_PLAYER_2_MODEL, etc.
+        # These create dedicated providers named "player_{seat_id}"
+        # Note: Mapping is NOT established here, only provider definition is created
+        for seat_id in range(2, 10):
+            prefix = f"AI_PLAYER_{seat_id}"
+            api_key = os.getenv(f"{prefix}_API_KEY")
+
+            # Only create player-specific provider if API_KEY is explicitly configured
+            if api_key:
+                provider_name = f"player_{seat_id}"
+                provider = AIProviderConfig(
+                    name=provider_name,
+                    api_key=api_key,
+                    base_url=os.getenv(f"{prefix}_BASE_URL") or None,
+                    model=os.getenv(f"{prefix}_MODEL", "gpt-4o-mini"),
+                    max_retries=int(os.getenv(f"{prefix}_MAX_RETRIES", "2")),
+                    temperature=float(os.getenv(f"{prefix}_TEMPERATURE", "0.7")),
+                    max_tokens=int(os.getenv(f"{prefix}_MAX_TOKENS", "500")),
+                )
+                if provider.is_valid():
+                    self._providers[provider_name] = provider
 
     def _get_default_model(self, provider_name: str) -> str:
         """Get default model for a provider."""
@@ -145,23 +153,54 @@ class Settings:
         return defaults.get(provider_name, "gpt-4o-mini")
 
     def _load_player_mappings(self):
-        """Load AI player to provider mappings."""
+        """Load AI player to provider mappings with correct priority.
+
+        Priority order (low to high, later overrides earlier):
+        1. Auto-mapping for player-specific configs (player_{seat_id})
+        2. JSON batch mapping (AI_PLAYER_MAPPING)
+        3. Individual mapping (AI_PLAYER_{seat}_PROVIDER) - highest priority
+
+        This ensures that explicit provider mappings always take precedence.
+        """
+        # Priority 1 (Lowest): Auto-map players with specific provider configs
+        # If player_{seat_id} provider exists, automatically map to it
+        for seat_id in range(2, 10):
+            provider_name = f"player_{seat_id}"
+            if provider_name in self._providers:
+                self._player_mappings[seat_id] = provider_name
+
+        # Priority 2 (Medium): JSON batch mapping
         # Format: AI_PLAYER_MAPPING={"2":"openai","3":"anthropic",...}
-        # Or individual: AI_PLAYER_2_PROVIDER=openai
         mapping_json = os.getenv("AI_PLAYER_MAPPING")
         if mapping_json:
             try:
                 mapping = json.loads(mapping_json)
                 for seat_str, provider in mapping.items():
-                    self._player_mappings[int(seat_str)] = provider
-            except (json.JSONDecodeError, ValueError):
-                pass
+                    seat_id = int(seat_str)
+                    if provider in self._providers:
+                        self._player_mappings[seat_id] = provider
+                    else:
+                        logger.warning(
+                            f"AI_PLAYER_MAPPING: provider '{provider}' not found for seat {seat_id}"
+                        )
+            except (json.JSONDecodeError, ValueError) as e:
+                logger.error(f"Failed to parse AI_PLAYER_MAPPING: {e}")
 
-        # Individual mappings override JSON
+        # Priority 3 (Highest): Individual mapping per seat
+        # Format: AI_PLAYER_{seat}_PROVIDER=openai
+        # This overrides both auto-mapping and JSON mapping
         for seat_id in range(1, 10):
             provider = os.getenv(f"AI_PLAYER_{seat_id}_PROVIDER")
             if provider:
-                self._player_mappings[seat_id] = provider
+                if provider in self._providers:
+                    self._player_mappings[seat_id] = provider
+                else:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"AI_PLAYER_{seat_id}_PROVIDER: provider '{provider}' not found, "
+                        f"falling back to default or auto-mapped provider"
+                    )
 
     def get_provider(self, name: str) -> Optional[AIProviderConfig]:
         """Get provider configuration by name."""
@@ -179,6 +218,28 @@ class Settings:
     def get_player_mappings(self) -> dict[int, str]:
         """Get all player to provider mappings."""
         return self._player_mappings.copy()
+
+    def _log_configuration_summary(self):
+        """Log configuration summary for debugging."""
+        logger.info(f"AI Configuration loaded: {len(self._providers)} providers configured")
+
+        # Log all providers
+        for name, provider in self._providers.items():
+            logger.info(
+                f"  Provider '{name}': model={provider.model}, "
+                f"base_url={provider.base_url or 'default'}"
+            )
+
+        # Log player mappings
+        if self._player_mappings:
+            logger.info("Player to provider mappings:")
+            for seat_id in sorted(self._player_mappings.keys()):
+                provider_name = self._player_mappings[seat_id]
+                provider = self._providers.get(provider_name)
+                model_info = f" (model: {provider.model})" if provider else ""
+                logger.info(f"  Seat {seat_id} -> {provider_name}{model_info}")
+        else:
+            logger.info("No explicit player mappings - all players use default provider")
 
 
 settings = Settings()

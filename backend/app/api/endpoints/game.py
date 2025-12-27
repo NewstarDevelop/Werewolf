@@ -77,7 +77,7 @@ def get_game_state(game_id: str) -> GameState:
         for p in game.players.values()
     ]
 
-    # Build message log (filter wolf chat messages for non-werewolves)
+    # Build message log (filter wolf chat and vote thoughts)
     message_log = [
         MessageInGame(
             seat_id=m.seat_id,
@@ -87,7 +87,9 @@ def get_game_state(game_id: str) -> GameState:
         )
         for m in game.messages
         # Only werewolves can see wolf chat messages
-        if m.msg_type != MessageType.WOLF_CHAT or human_player.role == Role.WEREWOLF
+        if (m.msg_type != MessageType.WOLF_CHAT or human_player.role == Role.WEREWOLF)
+        # Never show vote thoughts to human players (for fairness)
+        and m.msg_type != MessageType.VOTE_THOUGHT
     ]
 
     # Determine pending action for human

@@ -1,6 +1,6 @@
 """Game schemas."""
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, Dict
+from pydantic import BaseModel, Field
 
 from .enums import GameStatus, GamePhase, Role, ActionType, Winner
 from .player import PlayerPublic, PlayerPrivate
@@ -43,8 +43,9 @@ class GameState(BaseModel):
     winner: Optional[Winner] = None
     # Night info for specific roles
     night_kill_target: Optional[int] = None  # For witch to see who was killed
-    wolf_teammates: list[int] = []  # For werewolf to see teammates
-    verified_results: dict[int, bool] = {}  # For seer: seat_id -> is_werewolf
+    wolf_teammates: list[int] = Field(default_factory=list)  # For werewolf to see teammates
+    verified_results: Dict[int, bool] = Field(default_factory=dict)  # For seer: seat_id -> is_werewolf
+    wolf_votes_visible: Dict[int, int] = Field(default_factory=dict)  # For werewolf: teammate_seat -> target_seat
 
 
 class StepResponse(BaseModel):

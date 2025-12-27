@@ -1,5 +1,6 @@
 """Game API endpoints."""
 from fastapi import APIRouter, HTTPException
+from typing import List, Dict
 
 from app.models.game import game_store
 from app.schemas.enums import (
@@ -12,6 +13,7 @@ from app.schemas.action import ActionRequest, ActionResponse
 from app.schemas.player import PlayerPublic
 from app.schemas.message import MessageInGame
 from app.services.game_engine import game_engine
+from app.services.log_manager import get_game_logs
 
 router = APIRouter(prefix="/game", tags=["game"])
 
@@ -92,9 +94,17 @@ def get_game_state(game_id: str) -> GameState:
     # Get role-specific info
     wolf_teammates = []
     verified_results = {}
+    wolf_votes_visible = {}
 
     if human_player.role == Role.WEREWOLF:
         wolf_teammates = human_player.teammates
+        # Show teammate votes during werewolf night phase
+        if game.phase == GamePhase.NIGHT_WEREWOLF:
+            wolf_votes_visible = {
+                seat: target
+                for seat, target in game.wolf_votes.items()
+                if seat in human_player.teammates
+            }
     elif human_player.role == Role.SEER:
         verified_results = human_player.verified_players
 
@@ -112,7 +122,8 @@ def get_game_state(game_id: str) -> GameState:
         winner=game.winner,
         night_kill_target=game.night_kill_target if human_player.role == Role.WITCH else None,
         wolf_teammates=wolf_teammates,
-        verified_results=verified_results
+        verified_results=verified_results,
+        wolf_votes_visible=wolf_votes_visible
     )
 
 
@@ -284,3 +295,17 @@ def delete_game(game_id: str) -> dict:
     if game_store.delete_game(game_id):
         return {"success": True, "message": "Game deleted"}
     raise HTTPException(status_code=404, detail="Game not found")
+
+
+@router.get("/{game_id}/logs")
+def get_logs(game_id: str, limit: int = 100) -> Dict[str, List[Dict]]:
+    """
+    Get sanitized game logs (filtered to remove spoilers).
+    GET /api/game/{game_id}/logs?limit=100
+    """
+    game = game_store.get_game(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    logs = get_game_logs(game_id, limit)
+    return {"logs": logs}

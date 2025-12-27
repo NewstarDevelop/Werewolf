@@ -4,6 +4,8 @@ import ChatLog from "@/components/game/ChatLog";
 import PlayerGrid from "@/components/game/PlayerGrid";
 import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
+import LogPanel from "@/components/game/LogPanel";
+import { FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
 import {
@@ -35,6 +37,7 @@ const Index = () => {
   } = useGame({ autoStep: true, stepInterval: 1000 });
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [logPanelOpen, setLogPanelOpen] = useState(false);
 
   // Transform game state to UI format
   const players = useMemo(() => {
@@ -147,6 +150,7 @@ const Index = () => {
               toast.success("使用解药");
             } else {
               toast.error("只能救被狼人击杀的目标");
+              setSelectedPlayerId(null); // Clear selection on error
               return;
             }
           } else {
@@ -167,11 +171,13 @@ const Index = () => {
         default:
           await skip();
       }
-      setSelectedPlayerId(null);
     } catch (err) {
       toast.error("技能使用失败", {
         description: err instanceof Error ? err.message : "Unknown error",
       });
+    } finally {
+      // Always clear selection after action attempt
+      setSelectedPlayerId(null);
     }
   };
 
@@ -267,6 +273,7 @@ const Index = () => {
             pendingAction={gameState?.pending_action}
             wolfTeammates={gameState?.wolf_teammates}
             verifiedResults={gameState?.verified_results}
+            wolfVotesVisible={gameState?.wolf_votes_visible}
             myRole={gameState?.my_role}
           />
         </div>
@@ -286,6 +293,24 @@ const Index = () => {
           pendingAction={gameState?.pending_action}
         />
       </div>
+
+      {/* Floating Log Button */}
+      <button
+        onClick={() => setLogPanelOpen(true)}
+        className="fixed bottom-20 right-4 z-40 p-3 rounded-full bg-muted/80 hover:bg-muted shadow-lg transition-all hover:scale-105"
+        title="View System Logs"
+      >
+        <FileText className="w-5 h-5 text-foreground" />
+      </button>
+
+      {/* Log Panel */}
+      {gameId && (
+        <LogPanel
+          gameId={gameId}
+          isOpen={logPanelOpen}
+          onClose={() => setLogPanelOpen(false)}
+        />
+      )}
     </div>
   );
 };

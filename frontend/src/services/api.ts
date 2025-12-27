@@ -64,6 +64,7 @@ export interface GameState {
   night_kill_target?: number | null;
   wolf_teammates: number[];
   verified_results: Record<number, boolean>;
+  wolf_votes_visible?: Record<number, number>; // teammate_seat -> target_seat
 }
 
 export interface GameStartRequest {

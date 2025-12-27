@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.api import api_router
 from app.core.config import settings
+from app.services.log_manager import init_game_logging
 
 # Configure logging
 logging.basicConfig(
@@ -35,7 +36,7 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 async def startup_event():
-    """Log startup information."""
+    """Log startup information and initialize services."""
     logger.info("Werewolf AI Game API starting up...")
     logger.info(f"LLM Model: {settings.LLM_MODEL}")
     logger.info(f"LLM Mock Mode: {settings.LLM_USE_MOCK}")
@@ -43,6 +44,10 @@ async def startup_event():
         logger.info("OpenAI API Key: configured")
     else:
         logger.warning("OpenAI API Key: NOT configured - using mock mode")
+
+    # Initialize game logging
+    init_game_logging()
+    logger.info("Game logging initialized")
 
 
 @app.get("/")

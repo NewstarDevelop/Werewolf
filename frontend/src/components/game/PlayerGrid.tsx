@@ -19,6 +19,7 @@ interface PlayerGridProps {
   pendingAction?: PendingAction | null;
   wolfTeammates?: number[];
   verifiedResults?: Record<number, boolean>;
+  wolfVotesVisible?: Record<number, number>; // teammate_seat -> target_seat
   myRole?: Role;
 }
 
@@ -30,6 +31,7 @@ const PlayerGrid = ({
   pendingAction,
   wolfTeammates = [],
   verifiedResults = {},
+  wolfVotesVisible = {},
   myRole,
 }: PlayerGridProps) => {
   // Determine which players can be selected based on pending action
@@ -58,6 +60,9 @@ const PlayerGrid = ({
           // Check verification result (for seer role)
           const verificationResult = verifiedResults[player.seatId];
 
+          // Get teammate's vote target (for werewolf role)
+          const wolfVote = wolfVotesVisible[player.seatId];
+
           // Check if player is selectable
           const isSelectable =
             selectableIds.length === 0 ||
@@ -76,6 +81,7 @@ const PlayerGrid = ({
               isCurrentActor={currentActor === player.seatId}
               isWolfTeammate={isWolfTeammate}
               verificationResult={verificationResult}
+              wolfVote={wolfVote}
               isSelectable={isSelectable}
             />
           );

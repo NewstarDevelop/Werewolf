@@ -13,6 +13,7 @@ interface PlayerCardProps {
   isCurrentActor?: boolean;
   isWolfTeammate?: boolean;
   verificationResult?: boolean; // true = werewolf, false = good
+  wolfVote?: number; // teammate's vote target seat_id
   isSelectable?: boolean;
 }
 
@@ -27,6 +28,7 @@ const PlayerCard = ({
   isCurrentActor,
   isWolfTeammate,
   verificationResult,
+  wolfVote,
   isSelectable = true,
 }: PlayerCardProps) => {
   const getRoleIcon = () => {
@@ -171,6 +173,12 @@ const PlayerCard = ({
           <span className="text-[10px] text-accent uppercase tracking-wider">
             {getRoleDisplayName(role)}
           </span>
+        )}
+        {/* Teammate vote indicator */}
+        {wolfVote && (
+          <div className="mt-0.5 px-1.5 py-0.5 rounded-full bg-werewolf/80 text-white text-[10px] font-bold">
+            →{wolfVote}
+          </div>
         )}
       </div>
 

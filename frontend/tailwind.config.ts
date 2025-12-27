@@ -14,8 +14,25 @@ export default {
       },
     },
     extend: {
+      fontSize: {
+        xs: ['0.8125rem', { lineHeight: '1.25rem' }],      // 13px
+        sm: ['0.9375rem', { lineHeight: '1.5rem' }],       // 15px
+        base: ['1.0625rem', { lineHeight: '1.75rem' }],    // 17px (提升基础字号)
+        lg: ['1.1875rem', { lineHeight: '1.875rem' }],     // 19px
+        xl: ['1.3125rem', { lineHeight: '2rem' }],         // 21px
+        '2xl': ['1.5625rem', { lineHeight: '2.25rem' }],   // 25px
+        '3xl': ['1.9375rem', { lineHeight: '2.5rem' }],    // 31px
+      },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: [
+          'PingFang SC',
+          'Microsoft YaHei',
+          'Noto Sans SC',
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'sans-serif'
+        ],
         display: ['Cinzel', 'serif'],
       },
       colors: {

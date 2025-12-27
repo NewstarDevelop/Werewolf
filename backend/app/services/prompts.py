@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.game import Game, Player
+    from app.schemas.enums import GamePhase, MessageType
 
 # Role descriptions in Chinese
 ROLE_DESCRIPTIONS = {
@@ -50,7 +51,7 @@ def build_system_prompt(player: "Player", game: "Game") -> str:
     wolf_info = ""
     if player.role.value == "werewolf" and player.teammates:
         teammates_str = "、".join([f"{t}号" for t in player.teammates])
-        wolf_info = f"\n你的狼队友是：{teammates_str}（你们需要配合行动，白天互相掩护）"
+        wolf_info = f"\n你的狼队友是：{teammates_str}\n**重要**：你们从游戏开始第一晚就知道彼此的狼人身份，夜间可以私下讨论击杀目标，白天需要互相掩护、配合演戏。"
 
     # Seer verification info
     seer_info = ""
@@ -142,14 +143,43 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
             sender = f"{msg.seat_id}号"
             if msg.seat_id == player.seat_id:
                 sender = f"{msg.seat_id}号（你）"
-            chat_history.append(f"{sender}：{msg.content}")
+            elif player.role.value == "werewolf" and msg.seat_id in player.teammates:
+                sender = f"{msg.seat_id}号（队友）"
+
+            # 区分消息类型
+            if msg.msg_type.value == "wolf_chat":
+                chat_history.append(f"【狼人私聊】{sender}：{msg.content}")
+            else:
+                chat_history.append(f"{sender}：{msg.content}")
 
     chat_str = "\n".join(chat_history) if chat_history else "（暂无发言）"
 
     # Phase-specific instructions
     phase_instruction = ""
     if action_type == "speech":
-        phase_instruction = """
+        # 检查是否是狼人夜间讨论阶段
+        if game.phase.value == "night_werewolf_chat" and player.role.value == "werewolf":
+            # 狼人夜间讨论专用 prompt
+            teammates_str = "、".join([f"{t}号" for t in player.teammates])
+            phase_instruction = f"""
+# 当前任务：狼人队内讨论
+现在是夜晚，你和狼队友正在私下讨论今晚的击杀目标。
+
+**重要信息**：
+- 你的队友是：{teammates_str}
+- **所有参与讨论的玩家都是狼人，你们彼此都知道对方的身份**
+- 这是狼人队内的私密讨论，好人阵营看不到
+- 讨论内容应该围绕：分析局势、选择击杀目标、制定白天策略
+
+记住：
+- 发言要简短（1-2句话）
+- **你们是队友，不要表现出惊讶队友身份**
+- 可以提出建议、分析好人身份、讨论白天如何配合等
+- 不要说"你是狼人吗"之类的话，你们都知道彼此是狼人
+"""
+        else:
+            # 普通白天发言
+            phase_instruction = """
 # 当前任务：发言
 现在轮到你发言了。请根据当前局势发表你的看法。
 记住：
@@ -168,10 +198,22 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
     elif action_type == "kill":
         non_wolves = [p.seat_id for p in game.get_alive_players() if p.role.value != "werewolf"]
         targets_str = "、".join([f"{s}号" for s in non_wolves])
+
+        # 显示队友的投票情况
+        votes_info = ""
+        if game.wolf_votes:
+            teammate_votes = []
+            for seat, target in game.wolf_votes.items():
+                if seat in player.teammates:
+                    teammate_votes.append(f"- {seat}号队友投给了 {target}号")
+            if teammate_votes:
+                votes_info = "\n\n**队友投票情况**：\n" + "\n".join(teammate_votes) + "\n\n**建议**：和队友保持一致，统一击杀目标。"
+
         phase_instruction = f"""
 # 当前任务：狼人杀人
 现在是夜晚，你和狼队友需要选择今晚要击杀的目标。
-可选目标：{targets_str}
+可选目标：{targets_str}{votes_info}
+
 在 action_target 中填写你要击杀的座位号。
 """
     elif action_type == "verify":

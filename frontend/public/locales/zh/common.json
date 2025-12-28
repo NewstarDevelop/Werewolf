@@ -28,8 +28,11 @@
     "waiting": "等待游戏开始...",
     "no_messages": "暂无消息",
     "seat": "{{id}}号",
+    "seat_with_id": "{{id}}号",
     "system": "系统",
-    "day": "第{{count}}天"
+    "day": "第{{count}}天",
+    "you": "你",
+    "default_name": "玩家 {{id}}"
   },
   "ui": {
     "system_log": "系统日志",
@@ -44,5 +47,44 @@
     "system": "系统",
     "speech": "发言",
     "last_words": "遗言"
+  },
+  "toast": {
+    "speech_success": "发言成功",
+    "speech_failed": "发言失败",
+    "voted_for": "投票给 {{id}}号",
+    "abstain": "弃票",
+    "kill_selected": "选择击杀 {{id}}号",
+    "shoot_selected": "开枪带走 {{id}}号",
+    "shoot_skipped": "放弃开枪",
+    "action_failed": "操作失败",
+    "verify_selected": "查验 {{id}}号",
+    "antidote_used": "使用解药",
+    "save_error": "只能救被狼人击杀的目标",
+    "antidote_skipped": "不使用解药",
+    "poison_used": "毒杀 {{id}}号",
+    "poison_skipped": "不使用毒药",
+    "skill_failed": "技能使用失败",
+    "game_started": "游戏开始！",
+    "game_start_failed": "创建游戏失败"
+  },
+  "logs": {
+    "title": "系统日志",
+    "loading": "加载日志中...",
+    "no_logs": "暂无日志"
+  },
+  "error": {
+    "404_message": "页面未找到",
+    "404_description": "哎呀！您访问的页面不存在",
+    "return_home": "返回首页"
+  },
+  "player_grid": {
+    "title": "玩家",
+    "select_target": "选择目标",
+    "wolf_teammate": "狼队友",
+    "good": "好人",
+    "werewolf": "狼人"
+  },
+  "language": {
+    "switch_hint": "切换语言"
   }
 }

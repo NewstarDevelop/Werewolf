@@ -13,8 +13,11 @@ import {
   getPhaseDisplayName,
   isNightPhase,
 } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
+  const { t } = useTranslation('common');
+
   const {
     gameId,
     gameState,
@@ -47,7 +50,7 @@ const Index = () => {
       .sort((a, b) => a.seat_id - b.seat_id)  // Sort by seat_id to fix border highlighting
       .map((p) => ({
         id: p.seat_id,
-        name: p.is_human ? "You" : p.name || `Player ${p.seat_id}`,
+        name: p.is_human ? t('player.you') : p.name || t('player.default_name', { id: p.seat_id }),
         isUser: p.is_human,
         isAlive: p.is_alive,
         // Show role for: 1) Human player always, 2) All players when game is finished
@@ -66,10 +69,10 @@ const Index = () => {
       return {
         id: idx + 1,
         sender: isSystem
-          ? "System"
+          ? t('player.system')
           : isUser
-          ? "You"
-          : player?.name || `${m.seat_id}号`,
+          ? t('player.you')
+          : player?.name || t('player.seat', { id: m.seat_id }),
         message: m.text,
         isUser,
         isSystem,
@@ -88,9 +91,9 @@ const Index = () => {
 
     try {
       await speak(message);
-      toast.success("发言成功");
+      toast.success(t('toast.speech_success'));
     } catch (err) {
-      toast.error("发言失败", {
+      toast.error(t('toast.speech_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -108,23 +111,23 @@ const Index = () => {
         await vote(selectedPlayerId);
         toast.success(
           selectedPlayerId
-            ? `投票给 ${selectedPlayerId}号`
-            : "弃票"
+            ? t('toast.voted_for', { id: selectedPlayerId })
+            : t('toast.abstain')
         );
       } else if (pendingAction.type === "kill" && selectedPlayerId) {
         await kill(selectedPlayerId);
-        toast.success(`选择击杀 ${selectedPlayerId}号`);
+        toast.success(t('toast.kill_selected', { id: selectedPlayerId }));
       } else if (pendingAction.type === "shoot") {
         await shoot(selectedPlayerId);
         toast.success(
           selectedPlayerId
-            ? `开枪带走 ${selectedPlayerId}号`
-            : "放弃开枪"
+            ? t('toast.shoot_selected', { id: selectedPlayerId })
+            : t('toast.shoot_skipped')
         );
       }
       setSelectedPlayerId(null);
     } catch (err) {
-      toast.error("操作失败", {
+      toast.error(t('toast.action_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -142,7 +145,7 @@ const Index = () => {
         case "verify":
           if (selectedPlayerId) {
             await verify(selectedPlayerId);
-            toast.info(`查验 ${selectedPlayerId}号`);
+            toast.info(t('toast.verify_selected', { id: selectedPlayerId }));
           }
           break;
         case "save":
@@ -150,32 +153,32 @@ const Index = () => {
             // Only save if a player is selected (must be the kill target)
             if (selectedPlayerId === gameState.night_kill_target) {
               await save();
-              toast.success("使用解药");
+              toast.success(t('toast.antidote_used'));
             } else {
-              toast.error("只能救被狼人击杀的目标");
+              toast.error(t('toast.save_error'));
               setSelectedPlayerId(null); // Clear selection on error
               return;
             }
           } else {
             // No selection means skip
             await skip();
-            toast.info("不使用解药");
+            toast.info(t('toast.antidote_skipped'));
           }
           break;
         case "poison":
           if (selectedPlayerId) {
             await poison(selectedPlayerId);
-            toast.success(`毒杀 ${selectedPlayerId}号`);
+            toast.success(t('toast.poison_used', { id: selectedPlayerId }));
           } else {
             await skip();
-            toast.info("不使用毒药");
+            toast.info(t('toast.poison_skipped'));
           }
           break;
         default:
           await skip();
       }
     } catch (err) {
-      toast.error("技能使用失败", {
+      toast.error(t('toast.skill_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     } finally {
@@ -192,9 +195,9 @@ const Index = () => {
   const handleStartGame = async () => {
     try {
       await startGame(1); // Human at seat 1
-      toast.success("游戏开始！");
+      toast.success(t('toast.game_started'));
     } catch (err) {
-      toast.error("创建游戏失败", {
+      toast.error(t('toast.game_start_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }

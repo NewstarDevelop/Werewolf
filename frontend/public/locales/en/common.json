@@ -28,8 +28,11 @@
     "waiting": "Waiting for game to start...",
     "no_messages": "No messages yet",
     "seat": "#{{id}}",
+    "seat_with_id": "#{{id}}",
     "system": "System",
-    "day": "Day {{count}}"
+    "day": "Day {{count}}",
+    "you": "You",
+    "default_name": "Player {{id}}"
   },
   "ui": {
     "system_log": "System Log",
@@ -44,5 +47,44 @@
     "system": "System",
     "speech": "Speech",
     "last_words": "Last Words"
+  },
+  "toast": {
+    "speech_success": "Speech sent successfully",
+    "speech_failed": "Failed to send speech",
+    "voted_for": "Voted for #{{id}}",
+    "abstain": "Abstained",
+    "kill_selected": "Selected to kill #{{id}}",
+    "shoot_selected": "Shot #{{id}}",
+    "shoot_skipped": "Skipped shooting",
+    "action_failed": "Action failed",
+    "verify_selected": "Verified #{{id}}",
+    "antidote_used": "Used antidote",
+    "save_error": "Can only save the target killed by werewolves",
+    "antidote_skipped": "Skipped antidote",
+    "poison_used": "Poisoned #{{id}}",
+    "poison_skipped": "Skipped poison",
+    "skill_failed": "Skill failed",
+    "game_started": "Game started!",
+    "game_start_failed": "Failed to start game"
+  },
+  "logs": {
+    "title": "System Logs",
+    "loading": "Loading logs...",
+    "no_logs": "No logs available"
+  },
+  "error": {
+    "404_message": "Page Not Found",
+    "404_description": "Oops! The page you're looking for doesn't exist",
+    "return_home": "Return to Home"
+  },
+  "player_grid": {
+    "title": "Players",
+    "select_target": "Select Target",
+    "wolf_teammate": "Teammate",
+    "good": "Good",
+    "werewolf": "Werewolf"
+  },
+  "language": {
+    "switch_hint": "Switch Language"
   }
 }

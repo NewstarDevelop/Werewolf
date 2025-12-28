@@ -1,6 +1,7 @@
 import PlayerCard from "./PlayerCard";
 import { Users } from "lucide-react";
 import { PendingAction, Role } from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 interface Player {
   id: number;
@@ -34,6 +35,8 @@ const PlayerGrid = ({
   wolfVotesVisible = {},
   myRole,
 }: PlayerGridProps) => {
+  const { t } = useTranslation('common');
+
   // Determine which players can be selected based on pending action
   const selectableIds = pendingAction?.choices || [];
 
@@ -43,10 +46,10 @@ const PlayerGrid = ({
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
         <Users className="w-4 h-4 text-accent" />
         <h2 className="font-display text-sm uppercase tracking-wider text-foreground">
-          玩家
+          {t('player_grid.title')}
         </h2>
         <span className="ml-auto text-xs text-muted-foreground">
-          {pendingAction ? "选择目标" : ""}
+          {pendingAction ? t('player_grid.select_target') : ""}
         </span>
       </div>
 
@@ -98,18 +101,18 @@ const PlayerGrid = ({
             {myRole === "werewolf" && (
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-werewolf" />
-                <span>狼队友</span>
+                <span>{t('player_grid.wolf_teammate')}</span>
               </div>
             )}
             {myRole === "seer" && (
               <>
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-villager" />
-                  <span>好人</span>
+                  <span>{t('player_grid.good')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-werewolf" />
-                  <span>狼人</span>
+                  <span>{t('player_grid.werewolf')}</span>
                 </div>
               </>
             )}

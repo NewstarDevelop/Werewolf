@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LogEntry {
   timestamp: number;
@@ -17,6 +18,8 @@ interface LogPanelProps {
 }
 
 const LogPanel = ({ gameId, isOpen, onClose }: LogPanelProps) => {
+  const { t } = useTranslation('common');
+
   const { data, isLoading } = useQuery({
     queryKey: ['gameLogs', gameId],
     queryFn: async () => {
@@ -56,13 +59,13 @@ const LogPanel = ({ gameId, isOpen, onClose }: LogPanelProps) => {
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-[500px] sm:w-[600px]">
         <SheetHeader>
-          <SheetTitle>System Logs</SheetTitle>
+          <SheetTitle>{t('logs.title')}</SheetTitle>
         </SheetHeader>
 
         <ScrollArea className="h-[calc(100vh-80px)] mt-4">
           {isLoading ? (
             <div className="text-center text-muted-foreground py-8">
-              Loading logs...
+              {t('logs.loading')}
             </div>
           ) : data?.logs && data.logs.length > 0 ? (
             <div className="space-y-2">
@@ -88,7 +91,7 @@ const LogPanel = ({ gameId, isOpen, onClose }: LogPanelProps) => {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">
-              No logs available
+              {t('logs.no_logs')}
             </div>
           )}
         </ScrollArea>

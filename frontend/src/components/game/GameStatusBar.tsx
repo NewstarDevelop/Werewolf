@@ -1,4 +1,4 @@
-import { Moon, Sun, Trophy, FileText, Brain } from "lucide-react";
+import { Moon, Sun, Trophy, FileText, Brain, TrendingUp } from "lucide-react";
 import { GamePhase, Role, Winner, getRoleDisplayName, getPhaseDisplayName } from "@/services/api";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -15,6 +15,7 @@ interface GameStatusBarProps {
   winner?: Winner | null;
   onOpenLogs?: () => void;
   onOpenDebug?: () => void;
+  onOpenAnalysis?: () => void;
 }
 
 const GameStatusBar = ({
@@ -29,6 +30,7 @@ const GameStatusBar = ({
   winner,
   onOpenLogs,
   onOpenDebug,
+  onOpenAnalysis,
 }: GameStatusBarProps) => {
   const { t } = useTranslation(['common', 'game', 'roles']);
 
@@ -109,9 +111,22 @@ const GameStatusBar = ({
         )}
       </div>
 
-      {/* Right: Player Count */}
+      {/* Right: Player Count & Controls */}
       <div className="relative z-10 flex items-center gap-3">
         <LanguageSwitcher />
+
+        {isGameOver && onOpenAnalysis && (
+          <button
+            type="button"
+            onClick={onOpenAnalysis}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-accent/20 hover:bg-accent/30 transition-colors border border-accent/30"
+            title={t('common:ui.game_analysis')}
+            aria-label={t('common:ui.game_analysis')}
+          >
+            <TrendingUp className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-accent">{t('common:ui.game_analysis')}</span>
+          </button>
+        )}
 
         {onOpenLogs && (
           <button

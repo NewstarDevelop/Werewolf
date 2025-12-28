@@ -6,6 +6,7 @@ import GameActions from "@/components/game/GameActions";
 import GameLobby from "@/components/game/GameLobby";
 import LogPanel from "@/components/game/LogPanel";
 import DebugPanel from "@/components/game/DebugPanel";
+import GameAnalysisDialog from "@/components/game/GameAnalysisDialog";
 import { toast } from "sonner";
 import { useGame } from "@/hooks/useGame";
 import {
@@ -14,9 +15,10 @@ import {
   isNightPhase,
 } from "@/services/api";
 import { useTranslation } from "react-i18next";
+import { translateSystemMessage } from "@/utils/messageTranslator";
 
 const Index = () => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'game']);
 
   const {
     gameId,
@@ -42,6 +44,7 @@ const Index = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [logPanelOpen, setLogPanelOpen] = useState(false);
   const [debugPanelOpen, setDebugPanelOpen] = useState(false);
+  const [analysisDialogOpen, setAnalysisDialogOpen] = useState(false);
 
   // Transform game state to UI format
   const players = useMemo(() => {
@@ -50,14 +53,14 @@ const Index = () => {
       .sort((a, b) => a.seat_id - b.seat_id)  // Sort by seat_id to fix border highlighting
       .map((p) => ({
         id: p.seat_id,
-        name: p.is_human ? t('player.you') : p.name || t('player.default_name', { id: p.seat_id }),
+        name: p.is_human ? t('common:player.you') : p.name || t('common:player.default_name', { id: p.seat_id }),
         isUser: p.is_human,
         isAlive: p.is_alive,
         // Show role for: 1) Human player always, 2) All players when game is finished
         role: p.is_human ? gameState.my_role : (isGameOver ? (p.role ?? undefined) : undefined),
         seatId: p.seat_id,
       }));
-  }, [gameState, isGameOver]);
+  }, [gameState, isGameOver, t]);
 
   // Transform messages to UI format
   const messages = useMemo(() => {
@@ -66,21 +69,27 @@ const Index = () => {
       const player = gameState.players.find((p) => p.seat_id === m.seat_id);
       const isSystem = m.type === "system" || m.seat_id === 0;
       const isUser = m.seat_id === gameState.my_seat;
+
+      // Translate system messages
+      const messageText = isSystem
+        ? translateSystemMessage(m.text, t)
+        : m.text;
+
       return {
         id: idx + 1,
         sender: isSystem
-          ? t('player.system')
+          ? t('common:player.system')
           : isUser
-          ? t('player.you')
-          : player?.name || t('player.seat', { id: m.seat_id }),
-        message: m.text,
+          ? t('common:player.you')
+          : player?.name || t('common:player.seat', { id: m.seat_id }),
+        message: messageText,
         isUser,
         isSystem,
         timestamp: "",
         day: m.day,
       };
     });
-  }, [gameState]);
+  }, [gameState, t]);
 
   const playersAlive = players.filter((p) => p.isAlive).length;
   const turnCount = gameState?.day || 1;
@@ -91,9 +100,9 @@ const Index = () => {
 
     try {
       await speak(message);
-      toast.success(t('toast.speech_success'));
+      toast.success(t('common:toast.speech_success'));
     } catch (err) {
-      toast.error(t('toast.speech_failed'), {
+      toast.error(t('common:toast.speech_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -111,23 +120,23 @@ const Index = () => {
         await vote(selectedPlayerId);
         toast.success(
           selectedPlayerId
-            ? t('toast.voted_for', { id: selectedPlayerId })
-            : t('toast.abstain')
+            ? t('common:toast.voted_for', { id: selectedPlayerId })
+            : t('common:toast.abstain')
         );
       } else if (pendingAction.type === "kill" && selectedPlayerId) {
         await kill(selectedPlayerId);
-        toast.success(t('toast.kill_selected', { id: selectedPlayerId }));
+        toast.success(t('common:toast.kill_selected', { id: selectedPlayerId }));
       } else if (pendingAction.type === "shoot") {
         await shoot(selectedPlayerId);
         toast.success(
           selectedPlayerId
-            ? t('toast.shoot_selected', { id: selectedPlayerId })
-            : t('toast.shoot_skipped')
+            ? t('common:toast.shoot_selected', { id: selectedPlayerId })
+            : t('common:toast.shoot_skipped')
         );
       }
       setSelectedPlayerId(null);
     } catch (err) {
-      toast.error(t('toast.action_failed'), {
+      toast.error(t('common:toast.action_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -145,7 +154,7 @@ const Index = () => {
         case "verify":
           if (selectedPlayerId) {
             await verify(selectedPlayerId);
-            toast.info(t('toast.verify_selected', { id: selectedPlayerId }));
+            toast.info(t('common:toast.verify_selected', { id: selectedPlayerId }));
           }
           break;
         case "save":
@@ -153,32 +162,32 @@ const Index = () => {
             // Only save if a player is selected (must be the kill target)
             if (selectedPlayerId === gameState.night_kill_target) {
               await save();
-              toast.success(t('toast.antidote_used'));
+              toast.success(t('common:toast.antidote_used'));
             } else {
-              toast.error(t('toast.save_error'));
+              toast.error(t('common:toast.save_error'));
               setSelectedPlayerId(null); // Clear selection on error
               return;
             }
           } else {
             // No selection means skip
             await skip();
-            toast.info(t('toast.antidote_skipped'));
+            toast.info(t('common:toast.antidote_skipped'));
           }
           break;
         case "poison":
           if (selectedPlayerId) {
             await poison(selectedPlayerId);
-            toast.success(t('toast.poison_used', { id: selectedPlayerId }));
+            toast.success(t('common:toast.poison_used', { id: selectedPlayerId }));
           } else {
             await skip();
-            toast.info(t('toast.poison_skipped'));
+            toast.info(t('common:toast.poison_skipped'));
           }
           break;
         default:
           await skip();
       }
     } catch (err) {
-      toast.error(t('toast.skill_failed'), {
+      toast.error(t('common:toast.skill_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     } finally {
@@ -195,9 +204,9 @@ const Index = () => {
   const handleStartGame = async () => {
     try {
       await startGame(1); // Human at seat 1
-      toast.success(t('toast.game_started'));
+      toast.success(t('common:toast.game_started'));
     } catch (err) {
-      toast.error(t('toast.game_start_failed'), {
+      toast.error(t('common:toast.game_start_failed'), {
         description: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -222,7 +231,10 @@ const Index = () => {
   const canUseSkill =
     needsAction &&
     gameState?.pending_action?.type &&
-    ["verify", "save", "poison"].includes(gameState.pending_action.type);
+    ["verify", "save", "poison"].includes(gameState.pending_action.type) &&
+    // For save action, must select the night kill target to enable the button
+    (gameState.pending_action.type !== "save" ||
+     selectedPlayerId === gameState.night_kill_target);
   const canSpeak =
     needsAction && gameState?.pending_action?.type === "speak";
 
@@ -261,6 +273,7 @@ const Index = () => {
           winner={gameState?.winner}
           onOpenLogs={() => setLogPanelOpen(true)}
           onOpenDebug={() => setDebugPanelOpen(true)}
+          onOpenAnalysis={() => setAnalysisDialogOpen(true)}
         />
       </div>
 
@@ -316,6 +329,14 @@ const Index = () => {
           gameId={gameId}
           isOpen={debugPanelOpen}
           onClose={() => setDebugPanelOpen(false)}
+        />
+      )}
+
+      {gameId && (
+        <GameAnalysisDialog
+          gameId={gameId}
+          isOpen={analysisDialogOpen}
+          onClose={() => setAnalysisDialogOpen(false)}
         />
       )}
     </div>

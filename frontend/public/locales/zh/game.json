@@ -55,5 +55,28 @@
     "winner_announce": "{{winner}}获胜！",
     "all_wolves_eliminated": "所有狼人已被淘汰",
     "wolves_win": "狼人数量达到胜利条件"
+  },
+  "system_messages": {
+    "night_falls": "第{{day}}天夜晚降临，请沉睡。",
+    "werewolf_discussion_start": "狼人队内讨论开始。",
+    "werewolf_select_target": "狼人讨论结束，请选择击杀目标。",
+    "seer_select_target": "预言家请选择查验目标。",
+    "witch_action": "女巫请选择行动。",
+    "day_peaceful": "天亮了，昨晚是平安夜。",
+    "day_death": "天亮了，昨晚{{id}}号玩家死了。",
+    "day_breaks": "天亮了。",
+    "speech_start": "请从{{id}}号开始发言。",
+    "speak_turn": "请{{id}}号发言。",
+    "your_turn": "轮到你发言了",
+    "voting_start": "投票环节开始。",
+    "vote_please": "请进行投票。",
+    "player_exiled": "{{id}}号被放逐了。",
+    "vote_tie": "今天是平票，没有人被放逐。",
+    "hunter_shoot": "{{id}}号是猎人，请选择开枪目标。",
+    "hunter_select_target": "猎人请选择开枪目标。",
+    "game_over_villager": "游戏结束，好人胜利！",
+    "game_over_werewolf": "游戏结束，狼人胜利！",
+    "game_over": "游戏结束",
+    "last_words": "{{id}}号请留遗言。"
   }
 }

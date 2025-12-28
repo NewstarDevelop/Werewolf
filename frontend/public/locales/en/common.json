@@ -38,6 +38,13 @@
     "system_log": "System Log",
     "game_log": "Game Log",
     "ai_debug": "AI Debug",
+    "game_analysis": "AI Game Analysis",
+    "analyzing": "AI is analyzing the game, please wait...",
+    "analysis_failed": "Analysis Failed",
+    "retry": "Retry",
+    "total_days": "Total Days",
+    "total_speeches": "Total Speeches",
+    "total_votes": "Total Votes",
     "expand": "Expand",
     "collapse": "Collapse"
   },

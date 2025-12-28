@@ -38,6 +38,13 @@
     "system_log": "系统日志",
     "game_log": "游戏日志",
     "ai_debug": "AI思考调试",
+    "game_analysis": "AI 对局分析",
+    "analyzing": "AI正在分析对局，请稍候...",
+    "analysis_failed": "分析失败",
+    "retry": "重试",
+    "total_days": "总天数",
+    "total_speeches": "总发言数",
+    "total_votes": "总投票数",
     "expand": "展开",
     "collapse": "收起"
   },

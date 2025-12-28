@@ -14,6 +14,7 @@ from app.schemas.player import PlayerPublic
 from app.schemas.message import MessageInGame
 from app.services.game_engine import game_engine
 from app.services.log_manager import get_game_logs
+from app.services.game_analyzer import analyze_game
 
 router = APIRouter(prefix="/game", tags=["game"])
 
@@ -354,3 +355,31 @@ def get_debug_messages(game_id: str) -> Dict[str, List[MessageInGame]]:
     ]
 
     return {"messages": all_messages}
+
+
+@router.get("/{game_id}/analyze")
+def analyze_game_performance(game_id: str) -> Dict:
+    """
+    Generate comprehensive AI analysis of game performance.
+    Evaluates player performance and match quality using AI.
+    GET /api/game/{game_id}/analyze
+    """
+    game = game_store.get_game(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    # Only analyze finished games
+    if game.status != GameStatus.FINISHED:
+        raise HTTPException(
+            status_code=400,
+            detail="Game must be finished before analysis"
+        )
+
+    try:
+        analysis = analyze_game(game)
+        return analysis
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Analysis failed: {str(e)}"
+        )

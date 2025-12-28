@@ -64,6 +64,15 @@ class Settings:
         self.DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
         self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
+        # AI Analysis configuration (independent from game AI)
+        self.ANALYSIS_PROVIDER: Optional[str] = os.getenv("ANALYSIS_PROVIDER") or None
+        self.ANALYSIS_MODEL: str = os.getenv("ANALYSIS_MODEL", "gpt-4o")
+        self.ANALYSIS_MAX_TOKENS: int = int(os.getenv("ANALYSIS_MAX_TOKENS", "4000"))
+        self.ANALYSIS_TEMPERATURE: float = float(os.getenv("ANALYSIS_TEMPERATURE", "0.7"))
+        self.ANALYSIS_MODE: str = os.getenv("ANALYSIS_MODE", "comprehensive")  # comprehensive/quick/custom
+        self.ANALYSIS_LANGUAGE: str = os.getenv("ANALYSIS_LANGUAGE", "auto")  # auto/zh/en
+        self.ANALYSIS_CACHE_ENABLED: bool = os.getenv("ANALYSIS_CACHE_ENABLED", "true").lower() == "true"
+
         # Multi-provider configuration
         self._providers: dict[str, AIProviderConfig] = {}
         self._player_mappings: dict[int, str] = {}  # seat_id -> provider_name
@@ -219,6 +228,76 @@ class Settings:
         """Get all player to provider mappings."""
         return self._player_mappings.copy()
 
+    def get_analysis_provider(self) -> Optional[AIProviderConfig]:
+        """Get provider configuration for game analysis (prioritized).
+
+        Priority:
+        1. Dedicated ANALYSIS_PROVIDER if specified
+        2. Default provider with analysis settings
+        3. None (will use fallback mode)
+        """
+        # Priority 1: Dedicated ANALYSIS_PROVIDER
+        if self.ANALYSIS_PROVIDER:
+            provider = self._providers.get(self.ANALYSIS_PROVIDER.lower())
+            if provider and provider.is_valid():
+                # Override with analysis-specific settings
+                return AIProviderConfig(
+                    name=f"analysis_{provider.name}",
+                    api_key=provider.api_key,
+                    base_url=provider.base_url,
+                    model=self.ANALYSIS_MODEL,
+                    max_retries=provider.max_retries,
+                    temperature=self.ANALYSIS_TEMPERATURE,
+                    max_tokens=self.ANALYSIS_MAX_TOKENS,
+                )
+
+        # Priority 2: Default provider with analysis settings
+        default = self._providers.get("default")
+        if default and default.is_valid():
+            return AIProviderConfig(
+                name="analysis_default",
+                api_key=default.api_key,
+                base_url=default.base_url,
+                model=self.ANALYSIS_MODEL,
+                max_retries=default.max_retries,
+                temperature=self.ANALYSIS_TEMPERATURE,
+                max_tokens=self.ANALYSIS_MAX_TOKENS,
+            )
+
+        return None
+
+    def validate_analysis_config(self) -> tuple[bool, list[str]]:
+        """Validate analysis configuration.
+
+        Returns:
+            (is_valid, error_messages)
+        """
+        errors = []
+
+        # Check if any provider is available
+        if not self._providers:
+            errors.append("No AI provider configured. Set OPENAI_API_KEY or other provider.")
+
+        # Check analysis provider if specified
+        if self.ANALYSIS_PROVIDER:
+            provider_key = self.ANALYSIS_PROVIDER.lower()
+            if provider_key not in self._providers:
+                errors.append(f"ANALYSIS_PROVIDER '{self.ANALYSIS_PROVIDER}' not found in configured providers.")
+            elif not self._providers[provider_key].is_valid():
+                errors.append(f"ANALYSIS_PROVIDER '{self.ANALYSIS_PROVIDER}' has invalid configuration.")
+
+        # Check analysis mode
+        valid_modes = ["comprehensive", "quick", "custom"]
+        if self.ANALYSIS_MODE not in valid_modes:
+            errors.append(f"ANALYSIS_MODE must be one of {valid_modes}, got '{self.ANALYSIS_MODE}'")
+
+        # Check analysis language
+        valid_languages = ["auto", "zh", "en"]
+        if self.ANALYSIS_LANGUAGE not in valid_languages:
+            errors.append(f"ANALYSIS_LANGUAGE must be one of {valid_languages}, got '{self.ANALYSIS_LANGUAGE}'")
+
+        return (len(errors) == 0, errors)
+
     def _log_configuration_summary(self):
         """Log configuration summary for debugging."""
         logger.info(f"AI Configuration loaded: {len(self._providers)} providers configured")
@@ -240,6 +319,27 @@ class Settings:
                 logger.info(f"  Seat {seat_id} -> {provider_name}{model_info}")
         else:
             logger.info("No explicit player mappings - all players use default provider")
+
+        # Log analysis configuration
+        logger.info("=" * 50)
+        logger.info("Analysis Configuration:")
+        logger.info(f"  Mode: {self.ANALYSIS_MODE}")
+        logger.info(f"  Language: {self.ANALYSIS_LANGUAGE}")
+        logger.info(f"  Model: {self.ANALYSIS_MODEL}")
+        logger.info(f"  Max Tokens: {self.ANALYSIS_MAX_TOKENS}")
+        logger.info(f"  Cache Enabled: {self.ANALYSIS_CACHE_ENABLED}")
+
+        analysis_provider = self.get_analysis_provider()
+        if analysis_provider:
+            logger.info(f"  Provider: {analysis_provider.name} (model: {analysis_provider.model})")
+        else:
+            logger.warning("  Provider: None - Analysis will use fallback mode")
+
+        is_valid, errors = self.validate_analysis_config()
+        if not is_valid:
+            logger.warning("Analysis configuration issues:")
+            for error in errors:
+                logger.warning(f"  - {error}")
 
 
 settings = Settings()

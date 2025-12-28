@@ -15,6 +15,7 @@ from app.schemas.message import MessageInGame
 from app.services.game_engine import game_engine
 from app.services.log_manager import get_game_logs
 from app.services.game_analyzer import analyze_game
+from app.services.analysis_cache import AnalysisCache
 
 router = APIRouter(prefix="/game", tags=["game"])
 
@@ -383,3 +384,28 @@ def analyze_game_performance(game_id: str) -> Dict:
             status_code=500,
             detail=f"Analysis failed: {str(e)}"
         )
+
+
+@router.delete("/{game_id}/analysis-cache")
+def clear_game_analysis_cache(game_id: str) -> Dict:
+    """
+    Clear cached analysis for specific game.
+    DELETE /api/game/{game_id}/analysis-cache
+    """
+    count = AnalysisCache.clear(game_id)
+    return {
+        "message": f"Cleared {count} cache entries",
+        "game_id": game_id
+    }
+
+
+@router.delete("/analysis-cache/all")
+def clear_all_analysis_cache() -> Dict:
+    """
+    Clear all cached analyses.
+    DELETE /api/game/analysis-cache/all
+    """
+    count = AnalysisCache.clear()
+    return {
+        "message": f"Cleared {count} cache entries"
+    }

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, TrendingUp, Trophy, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, TrendingUp, Trophy, AlertCircle, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from 'react-markdown';
 
@@ -79,8 +80,11 @@ const GameAnalysisDialog = ({ gameId, isOpen, onClose }: GameAnalysisDialogProps
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <Loader2 className="w-12 h-12 animate-spin text-accent" />
-              <p className="text-muted-foreground">
-                {t('common:ui.analyzing')}
+              <p className="text-muted-foreground text-lg">
+                {t('game:analysis.generating')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t('game:analysis.may_take_time')}
               </p>
             </div>
           )}
@@ -98,6 +102,27 @@ const GameAnalysisDialog = ({ gameId, isOpen, onClose }: GameAnalysisDialogProps
 
           {analysis && !isLoading && (
             <ScrollArea className="h-full px-6 py-4">
+              {/* Fallback Mode Warning */}
+              {(() => {
+                const isFallbackMode = analysis.analysis.includes("备用模式") ||
+                                       analysis.analysis.includes("Fallback Mode") ||
+                                       analysis.analysis.includes("暂时不可用");
+
+                return isFallbackMode && (
+                  <Alert variant="warning" className="mb-4 border-yellow-500/50 bg-yellow-500/10">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>{t('game:analysis.fallback_mode')}</AlertTitle>
+                    <AlertDescription>
+                      <p className="mb-2">{t('game:analysis.fallback_hint')}</p>
+                      <code className="text-xs bg-muted p-2 rounded block mt-2">
+                        ANALYSIS_PROVIDER=openai<br />
+                        ANALYSIS_MODEL=gpt-4o
+                      </code>
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()}
+
               {/* Game Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <SummaryCard

@@ -78,5 +78,25 @@
     "game_over_werewolf": "Game Over. Werewolves Win!",
     "game_over": "Game Over",
     "last_words": "Player {{id}}, please leave your last words."
+  },
+  "action_messages": {
+    "werewolf_discuss": "Discuss with your wolf teammates about tonight's kill target (voting starts after speaking)",
+    "werewolf_select_kill": "Please select tonight's kill target",
+    "seer_select_verify": "Please select a player to inspect",
+    "witch_save_prompt": "Player {{id}} was killed tonight. Use antidote?",
+    "witch_no_target": "No one was killed tonight. Click skill button to skip antidote decision",
+    "witch_no_antidote": "You have no antidote. Click skill button to skip antidote decision",
+    "witch_used_antidote": "You already used antidote tonight. Cannot use poison. Click skill button to continue",
+    "witch_poison_prompt": "Use poison? Select target or skip",
+    "witch_no_poison": "You have no poison available. Click skill button to continue",
+    "your_turn_speak": "It's your turn to speak",
+    "vote_prompt": "Please vote to exile a player, or abstain",
+    "hunter_shoot_prompt": "You can shoot to take down a player"
+  },
+  "analysis": {
+    "fallback_mode": "AI Analysis Not Configured",
+    "fallback_hint": "Please configure .env file in backend to enable AI analysis. Recommended:",
+    "generating": "Generating AI analysis...",
+    "may_take_time": "This may take 10-30 seconds, please wait"
   }
 }

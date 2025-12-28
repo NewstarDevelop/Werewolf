@@ -78,5 +78,25 @@
     "game_over_werewolf": "游戏结束，狼人胜利！",
     "game_over": "游戏结束",
     "last_words": "{{id}}号请留遗言。"
+  },
+  "action_messages": {
+    "werewolf_discuss": "与狼队友讨论今晚击杀目标（发言后自动进入投票）",
+    "werewolf_select_kill": "请选择今晚要击杀的目标",
+    "seer_select_verify": "请选择要查验的玩家",
+    "witch_save_prompt": "今晚{{id}}号被杀，是否使用解药？",
+    "witch_no_target": "今晚无人被杀，点击技能按钮跳过解药决策",
+    "witch_no_antidote": "你没有解药，点击技能按钮跳过解药决策",
+    "witch_used_antidote": "你今晚已使用解药，无法再使用毒药，点击技能按钮继续",
+    "witch_poison_prompt": "是否使用毒药？选择目标或跳过",
+    "witch_no_poison": "你没有可用的毒药，点击技能按钮继续",
+    "your_turn_speak": "轮到你发言了",
+    "vote_prompt": "请投票选择要放逐的玩家，或弃票",
+    "hunter_shoot_prompt": "你可以开枪带走一名玩家"
+  },
+  "analysis": {
+    "fallback_mode": "AI分析服务未配置",
+    "fallback_hint": "请在后端配置 .env 文件以启用AI分析功能。推荐配置：",
+    "generating": "正在生成AI分析...",
+    "may_take_time": "这可能需要10-30秒，请耐心等待"
   }
 }

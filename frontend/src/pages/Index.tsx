@@ -15,7 +15,7 @@ import {
   isNightPhase,
 } from "@/services/api";
 import { useTranslation } from "react-i18next";
-import { translateSystemMessage } from "@/utils/messageTranslator";
+import { translateSystemMessage, translateActionMessage } from "@/utils/messageTranslator";
 
 const Index = () => {
   const { t } = useTranslation(['common', 'game']);
@@ -238,8 +238,10 @@ const Index = () => {
   const canSpeak =
     needsAction && gameState?.pending_action?.type === "speak";
 
-  // Get action hint
-  const actionHint = gameState?.pending_action?.message || "";
+  // Get action hint with translation
+  const actionHint = gameState?.pending_action?.message
+    ? translateActionMessage(gameState.pending_action.message, t)
+    : "";
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">

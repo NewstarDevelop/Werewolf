@@ -156,3 +156,90 @@ export function translateSystemMessage(message: string, t: TFunction): string {
 export function translateSystemMessages(messages: string[], t: TFunction): string[] {
   return messages.map(msg => translateSystemMessage(msg, t));
 }
+
+// Translation patterns for action messages (pendingAction.message)
+const actionMessagePatterns: TranslationPattern[] = [
+  // Werewolf actions
+  {
+    pattern: /与狼队友讨论今晚击杀目标.*/,
+    translate: (_, t) => t('game:action_messages.werewolf_discuss')
+  },
+  {
+    pattern: /请选择今晚要击杀的目标/,
+    translate: (_, t) => t('game:action_messages.werewolf_select_kill')
+  },
+
+  // Seer actions
+  {
+    pattern: /请选择要查验的玩家/,
+    translate: (_, t) => t('game:action_messages.seer_select_verify')
+  },
+
+  // Witch actions
+  {
+    pattern: /今晚(\d+)号被杀[，,]?是否使用解药[？?]/,
+    translate: (match, t) => t('game:action_messages.witch_save_prompt', { id: match[1] })
+  },
+  {
+    pattern: /今晚无人被杀[，,]?点击技能按钮跳过解药决策/,
+    translate: (_, t) => t('game:action_messages.witch_no_target')
+  },
+  {
+    pattern: /你没有解药[，,]?点击技能按钮跳过解药决策/,
+    translate: (_, t) => t('game:action_messages.witch_no_antidote')
+  },
+  {
+    pattern: /你今晚已使用解药[，,]?无法再使用毒药.*/,
+    translate: (_, t) => t('game:action_messages.witch_used_antidote')
+  },
+  {
+    pattern: /是否使用毒药[？?].*/,
+    translate: (_, t) => t('game:action_messages.witch_poison_prompt')
+  },
+  {
+    pattern: /你没有可用的毒药.*/,
+    translate: (_, t) => t('game:action_messages.witch_no_poison')
+  },
+
+  // Speech actions
+  {
+    pattern: /^轮到你发言了$/,
+    translate: (_, t) => t('game:action_messages.your_turn_speak')
+  },
+
+  // Vote actions
+  {
+    pattern: /请投票选择要放逐的玩家.*/,
+    translate: (_, t) => t('game:action_messages.vote_prompt')
+  },
+
+  // Hunter actions
+  {
+    pattern: /你可以开枪带走一名玩家/,
+    translate: (_, t) => t('game:action_messages.hunter_shoot_prompt')
+  }
+];
+
+/**
+ * Translate an action message (pendingAction.message) from Chinese to the current language
+ * @param message - Original action message text
+ * @param t - i18next translation function
+ * @returns Translated message or original if no match found
+ */
+export function translateActionMessage(message: string, t: TFunction): string {
+  // Try to match against all action message patterns
+  for (const { pattern, translate } of actionMessagePatterns) {
+    const match = message.match(pattern);
+    if (match) {
+      try {
+        return translate(match, t);
+      } catch (error) {
+        console.warn('Action message translation failed:', message, error);
+        // Continue to next pattern
+      }
+    }
+  }
+
+  // If no pattern matches, return original message
+  return message;
+}

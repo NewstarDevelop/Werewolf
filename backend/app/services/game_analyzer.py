@@ -6,37 +6,68 @@ from openai import OpenAI
 from app.models.game import Game, Player
 from app.schemas.enums import Role, MessageType, ActionType, Winner
 from app.core.config import settings
+from app.services.analysis_cache import AnalysisCache
 
 logger = logging.getLogger(__name__)
 
 
 def analyze_game(game: Game) -> Dict[str, Any]:
     """
-    Analyze finished game and generate comprehensive performance report.
+    Analyze finished game with configurable mode and language.
 
     Evaluates:
     - Individual player performance (strategy, logic, social influence)
     - Match quality (balance, drama, technical stability)
     - MVP/LVP moments
+
+    Supports multiple analysis modes:
+    - comprehensive: Detailed analysis (default)
+    - quick: Brief summary
+    - custom: Custom template (future extension)
     """
+
+    # Determine analysis language
+    analysis_language = settings.ANALYSIS_LANGUAGE
+    if analysis_language == "auto":
+        analysis_language = game.language
+
+    analysis_mode = settings.ANALYSIS_MODE
+
+    # Try cache first
+    if settings.ANALYSIS_CACHE_ENABLED:
+        cached = AnalysisCache.get(game.id, analysis_mode, analysis_language)
+        if cached:
+            logger.info(f"Returning cached analysis for game {game.id}")
+            return cached["result"]
+
+    # Cache miss or disabled - generate new analysis
+    logger.info(f"Generating new analysis for game {game.id}")
 
     # Collect game data
     game_data = _collect_game_data(game)
 
-    # Build analysis prompt
-    prompt = _build_analysis_prompt(game_data, game.language)
+    # Build prompt based on mode
+    prompt = _get_analysis_prompt_by_mode(game_data, analysis_language, analysis_mode)
 
-    # Call AI for analysis
-    analysis_text = _call_ai_analyzer(prompt, game.language)
+    # Call AI with quality detection
+    analysis_text = _call_ai_analyzer(prompt, analysis_language, analysis_mode)
 
     # Structure the response
-    return {
+    result = {
         "game_id": game.id,
         "winner": game.winner,
         "total_days": game.day,
         "analysis": analysis_text,
-        "game_summary": _build_game_summary(game_data)
+        "game_summary": _build_game_summary(game_data),
+        "analysis_mode": analysis_mode,
+        "analysis_language": analysis_language,
     }
+
+    # Save to cache
+    if settings.ANALYSIS_CACHE_ENABLED:
+        AnalysisCache.set(game.id, analysis_mode, analysis_language, result)
+
+    return result
 
 
 def _collect_game_data(game: Game) -> Dict[str, Any]:
@@ -128,6 +159,53 @@ def _calculate_survival_days(game: Game, seat_id: int) -> int:
 
     # Default: survived until current day or died on last day
     return game.day if player.is_alive else max(1, game.day - 1)
+
+
+def _get_analysis_prompt_by_mode(game_data: Dict[str, Any], language: str, mode: str) -> str:
+    """Generate analysis prompt based on mode."""
+
+    if mode == "quick":
+        return _build_quick_analysis_prompt(game_data, language)
+    elif mode == "custom":
+        return _build_custom_analysis_prompt(game_data, language)
+    else:  # comprehensive (default)
+        return _build_analysis_prompt(game_data, language)
+
+
+def _build_quick_analysis_prompt(game_data: Dict[str, Any], language: str) -> str:
+    """Build quick analysis prompt (shorter, faster)."""
+
+    if language == "en":
+        return f"""# Quick Game Analysis
+
+Winner: {game_data['winner'].title()}
+Days: {game_data['total_days']}
+
+Provide a brief 3-section analysis:
+1. Winner's key advantage (1 paragraph)
+2. Critical turning point (1 paragraph)
+3. MVP player (1 sentence)
+
+Keep it under 200 words."""
+    else:
+        return f"""# 快速对局分析
+
+获胜方：{'好人' if game_data['winner'] == 'villager' else '狼人' if game_data['winner'] == 'werewolf' else '平局'}
+天数：{game_data['total_days']}
+
+请提供简短的3段分析：
+1. 获胜方关键优势（1段）
+2. 关键转折点（1段）
+3. MVP玩家（1句话）
+
+控制在200字以内。"""
+
+
+def _build_custom_analysis_prompt(game_data: Dict[str, Any], language: str) -> str:
+    """Build custom analysis prompt (can be extended by user)."""
+    # For now, use comprehensive mode
+    # Future: allow custom prompt template from env var or config file
+    return _build_analysis_prompt(game_data, language)
 
 
 def _build_analysis_prompt(game_data: Dict[str, Any], language: str) -> str:
@@ -314,44 +392,65 @@ Begin analysis:
     return prompt
 
 
-def _call_ai_analyzer(prompt: str, language: str) -> str:
-    """Call AI to generate analysis using configured provider."""
+def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
+    """Call AI to generate analysis with quality detection and retry."""
 
-    try:
-        # Use the first available provider for analysis
-        # Could be made configurable via ANALYSIS_PROVIDER env var
-        provider = settings.get_provider("default")
+    max_attempts = 2
+    min_length = 50 if mode == "quick" else 100
 
-        if not provider:
-            logger.error("No AI provider configured for analysis")
-            return _generate_fallback_analysis(language)
+    for attempt in range(max_attempts):
+        try:
+            # Use analysis-specific provider configuration
+            provider = settings.get_analysis_provider()
 
-        client = OpenAI(
-            api_key=provider.api_key,
-            base_url=provider.base_url
-        )
+            if not provider:
+                logger.error("No analysis provider configured")
+                return _generate_fallback_analysis(language)
 
-        response = client.chat.completions.create(
-            model=provider.model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional Werewolf game analyst. Provide detailed, insightful analysis based on the provided framework."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.7,
-            max_tokens=4000  # Longer for detailed analysis
-        )
+            logger.info(f"Analysis attempt {attempt + 1}/{max_attempts} using {provider.name}")
 
-        return response.choices[0].message.content or _generate_fallback_analysis(language)
+            client = OpenAI(
+                api_key=provider.api_key,
+                base_url=provider.base_url
+            )
 
-    except Exception as e:
-        logger.error(f"AI analysis failed: {e}")
-        return _generate_fallback_analysis(language)
+            response = client.chat.completions.create(
+                model=provider.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a professional Werewolf game analyst. Provide detailed, insightful analysis."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=provider.temperature,
+                max_tokens=provider.max_tokens
+            )
+
+            analysis_text = response.choices[0].message.content or ""
+
+            # Quality check
+            if len(analysis_text) < min_length:
+                logger.warning(f"Analysis too short ({len(analysis_text)} chars), expected >{min_length}")
+                if attempt < max_attempts - 1:
+                    logger.info("Retrying with adjusted prompt...")
+                    continue
+
+            logger.info(f"Analysis generated successfully ({len(analysis_text)} chars)")
+            return analysis_text
+
+        except Exception as e:
+            logger.error(f"Analysis attempt {attempt + 1} failed: {e}")
+            if attempt < max_attempts - 1:
+                logger.info("Retrying...")
+                continue
+
+    # All attempts failed
+    logger.error("All analysis attempts failed, returning fallback")
+    return _generate_fallback_analysis(language)
 
 
 def _generate_fallback_analysis(language: str) -> str:

@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, TrendingUp, Trophy, AlertCircle, AlertTriangle } from "lucide-react";
+import { Loader2, TrendingUp, Trophy, AlertCircle, AlertTriangle, Copy, CheckCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from 'react-markdown';
+import { toast } from "sonner";
 
 interface GameAnalysisDialogProps {
   gameId: string;
@@ -29,10 +30,11 @@ interface AnalysisData {
 }
 
 const GameAnalysisDialog = ({ gameId, isOpen, onClose }: GameAnalysisDialogProps) => {
-  const { t } = useTranslation(['common', 'game']);
+  const { t, i18n } = useTranslation(['common', 'game']);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Fetch analysis when dialog opens
   const fetchAnalysis = async () => {
@@ -64,6 +66,21 @@ const GameAnalysisDialog = ({ gameId, isOpen, onClose }: GameAnalysisDialogProps
     if (!open) {
       onClose();
     }
+  };
+
+  // Copy configuration to clipboard
+  const handleCopyConfig = () => {
+    const configText = `OPENAI_API_KEY=your-api-key-here
+ANALYSIS_PROVIDER=openai
+ANALYSIS_MODEL=gpt-4o`;
+
+    navigator.clipboard.writeText(configText).then(() => {
+      setCopied(true);
+      toast.success(i18n.language === 'zh' ? '配置已复制到剪贴板' : 'Configuration copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      toast.error(i18n.language === 'zh' ? '复制失败' : 'Copy failed');
+    });
   };
 
   return (
@@ -111,13 +128,61 @@ const GameAnalysisDialog = ({ gameId, isOpen, onClose }: GameAnalysisDialogProps
                 return isFallbackMode && (
                   <Alert variant="warning" className="mb-4 border-yellow-500/50 bg-yellow-500/10">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>{t('game:analysis.fallback_mode')}</AlertTitle>
-                    <AlertDescription>
-                      <p className="mb-2">{t('game:analysis.fallback_hint')}</p>
-                      <code className="text-xs bg-muted p-2 rounded block mt-2">
-                        ANALYSIS_PROVIDER=openai<br />
-                        ANALYSIS_MODEL=gpt-4o
-                      </code>
+                    <AlertTitle className="text-lg font-semibold">{t('game:analysis.fallback_mode')}</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                      <p className="text-sm">{t('game:analysis.fallback_hint')}</p>
+
+                      {/* Configuration Steps */}
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          {i18n.language === 'zh' ? '配置步骤：' : 'Configuration Steps:'}
+                        </p>
+                        <ol className="text-xs space-y-1 list-decimal list-inside text-muted-foreground">
+                          <li>{i18n.language === 'zh' ? '在后端目录找到 .env 文件' : 'Locate .env file in backend directory'}</li>
+                          <li>{i18n.language === 'zh' ? '将 your-api-key-here 替换为真实API密钥' : 'Replace your-api-key-here with your real API key'}</li>
+                          <li>{i18n.language === 'zh' ? '重启后端服务' : 'Restart backend service'}</li>
+                        </ol>
+                      </div>
+
+                      {/* Configuration Template */}
+                      <div className="relative">
+                        <code className="text-xs bg-muted/50 p-3 rounded block border border-border">
+                          OPENAI_API_KEY=your-api-key-here<br />
+                          ANALYSIS_PROVIDER=openai<br />
+                          ANALYSIS_MODEL=gpt-4o
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute top-2 right-2 h-6 w-6 p-0"
+                          onClick={handleCopyConfig}
+                        >
+                          {copied ? (
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* File Path Hint */}
+                      <p className="text-xs text-muted-foreground">
+                        {i18n.language === 'zh' ? '📁 文件路径：' : '📁 File Path: '}
+                        <code className="bg-muted/50 px-1 py-0.5 rounded">.env</code>
+                        <span className="ml-1 text-muted-foreground/60">
+                          {i18n.language === 'zh' ? '(项目根目录)' : '(project root)'}
+                        </span>
+                      </p>
+
+                      {/* Verification Command */}
+                      <div className="bg-muted/30 p-2 rounded border border-border">
+                        <p className="text-xs font-medium mb-1">
+                          {i18n.language === 'zh' ? '验证配置：' : 'Verify Configuration:'}
+                        </p>
+                        <code className="text-xs text-muted-foreground">
+                          cd backend && python verify_config.py
+                        </code>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 );

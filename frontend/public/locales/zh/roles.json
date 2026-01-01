@@ -4,12 +4,18 @@
   "seer": "预言家",
   "witch": "女巫",
   "hunter": "猎人",
+  "guard": "守卫",
+  "wolf_king": "狼王",
+  "white_wolf_king": "白狼王",
   "description": {
     "werewolf": "狼人阵营，夜晚可以击杀玩家",
     "villager": "好人阵营，无特殊技能",
     "seer": "好人阵营的神职，可以查验身份",
     "witch": "好人阵营的神职，拥有解药和毒药",
-    "hunter": "好人阵营的神职，死亡时可以开枪"
+    "hunter": "好人阵营的神职，死亡时可以开枪",
+    "guard": "好人阵营的神职，夜晚可守护一名玩家",
+    "wolf_king": "狼人阵营，死亡时可带走一人",
+    "white_wolf_king": "狼人阵营，可自爆带走一人"
   },
   "your_role": "你的身份：{{role}}",
   "faction": {

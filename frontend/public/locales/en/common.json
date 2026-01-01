@@ -76,6 +76,9 @@
     "antidote_skipped": "Skipped antidote",
     "poison_used": "Poisoned #{{id}}",
     "poison_skipped": "Skipped poison",
+    "protect_selected": "Protected #{{id}}",
+    "protect_skipped": "Skipped protection",
+    "self_destruct_activated": "Self-destruct activated!",
     "skill_failed": "Skill failed",
     "game_started": "Game started!",
     "game_start_failed": "Failed to start game"
@@ -160,6 +163,12 @@
     "not_enough_players": "Not enough players",
     "need_9_players": "Need 9 players to start",
     "players_not_ready": "Some players are not ready",
-    "confirm_delete": "Delete this room? All players will be removed."
+    "confirm_delete": "Delete this room? All players will be removed.",
+    "game_mode": "Game Mode",
+    "mode_classic_9": "Classic 9P",
+    "mode_classic_12": "Classic 12P",
+    "wolf_king_variant": "Wolf King Variant",
+    "variant_wolf_king": "Wolf King",
+    "variant_white_wolf_king": "White Wolf King"
   }
 }

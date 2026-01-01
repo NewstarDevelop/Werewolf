@@ -76,6 +76,9 @@
     "antidote_skipped": "不使用解药",
     "poison_used": "毒杀 {{id}}号",
     "poison_skipped": "不使用毒药",
+    "protect_selected": "守护 {{id}}号",
+    "protect_skipped": "不守护",
+    "self_destruct_activated": "自爆成功！",
     "skill_failed": "技能使用失败",
     "game_started": "游戏开始！",
     "game_start_failed": "创建游戏失败"
@@ -160,6 +163,12 @@
     "not_enough_players": "人数不足",
     "need_9_players": "需要9名玩家才能开始游戏",
     "players_not_ready": "还有玩家未准备",
-    "confirm_delete": "确定要删除房间吗？所有玩家将被移除。"
+    "confirm_delete": "确定要删除房间吗？所有玩家将被移除。",
+    "game_mode": "游戏模式",
+    "mode_classic_9": "经典9人局",
+    "mode_classic_12": "经典12人局",
+    "wolf_king_variant": "狼王类型",
+    "variant_wolf_king": "狼王",
+    "variant_white_wolf_king": "白狼王"
   }
 }

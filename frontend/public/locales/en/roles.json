@@ -4,12 +4,18 @@
   "seer": "Seer",
   "witch": "Witch",
   "hunter": "Hunter",
+  "guard": "Guard",
+  "wolf_king": "Wolf King",
+  "white_wolf_king": "White Wolf King",
   "description": {
     "werewolf": "Werewolf faction, can eliminate players at night",
     "villager": "Village faction, no special abilities",
     "seer": "Village role with divine powers, can inspect identities",
     "witch": "Village role with potions, has healing and poison abilities",
-    "hunter": "Village role, can shoot when eliminated"
+    "hunter": "Village role, can shoot when eliminated",
+    "guard": "Village role, can protect one player each night",
+    "wolf_king": "Werewolf faction, can shoot when eliminated",
+    "white_wolf_king": "Werewolf faction, can self-destruct to eliminate one"
   },
   "your_role": "Your Role: {{role}}",
   "faction": {

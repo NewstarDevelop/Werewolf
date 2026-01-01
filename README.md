@@ -1,67 +1,93 @@
-# 狼人杀
+# 🐺 狼人杀
 
 [English](./README.en.md) | [简体中文](./README.md)
 
 一个基于 AI 的在线狼人杀游戏，支持人类玩家与多个 AI 玩家共同游戏。采用 FastAPI + React + Docker 架构，提供流畅的游戏体验和智能的 AI 对手。
 
-在线预览：https://werewolf.newstardev.de
+**在线预览**：https://werewolf.newstardev.de （Mock 模式，未配置真实密钥）
 
-（已开启mock模式，未配置真实密钥）
-
-![Game Screenshot](https://img.shields.io/badge/Game-Werewolf-red)
+![Game](https://img.shields.io/badge/Game-Werewolf-red)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![React](https://img.shields.io/badge/React-18.3-61dafb)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## 特性
+---
 
-- **完整游戏流程**：支持狼人、预言家、女巫、猎人等经典角色
+## ✨ 特性
+
+### 核心功能
+- **完整游戏流程**：支持狼人、预言家、女巫、猎人、守卫、狼王、白狼王等角色
 - **AI 玩家**：基于 OpenAI GPT 的智能 AI 玩家，支持 Mock 模式测试
 - **多房间系统**：支持多个房间同时进行游戏，玩家可自由创建和加入房间
 - **混合对战**：支持纯真人、纯 AI、真人 + AI 混合等多种游戏模式
 - **实时聊天**：游戏内实时聊天系统，记录所有玩家发言
+- **AI 对局分析**：游戏结束后可查看 AI 生成的对局分析报告
+
+### 用户系统
+- **用户注册登录**：支持邮箱密码注册和登录
+- **OAuth 认证**：支持 linux.do OAuth2 第三方登录
+- **JWT 认证**：安全的 Token 认证体系，HttpOnly Cookie
+- **个人资料**：用户头像、昵称、个人简介管理
+
+### 技术特性
 - **现代化 UI**：基于 shadcn/ui 的精美界面设计，纯黑主题
 - **Docker 部署**：一键启动，开箱即用
 - **响应式设计**：支持桌面和移动端访问
-- **数据持久化**：SQLite 数据库存储房间信息
+- **数据持久化**：SQLite 数据库存储用户和房间信息
 - **国际化支持**：支持中英文切换
-- **AI 对局分析**：游戏结束后可查看 AI 生成的对局分析报告
 
-## 游戏角色
+---
 
+## 🎭 游戏角色
+
+### 经典9人局
 | 角色 | 阵营 | 能力 |
 |------|------|------|
-| 狼人 | 狼人阵营 | 每晚可以杀死一名玩家 |
-| 预言家 | 好人阵营 | 每晚可以查验一名玩家的身份 |
-| 女巫 | 好人阵营 | 拥有解药和毒药各一瓶，同一晚使用解药后无法使用毒药 |
-| 猎人 | 好人阵营 | 被淘汰时可以开枪带走一名玩家 |
-| 村民 | 好人阵营 | 普通村民，无特殊能力 |
+| 🐺 狼人 (×3) | 狼人阵营 | 每晚可以杀死一名玩家 |
+| 👁️ 预言家 | 好人阵营 | 每晚可以查验一名玩家的身份 |
+| 🧪 女巫 | 好人阵营 | 拥有解药和毒药各一瓶，同一晚使用解药后无法使用毒药 |
+| 🔫 猎人 | 好人阵营 | 被淘汰时可以开枪带走一名玩家（被毒杀除外） |
+| 👨‍🌾 村民 (×3) | 好人阵营 | 普通村民，无特殊能力 |
 
-## 快速开始
+### 扩展12人局
+| 角色 | 阵营 | 能力 |
+|------|------|------|
+| 🛡️ 守卫 | 好人阵营 | 每晚可以保护一名玩家免受狼人攻击 |
+| 👑 狼王 | 狼人阵营 | 被淘汰时可以带走一名玩家 |
+| ⚪ 白狼王 | 狼人阵营 | 白天可以自爆带走一名玩家 |
+
+---
+
+## 🚀 快速开始
 
 ### 前置要求
 
 - Docker 和 Docker Compose
 - （可选）OpenAI API Key（用于真实 AI 对手）
+- （可选）linux.do OAuth 配置（用于第三方登录）
 
 ### 使用 Docker 启动
 
 ```bash
+# 克隆仓库
 git clone https://github.com/NewstarDevelop/Werewolf.git
 cd Werewolf
-cp .env.example .env
-nano .env
-```
-**填入真实模型商、密钥、模型之后**
 
-```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑配置文件（填入API密钥等）
+nano .env
+
+# 启动服务
 docker compose up
 ```
 
- **访问游戏**
-- 前端页面：http://localhost:8081
-- 后端 API：http://localhost:8082
-- API 文档：http://localhost:8082/docs
+**访问游戏**
+- 🎮 前端页面：http://localhost:8081
+- 📡 后端 API：http://localhost:8082
+- 📚 API 文档：http://localhost:8082/docs
 
 ### 本地开发
 
@@ -93,55 +119,9 @@ npm install
 npm run dev
 ```
 
-## 项目结构
+---
 
-```
-Werewolf/
-├── backend/                 # FastAPI 后端
-│   ├── app/
-│   │   ├── api/            # API 路由
-│   │   │   └── endpoints/
-│   │   │       ├── game.py      # 游戏API
-│   │   │       └── room.py      # 房间API
-│   │   ├── core/           # 核心配置
-│   │   │   └── database.py      # 数据库配置
-│   │   ├── models/         # 数据模型
-│   │   │   ├── game.py          # 游戏模型
-│   │   │   └── room.py          # 房间模型
-│   │   ├── schemas/        # Pydantic 模式
-│   │   └── services/       # 业务逻辑
-│   │       ├── game_engine.py   # 游戏引擎
-│   │       ├── room_manager.py  # 房间管理
-│   │       ├── llm.py           # AI 服务
-│   │       └── prompts.py       # AI 提示词
-│   ├── data/               # 数据存储
-│   │   └── werewolf.db          # SQLite 数据库
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/               # React 前端
-│   ├── src/
-│   │   ├── components/     # React 组件
-│   │   │   ├── game/      # 游戏相关组件
-│   │   │   └── ui/        # UI 基础组件
-│   │   ├── hooks/         # 自定义 Hooks
-│   │   ├── services/      # API 服务
-│   │   │   ├── api.ts          # 游戏API
-│   │   │   └── roomApi.ts      # 房间API
-│   │   ├── pages/         # 页面组件
-│   │   │   ├── RoomLobby.tsx   # 房间大厅
-│   │   │   ├── RoomWaiting.tsx # 房间等待室
-│   │   │   └── GamePage.tsx    # 游戏页面
-│   │   └── utils/         # 工具函数
-│   │       └── player.ts       # 玩家标识管理
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── package.json
-├── docker-compose.yml
-├── PROGRESS.md             # 开发进度与问题清单
-└── README.md
-```
-
-## 游戏玩法
+## 🎮 游戏玩法
 
 ### 游戏模式
 
@@ -154,17 +134,20 @@ Werewolf/
 ### 游戏流程
 
 1. **游戏开始**：通过房间系统创建或加入游戏
-2. **角色分配**：系统自动分配角色（3 狼人、3 村民、预言家、女巫、猎人）
+2. **角色分配**：系统自动分配角色
 3. **夜晚阶段**：
-   - 狼人选择击杀目标
+   - 守卫选择保护对象
+   - 狼人讨论并选择击杀目标
    - 预言家查验玩家身份
-   - 女巫先决策是否使用解药，再决策是否使用毒药（同一晚使用解药后无法使用毒药）
+   - 女巫先决策是否使用解药，再决策是否使用毒药
 4. **白天阶段**：
+   - 公布夜晚死亡信息
+   - 死亡玩家遗言
    - 所有玩家依次发言
    - 投票淘汰可疑玩家
 5. **胜利条件**：
    - 好人阵营：淘汰所有狼人
-   - 狼人阵营：狼人数量 >= 好人数量，或所有村民死亡（屠民），或所有神职死亡（屠神）
+   - 狼人阵营：狼人数量 ≥ 好人数量，或屠民（所有村民死亡），或屠神（所有神职死亡）
 
 ### 操作指南
 
@@ -172,12 +155,94 @@ Werewolf/
 - **投票**：在投票阶段，点击玩家头像选择投票目标
 - **使用技能**：在夜晚阶段，点击"技能"按钮使用角色技能
 
-## 技术栈
+---
+
+## 📁 项目结构
+
+```
+Werewolf/
+├── backend/                     # FastAPI 后端
+│   ├── app/
+│   │   ├── api/                # API 路由
+│   │   │   ├── dependencies.py # 依赖注入
+│   │   │   └── endpoints/
+│   │   │       ├── auth.py     # 认证API
+│   │   │       ├── game.py     # 游戏API
+│   │   │       ├── room.py     # 房间API
+│   │   │       └── users.py    # 用户API
+│   │   ├── core/               # 核心配置
+│   │   │   ├── config.py       # 配置管理
+│   │   │   ├── database.py     # 数据库配置
+│   │   │   └── security.py     # 安全工具
+│   │   ├── i18n/               # 国际化
+│   │   │   ├── en.json         # 英文翻译
+│   │   │   └── zh.json         # 中文翻译
+│   │   ├── models/             # 数据模型
+│   │   │   ├── game.py         # 游戏模型
+│   │   │   ├── room.py         # 房间模型
+│   │   │   └── user.py         # 用户模型
+│   │   ├── schemas/            # Pydantic 模式
+│   │   │   ├── auth.py         # 认证模式
+│   │   │   ├── enums.py        # 枚举定义
+│   │   │   └── game.py         # 游戏模式
+│   │   └── services/           # 业务逻辑
+│   │       ├── game_engine.py  # 游戏引擎
+│   │       ├── game_analyzer.py# 对局分析
+│   │       ├── llm.py          # AI 服务
+│   │       ├── oauth.py        # OAuth 服务
+│   │       ├── prompts.py      # AI 提示词
+│   │       └── room_manager.py # 房间管理
+│   ├── data/                   # 数据存储
+│   ├── migrations/             # 数据库迁移
+│   ├── tests/                  # 测试文件
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/                   # React 前端
+│   ├── src/
+│   │   ├── components/        # React 组件
+│   │   │   ├── game/          # 游戏相关组件
+│   │   │   │   ├── ChatLog.tsx
+│   │   │   │   ├── DebugPanel.tsx
+│   │   │   │   ├── GameActions.tsx
+│   │   │   │   ├── GameAnalysisDialog.tsx
+│   │   │   │   ├── GameStatusBar.tsx
+│   │   │   │   ├── PlayerCard.tsx
+│   │   │   │   └── PlayerGrid.tsx
+│   │   │   └── ui/            # UI 基础组件
+│   │   ├── hooks/             # 自定义 Hooks
+│   │   ├── pages/             # 页面组件
+│   │   │   ├── auth/          # 认证页面
+│   │   │   │   ├── LoginPage.tsx
+│   │   │   │   ├── RegisterPage.tsx
+│   │   │   │   └── OAuthCallback.tsx
+│   │   │   ├── GamePage.tsx   # 游戏页面
+│   │   │   ├── ProfilePage.tsx# 个人资料
+│   │   │   ├── RoomLobby.tsx  # 房间大厅
+│   │   │   └── RoomWaiting.tsx# 房间等待室
+│   │   ├── services/          # API 服务
+│   │   │   ├── api.ts         # 游戏API
+│   │   │   ├── authService.ts # 认证服务
+│   │   │   └── roomApi.ts     # 房间API
+│   │   └── utils/             # 工具函数
+│   ├── public/
+│   │   └── locales/           # 翻译文件 (zh/en)
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── package.json
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 🛠️ 技术栈
 
 ### 后端
 - **FastAPI**：现代化的 Python Web 框架
+- **SQLAlchemy**：ORM 数据库操作
 - **Pydantic**：数据验证和序列化
 - **OpenAI API**：AI 玩家决策引擎
+- **JWT + HttpOnly Cookie**：安全认证
 - **Uvicorn**：ASGI 服务器
 
 ### 前端
@@ -189,16 +254,16 @@ Werewolf/
 - **Tailwind CSS**：样式框架
 - **React Router**：路由管理
 - **i18next**：国际化
+- **Recharts**：图表组件
 
 ### 基础设施
 - **Docker & Docker Compose**：容器化部署
 - **Nginx**：前端静态文件服务
+- **SQLite**：数据持久化
 
-## 配置说明
+---
 
-### AI调试面板（心理活动）
-
-只有在.env中配置 DEBUG_MODE=true 时，才能正常显示内容
+## ⚙️ 配置说明
 
 ### 环境变量
 
@@ -207,16 +272,44 @@ Werewolf/
 ```env
 # OpenAI API 配置
 OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
 
 # 应用配置
 DEBUG=false
+DEBUG_MODE=false
 CORS_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
+
+# JWT 配置
+JWT_SECRET_KEY=your-very-long-random-secret-key-here
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=15
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# OAuth 配置 (linux.do)
+LINUXDO_CLIENT_ID=your_client_id
+LINUXDO_CLIENT_SECRET=your_client_secret
+LINUXDO_REDIRECT_URI=http://localhost:8082/api/auth/oauth/linuxdo/callback
 ```
+
+### 生产环境安全配置
+
+```env
+# 必须指定具体的前端域名，禁止使用通配符 "*"
+CORS_ORIGINS=https://your-domain.com
+
+# 确保使用强随机密钥（至少 32 字符）
+JWT_SECRET_KEY=your-very-long-random-secret-key-here
+
+# 建议禁用调试模式
+DEBUG=false
+DEBUG_MODE=false
+```
+
+⚠️ **安全警告**：使用 HttpOnly Cookie 认证时，`CORS_ORIGINS` 必须配置为具体域名，**禁止使用 `*`**，否则存在 CSRF 攻击风险。
 
 ### 玩家级别的 LLM 配置
 
-你可以为每个 AI 玩家（座位 2-9）配置独立的 LLM 提供商和参数。在 `.env` 文件中添加：
+你可以为每个 AI 玩家（座位 2-9）配置独立的 LLM 提供商和参数：
 
 ```env
 # 为玩家 2 配置专属 LLM
@@ -226,72 +319,68 @@ AI_PLAYER_2_BASE_URL=https://api.openai.com/v1
 AI_PLAYER_2_MODEL=gpt-4o-mini
 AI_PLAYER_2_TEMPERATURE=0.7
 AI_PLAYER_2_MAX_TOKENS=500
-
-# 为玩家 3 配置不同的模型
-AI_PLAYER_3_NAME=player3
-AI_PLAYER_3_API_KEY=your_api_key
-AI_PLAYER_3_MODEL=gpt-4o
-# ... 其他配置
+AI_PLAYER_2_MAX_RETRIES=2
 ```
 
-**支持的配置项**：
-- `AI_PLAYER_X_NAME`：玩家名称（可选）
-- `AI_PLAYER_X_API_KEY`：API 密钥
-- `AI_PLAYER_X_BASE_URL`：API 基础 URL（可选，默认使用 OpenAI）
-- `AI_PLAYER_X_MODEL`：模型名称（默认：gpt-4o-mini）
-- `AI_PLAYER_X_TEMPERATURE`：温度参数（默认：0.7）
-- `AI_PLAYER_X_MAX_TOKENS`：最大 token 数（默认：500）
-- `AI_PLAYER_X_MAX_RETRIES`：最大重试次数（默认：2）
+### AI 对局分析配置
 
-其中 `X` 为玩家座位号（2-9，座位 1 为人类玩家）。
+```env
+# AI分析配置（可选，未配置则使用默认OpenAI配置）
+ANALYSIS_PROVIDER=openai
+ANALYSIS_MODEL=gpt-4o
+ANALYSIS_MODE=comprehensive
+ANALYSIS_LANGUAGE=auto
+ANALYSIS_CACHE_ENABLED=true
+ANALYSIS_MAX_TOKENS=4000
+ANALYSIS_TEMPERATURE=0.7
+```
 
 ### Mock 模式
 
 如果不配置 `OPENAI_API_KEY`，系统会自动进入 Mock 模式，AI 玩家将使用预设的随机策略进行游戏。
 
-### AI 对局分析配置
+### AI 调试面板
 
-游戏结束后可以查看AI生成的对局分析报告。配置示例：
+只有在 `.env` 中配置 `DEBUG_MODE=true` 时，游戏界面才会显示 AI 心理活动调试面板。
 
-```env
-# AI分析配置（可选，未配置则使用默认OpenAI配置）
-ANALYSIS_PROVIDER=openai          # 分析专用provider（可选）
-ANALYSIS_MODEL=gpt-4o             # 推荐使用高级模型以获得更好的分析质量
-ANALYSIS_MODE=comprehensive       # 分析模式：comprehensive/quick/custom
-ANALYSIS_LANGUAGE=auto            # 分析语言：auto/zh/en
-ANALYSIS_CACHE_ENABLED=true       # 是否启用缓存
-ANALYSIS_MAX_TOKENS=4000          # 最大token数
-ANALYSIS_TEMPERATURE=0.7          # 温度参数
-```
+---
 
-**配置说明**：
-- 如果不单独配置 `ANALYSIS_PROVIDER`，将使用默认的 `OPENAI_API_KEY` 进行分析
-- 推荐使用 `gpt-4o` 或更高级的模型以获得更详细准确的分析
-- `comprehensive` 模式提供详细分析（3-5分钟），`quick` 模式提供快速总结（1-2分钟）
-- 分析结果会被缓存，避免重复计算
-
-## API 文档
+## 📡 API 文档
 
 启动服务后访问 http://localhost:8082/docs 查看完整的 API 文档（Swagger UI）。
 
 ### 主要 API 端点
 
+#### 认证
+- `POST /api/auth/register` - 用户注册
+- `POST /api/auth/login` - 用户登录
+- `POST /api/auth/logout` - 用户登出
+- `POST /api/auth/refresh` - 刷新 Token
+- `GET /api/auth/oauth/linuxdo` - OAuth 登录
+- `GET /api/auth/oauth/linuxdo/callback` - OAuth 回调
+
+#### 用户
+- `GET /api/users/me` - 获取当前用户信息
+- `PUT /api/users/me` - 更新用户资料
+
 #### 房间管理
 - `POST /api/rooms` - 创建房间
-- `GET /api/rooms` - 获取房间列表（可按状态筛选）
+- `GET /api/rooms` - 获取房间列表
 - `GET /api/rooms/{room_id}` - 获取房间详情
 - `POST /api/rooms/{room_id}/join` - 加入房间
 - `POST /api/rooms/{room_id}/ready` - 切换准备状态
-- `POST /api/rooms/{room_id}/start` - 开始游戏（支持AI填充）
-- `DELETE /api/rooms/{room_id}` - 删除房间（房主专用）
+- `POST /api/rooms/{room_id}/start` - 开始游戏
+- `DELETE /api/rooms/{room_id}` - 删除房间
 
 #### 游戏进行
-- `POST /api/game/start` - 开始新游戏（已集成到房间系统）
 - `GET /api/game/{game_id}/state` - 获取游戏状态
 - `POST /api/game/{game_id}/action` - 玩家行动
 - `POST /api/game/{game_id}/step` - 推进游戏进程
+- `GET /api/game/{game_id}/analysis` - 获取对局分析
 
-## 故障排除
+---
+
+## 🐛 故障排除
 
 ### Docker 相关问题
 
@@ -319,7 +408,51 @@ npm cache clean --force
 npm install
 ```
 
-## 贡献指南
+---
+
+## 📝 开发计划
+
+### 当前版本 (v1.4 - 2025-01-01)
+
+#### 用户系统
+- ✅ 用户注册/登录（邮箱+密码）
+- ✅ linux.do OAuth2 第三方登录
+- ✅ JWT + HttpOnly Cookie 认证
+- ✅ Refresh Token 轮换机制
+- ✅ 用户资料管理（头像、昵称、简介）
+
+#### 游戏功能
+- ✅ 12人扩展局支持（守卫、狼王、白狼王）
+- ✅ 狼人自刀策略
+- ✅ 完善的胜负判定逻辑
+- ✅ AI 对局分析与缓存
+
+#### 安全与稳定性
+- ✅ 异步 LLM 调用
+- ✅ 游戏状态锁防止并发竞态
+- ✅ 输入净化防止 Prompt 注入
+- ✅ CSRF 防护（OAuth State 验证）
+
+### 版本历史
+
+| 版本 | 日期 | 主要功能 |
+|------|------|----------|
+| v1.4 | 2025-01-01 | 用户系统、OAuth登录、12人局 |
+| v1.3 | 2024-12-30 | 安全修复、稳定性增强、狼人自刀 |
+| v1.2 | 2024-12-30 | 多房间系统、AI填充、混合对战 |
+| v1.1 | 2024-12-28 | AI对局分析、分析缓存 |
+| v1.0 | 2024-12-27 | 初始版本、国际化支持 |
+
+### 计划中功能
+- [ ] WebSocket 实时通信
+- [ ] 添加游戏回放功能
+- [ ] 优化 AI 策略
+- [ ] 游戏统计与排行榜
+- [ ] 更多游戏配置选项
+
+---
+
+## 🤝 贡献指南
 
 欢迎提交 Issue 和 Pull Request！
 
@@ -329,46 +462,12 @@ npm install
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
 
-## 开发计划
+---
 
-### 最新版本 (v1.3 - 2024-12-30)
-
-#### 安全与稳定性
-- JWT 认证体系 - 完整的 Token 认证
-- 异步 LLM 调用 - 非阻塞 AI 操作
-- 游戏状态锁 - 防止并发竞态
-- 内存管理 - 游戏上限与自动清理
-- 输入净化 - 防止 Prompt 注入
-
-#### 游戏功能
-- 狼人自刀策略 - 允许狼人击杀自己
-- 胜负判定修复 - 正确的狼人胜利条件
-- 动作校验增强 - 全面的目标合法性验证
-
-### 已完成功能
-| 版本 | 日期 | 主要功能 |
-|------|------|----------|
-| v1.3 | 2024-12-30 | 安全修复、稳定性增强、狼人自刀 |
-| v1.2 | 2024-12-30 | 多房间系统、AI填充、混合对战 |
-| v1.1 | 2024-12-28 | AI对局分析、分析缓存 |
-| v1.0 | 2024-12-27 | 初始版本、国际化支持 |
-
-### 计划中功能
-- [ ] 添加更多游戏角色（守卫、猎魔人等）
-- [ ] 添加游戏回放功能
-- [ ] 优化 AI 策略
-- [ ] WebSocket 实时通信
-- [ ] 用户账户系统
-
-> 详细文档请查看 [docs/](./docs/) 目录：
-> - [变更日志](./docs/changelog.md) - 完整版本历史
-> - [架构说明](./docs/architecture.md) - 系统设计
-> - [安全审查](./docs/security-audit.md) - 安全修复详情
-
-## 许可证
+## 📄 许可证
 
 本项目采用 MIT 许可证。
 
 ---
 
-如果这个项目对你有帮助，请给一个 Star！
+**如果这个项目对你有帮助，请给一个 ⭐ Star！**

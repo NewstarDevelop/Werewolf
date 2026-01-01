@@ -215,6 +215,16 @@ export function useGame(options: UseGameOptions = {}) {
     [handleAction]
   );
 
+  const handleProtect = useCallback(
+    (targetId: number | null) => handleAction('protect', targetId),
+    [handleAction]
+  );
+
+  const handleSelfDestruct = useCallback(
+    () => handleAction('self_destruct'),
+    [handleAction]
+  );
+
   const handleSkip = useCallback(() => handleAction('skip'), [handleAction]);
 
   // Auto-step when game starts or state changes
@@ -281,6 +291,8 @@ export function useGame(options: UseGameOptions = {}) {
     save: handleSave,
     poison: handlePoison,
     shoot: handleShoot,
+    protect: handleProtect,
+    selfDestruct: handleSelfDestruct,
     skip: handleSkip,
     submitAction: handleAction,
 

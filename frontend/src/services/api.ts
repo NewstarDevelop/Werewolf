@@ -35,22 +35,27 @@ export async function authorizedFetch<T>(endpoint: string): Promise<T> {
 }
 
 // Types matching backend schemas
-export type Role = 'werewolf' | 'villager' | 'seer' | 'witch' | 'hunter';
+export type Role = 'werewolf' | 'villager' | 'seer' | 'witch' | 'hunter' | 'guard' | 'wolf_king' | 'white_wolf_king';
 export type GameStatus = 'waiting' | 'playing' | 'finished';
+export type GameMode = 'classic_9' | 'classic_12';
+export type WolfKingVariant = 'wolf_king' | 'white_wolf_king';
+
 export type GamePhase =
   | 'night_start'
+  | 'night_guard'
   | 'night_werewolf_chat'
   | 'night_werewolf'
   | 'night_seer'
   | 'night_witch'
   | 'day_announcement'
   | 'day_last_words'
+  | 'death_shoot'
   | 'day_speech'
   | 'day_vote'
   | 'day_vote_result'
   | 'hunter_shoot'
   | 'game_over';
-export type ActionType = 'kill' | 'verify' | 'save' | 'poison' | 'vote' | 'shoot' | 'speak' | 'skip';
+export type ActionType = 'kill' | 'verify' | 'save' | 'poison' | 'vote' | 'shoot' | 'protect' | 'self_destruct' | 'speak' | 'skip';
 // WL-013 Fix: Sync with backend MessageType enum
 export type MessageType = 'speech' | 'system' | 'thought' | 'last_words' | 'wolf_chat' | 'vote_thought';
 export type Winner = 'werewolf' | 'villager' | 'none';

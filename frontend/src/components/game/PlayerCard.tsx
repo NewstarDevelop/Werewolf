@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { User, Skull, Shield, Search, Crosshair, FlaskConical, Target } from "lucide-react";
+import { User, Skull, Shield, Search, Crosshair, FlaskConical, Target, Crown, Ghost } from "lucide-react";
 import { type Role } from "@/services/api";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,12 +12,13 @@ interface PlayerCardProps {
   isSelected: boolean;
   role?: Role;
   avatar?: string;
-  onSelect: () => void;
+  onSelect: (seatId: number) => void;
   isCurrentActor?: boolean;
   isWolfTeammate?: boolean;
   verificationResult?: boolean; // true = werewolf, false = good
   wolfVote?: number; // teammate's vote target seat_id
   isSelectable?: boolean;
+  isKillTarget?: boolean; // For witch save phase - highlight the kill target
 }
 
 const PlayerCard = ({
@@ -33,8 +34,9 @@ const PlayerCard = ({
   verificationResult,
   wolfVote,
   isSelectable = true,
+  isKillTarget = false,
 }: PlayerCardProps) => {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'roles']);
   const isMobile = useIsMobile();
 
   const padding = isMobile ? "p-1.5" : "p-3";
@@ -54,6 +56,12 @@ const PlayerCard = ({
         return <Crosshair className="w-3 h-3 text-orange-400" />;
       case "villager":
         return <User className="w-3 h-3 text-villager" />;
+      case "guard":
+        return <Shield className="w-3 h-3 text-emerald-400" />;
+      case "wolf_king":
+        return <Crown className="w-3 h-3 text-red-500" />;
+      case "white_wolf_king":
+        return <Ghost className="w-3 h-3 text-slate-300" />;
       default:
         return null;
     }
@@ -77,6 +85,7 @@ const PlayerCard = ({
     if (verificationResult === false) parts.push(t('player.verified_good'));
     if (isWolfTeammate) parts.push(t('player.wolf_teammate'));
     if (isCurrentActor) parts.push(t('player.current_actor'));
+    if (role) parts.push(t(`roles:${role}`));
     return parts.join(', ');
   };
 
@@ -88,6 +97,9 @@ const PlayerCard = ({
 
     // Selection state (second priority)
     if (isSelected) return "border-2 border-werewolf shadow-glow-red";
+
+    // Kill target for witch save phase (third priority)
+    if (isKillTarget) return "border-2 border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)] animate-pulse";
 
     // Team/verification states (lower priority, only show when NOT speaking)
     if (isWolfTeammate) return "border-2 border-werewolf/50";
@@ -110,6 +122,12 @@ const PlayerCard = ({
         return "bg-orange-500/20 border-orange-500 text-orange-400";
       case "villager":
         return "bg-villager/20 border-villager text-villager";
+      case "guard":
+        return "bg-emerald-500/20 border-emerald-500 text-emerald-400";
+      case "wolf_king":
+        return "bg-red-500/20 border-red-500 text-red-400";
+      case "white_wolf_king":
+        return "bg-slate-500/20 border-slate-500 text-slate-300";
       default:
         return "bg-muted border-muted text-muted-foreground";
     }
@@ -117,7 +135,7 @@ const PlayerCard = ({
 
   return (
     <button
-      onClick={onSelect}
+      onClick={() => onSelect(seatId)}
       disabled={!isAlive || !isSelectable}
       aria-label={getAccessibleLabel()}
       aria-pressed={isSelected}

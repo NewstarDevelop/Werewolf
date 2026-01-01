@@ -3,7 +3,7 @@
  */
 
 import { saveToken, getAuthHeader } from '@/utils/token';
-import { ApiError } from '@/services/api';
+import { ApiError, GameMode, WolfKingVariant } from '@/services/api';
 
 // 默认空字符串（相对路径），生产环境走 nginx 反代；开发环境需在 .env.development 配置
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
@@ -18,6 +18,8 @@ export interface Room {
   current_players: number;
   max_players: number;
   created_at: string;
+  game_mode: GameMode;
+  wolf_king_variant?: WolfKingVariant;
 }
 
 export interface RoomPlayer {
@@ -40,6 +42,8 @@ export interface CreateRoomRequest {
   name: string;
   creator_nickname: string;
   creator_id: string;
+  game_mode: GameMode;
+  wolf_king_variant?: WolfKingVariant;
 }
 
 export interface JoinRoomRequest {

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import { createRoom, getRooms, joinRoom } from '@/services/roomApi';
 import { getPlayerId, getNickname, setNickname as saveNickname } from '@/utils/player';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { z } from 'zod';
+import { GameMode, WolfKingVariant } from '@/services/api';
 
 const nicknameSchema = z.string()
   .min(1, 'Nickname is required')
@@ -31,6 +33,8 @@ export default function RoomLobby() {
 
   const [nickname, setNickname] = useState(getNickname() || '');
   const [roomName, setRoomName] = useState('');
+  const [gameMode, setGameMode] = useState<GameMode>('classic_9');
+  const [wolfKingVariant, setWolfKingVariant] = useState<WolfKingVariant>('wolf_king');
 
   // Auto-save nickname when changed
   useEffect(() => {
@@ -90,6 +94,8 @@ export default function RoomLobby() {
       name: roomNameResult.data,
       creator_nickname: nicknameResult.data,
       creator_id: playerId,
+      game_mode: gameMode,
+      wolf_king_variant: gameMode === 'classic_12' ? wolfKingVariant : undefined,
     });
   };
 
@@ -155,6 +161,46 @@ export default function RoomLobby() {
                 className="mt-2"
               />
             </div>
+
+            {/* Game Mode Selection */}
+            <div className="space-y-3 pt-2">
+              <Label>{t('room.game_mode')}</Label>
+              <RadioGroup
+                value={gameMode}
+                onValueChange={(v) => setGameMode(v as GameMode)}
+                className="flex flex-col gap-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="classic_9" id="mode_9" />
+                  <Label htmlFor="mode_9">{t('room.mode_classic_9')}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="classic_12" id="mode_12" />
+                  <Label htmlFor="mode_12">{t('room.mode_classic_12')}</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Wolf King Variant Selection (Only for 12 players) */}
+            {gameMode === 'classic_12' && (
+              <div className="space-y-3 pt-2 pl-4 border-l-2 border-accent/20">
+                <Label>{t('room.wolf_king_variant')}</Label>
+                <RadioGroup
+                  value={wolfKingVariant}
+                  onValueChange={(v) => setWolfKingVariant(v as WolfKingVariant)}
+                  className="flex flex-col gap-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="wolf_king" id="wk_normal" />
+                    <Label htmlFor="wk_normal">{t('room.variant_wolf_king')}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="white_wolf_king" id="wk_white" />
+                    <Label htmlFor="wk_white">{t('room.variant_white_wolf_king')}</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
             {/* Create Button */}
             <Button

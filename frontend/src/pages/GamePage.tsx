@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import GameStatusBar from "@/components/game/GameStatusBar";
@@ -50,6 +50,8 @@ const GamePage = () => {
     save,
     poison,
     shoot,
+    protect,
+    selfDestruct,
     skip,
     isSubmitting,
   } = useGame({ autoStep: true, gameId: gameIdFromRoute });  // Use gameId from route
@@ -202,6 +204,19 @@ const GamePage = () => {
             toast.info(t('common:toast.poison_skipped'));
           }
           break;
+        case "protect":
+          if (selectedPlayerId) {
+            await protect(selectedPlayerId);
+            toast.success(t('common:toast.protect_selected', { id: selectedPlayerId }));
+          } else {
+            await skip();
+            toast.info(t('common:toast.protect_skipped'));
+          }
+          break;
+        case "self_destruct":
+          await selfDestruct();
+          toast.success(t('common:toast.self_destruct_activated'));
+          break;
         default:
           await skip();
       }
@@ -215,9 +230,9 @@ const GamePage = () => {
     }
   };
 
-  const handleSelectPlayer = (id: number) => {
-    setSelectedPlayerId(selectedPlayerId === id ? null : id);
-  };
+  const handleSelectPlayer = useCallback((id: number) => {
+    setSelectedPlayerId(prev => prev === id ? null : id);
+  }, []);
 
   // Show loading state while game is loading
   if (isLoading && !gameState) {
@@ -252,8 +267,9 @@ const GamePage = () => {
   const canUseSkill =
     needsAction &&
     gameState?.pending_action?.type &&
-    ["verify", "save", "poison"].includes(gameState.pending_action.type) &&
+    ["verify", "save", "poison", "protect", "self_destruct"].includes(gameState.pending_action.type) &&
     // For save action, must select the night kill target to enable the button
+    // For self_destruct, no target needed (always enabled via includes check above)
     (gameState.pending_action.type !== "save" ||
      selectedPlayerId === gameState.night_kill_target);
   const canSpeak =
@@ -307,6 +323,7 @@ const GamePage = () => {
             verifiedResults={gameState?.verified_results}
             wolfVotesVisible={gameState?.wolf_votes_visible}
             myRole={gameState?.my_role}
+            nightKillTarget={gameState?.night_kill_target}
           />
         </div>
       </div>

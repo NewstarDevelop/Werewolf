@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Vote, Sparkles, Loader2, SkipForward } from "lucide-react";
+import { Send, Vote, Sparkles, Loader2, SkipForward, Shield, Bomb } from "lucide-react";
 import { PendingAction } from "@/services/api";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -64,20 +64,30 @@ const GameActions = ({
     if (["verify", "save", "poison"].includes(pendingAction.type)) {
       return t(`action.${pendingAction.type}`);
     }
+    if (pendingAction.type === "protect") return t('action.protect');
+    if (pendingAction.type === "self_destruct") return t('action.self_destruct');
     return t('action.skill');
   };
 
   // Determine if we should show skip button
   const showSkipButton =
     pendingAction &&
-    ["save", "poison", "shoot", "vote"].includes(pendingAction.type) &&
+    ["save", "poison", "shoot", "vote", "protect"].includes(pendingAction.type) &&
     pendingAction.choices.includes(0);
 
   // Determine which handler to use for skip button based on action type
   const getSkipHandler = () => {
     if (!pendingAction) return onUseSkill;
-    // vote and shoot are handled by onVote, save and poison by onUseSkill
+    // vote and shoot are handled by onVote, save and poison and protect by onUseSkill
     return ["vote", "shoot"].includes(pendingAction.type) ? onVote : onUseSkill;
+  };
+
+  // Get appropriate icon based on action type
+  const getActionIcon = () => {
+    if (pendingAction?.type === "protect") return <Shield className="w-4 h-4" />;
+    if (pendingAction?.type === "self_destruct") return <Bomb className="w-4 h-4" />;
+    if (pendingAction?.type === "vote" || pendingAction?.type === "kill" || pendingAction?.type === "shoot") return <Vote className="w-4 h-4" />;
+    return <Sparkles className="w-4 h-4" />;
   };
 
   return (
@@ -144,13 +154,13 @@ const GameActions = ({
           <Button
             variant="skill"
             onClick={onUseSkill}
-            disabled={!canUseSkill || isSubmitting}
+            disabled={(!canUseSkill && pendingAction?.type !== 'self_destruct') || isSubmitting}
             className="flex-1"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              getActionIcon()
             )}
             {getSkillButtonLabel()}
           </Button>

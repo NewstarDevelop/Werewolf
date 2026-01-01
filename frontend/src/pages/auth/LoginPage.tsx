@@ -2,7 +2,7 @@
  * Login page with email/password and OAuth options.
  */
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -22,8 +22,13 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+interface LocationState {
+  from?: { pathname: string };
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +50,16 @@ export default function LoginPage() {
         title: '登录成功',
         description: '欢迎回来！',
       });
-      navigate('/lobby');
+
+      // Read the original target page from ProtectedRoute
+      const from = (location.state as LocationState)?.from?.pathname;
+
+      // Defensive validation: must be an internal path
+      if (from && from.startsWith('/') && !from.startsWith('/auth/')) {
+        navigate(from, { replace: true });
+      } else {
+        navigate('/lobby', { replace: true });
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',

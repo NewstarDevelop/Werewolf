@@ -2,7 +2,7 @@
  * Registration page for new users.
  */
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,8 +26,13 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+interface LocationState {
+  from?: { pathname: string };
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register: registerUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +55,16 @@ export default function RegisterPage() {
         title: '注册成功',
         description: '欢迎加入狼人杀！',
       });
-      navigate('/lobby');
+
+      // Read the original target page from ProtectedRoute
+      const from = (location.state as LocationState)?.from?.pathname;
+
+      // Defensive validation: must be an internal path
+      if (from && from.startsWith('/') && !from.startsWith('/auth/')) {
+        navigate(from, { replace: true });
+      } else {
+        navigate('/lobby', { replace: true });
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',

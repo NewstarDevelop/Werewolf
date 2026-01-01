@@ -1,4 +1,5 @@
 """Authentication API endpoints."""
+import logging
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
@@ -23,6 +24,9 @@ from app.services.oauth import LinuxdoOAuthService
 from app.api.dependencies import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+logger = logging.getLogger(__name__)
+
+COOKIE_SECURE = not settings.DEBUG
 
 
 def sanitize_next_url(next_url: str) -> str:
@@ -33,6 +37,10 @@ def sanitize_next_url(next_url: str) -> str:
     """
     if not next_url:
         return "/lobby"
+
+    # Reject CRLF injection attempts
+    if "\r" in next_url or "\n" in next_url:
+        raise HTTPException(status_code=400, detail="Invalid next URL: control characters not allowed")
 
     parsed = urlparse(next_url)
 
@@ -102,7 +110,7 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
         key="user_access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax",
         max_age=settings.JWT_EXPIRE_MINUTES * 60,
         path="/"
@@ -154,7 +162,7 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
         key="user_access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=COOKIE_SECURE,
         samesite="lax",
         max_age=settings.JWT_EXPIRE_MINUTES * 60,
         path="/"
@@ -166,11 +174,26 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/logout")
 async def logout(current_user: dict = Depends(get_current_user)):
     """
-    Logout current user (client should remove token).
+    Logout current user and clear HttpOnly cookie.
+
+    Security: Deletes the user_access_token cookie to prevent automatic re-login.
     """
-    # Note: With JWT, actual logout is client-side (remove token)
-    # If implementing refresh tokens, revoke them here
-    return {"message": "Logged out successfully"}
+    response = Response(
+        content='{"message":"Logged out successfully"}',
+        media_type="application/json",
+        status_code=200
+    )
+
+    # Delete the HttpOnly cookie
+    response.delete_cookie(
+        key="user_access_token",
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax"
+    )
+
+    return response
 
 
 @router.get("/oauth/linuxdo", response_model=OAuthStateResponse)
@@ -183,7 +206,10 @@ async def oauth_linuxdo(
     """
     Initiate linux.do OAuth2 authorization flow.
 
-    Security: next URL is validated to prevent open redirect attacks.
+    Security:
+    - next URL is validated to prevent open redirect attacks
+    - State parameter provides CSRF protection for OAuth flow
+    - Note: Uses GET method as required by OAuth 2.0 standard
     """
     # Validate next URL before storing in state
     validated_next = sanitize_next_url(next)
@@ -258,9 +284,9 @@ async def oauth_callback(
         response.set_cookie(
             key="user_access_token",
             value=jwt_token,
-            httponly=True,  # Prevents JavaScript access (XSS protection)
-            secure=True,    # Only sent over HTTPS
-            samesite="lax", # CSRF protection while allowing OAuth redirects
+            httponly=True,
+            secure=COOKIE_SECURE,
+            samesite="lax",
             max_age=settings.JWT_EXPIRE_MINUTES * 60,
             path="/"
         )
@@ -269,8 +295,9 @@ async def oauth_callback(
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OAuth callback failed: {str(e)}")
+    except Exception:
+        logger.error("OAuth callback failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="OAuth callback failed")
 
 
 @router.post("/reset-password")

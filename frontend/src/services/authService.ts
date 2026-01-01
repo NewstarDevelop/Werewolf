@@ -1,9 +1,10 @@
 /**
  * Authentication API service.
  *
- * Security: Uses credentials: 'include' to send HttpOnly cookies
+ * Security: Uses HttpOnly cookies as primary authentication mechanism.
+ * Token storage in localStorage has been removed to prevent XSS attacks.
  */
-import { getUserAuthHeader, saveUserToken, clearUserToken } from '@/utils/token';
+import { clearUserToken } from '@/utils/token';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082';
 
@@ -24,11 +25,18 @@ export interface AuthResponse {
   user: User;
 }
 
+export class AuthError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
 export const authService = {
   async register(email: string, password: string, nickname: string): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
-      credentials: 'include',  // Send cookies
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, nickname }),
     });
@@ -38,15 +46,13 @@ export const authService = {
       throw new Error(error.detail || 'Registration failed');
     }
 
-    const data = await response.json();
-    saveUserToken(data.access_token);
-    return data;
+    return response.json();
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
-      credentials: 'include',  // Send cookies
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
@@ -56,17 +62,14 @@ export const authService = {
       throw new Error(error.detail || 'Login failed');
     }
 
-    const data = await response.json();
-    saveUserToken(data.access_token);
-    return data;
+    return response.json();
   },
 
   async logout(): Promise<void> {
     try {
       await fetch(`${API_BASE}/api/auth/logout`, {
         method: 'POST',
-        credentials: 'include',  // Send cookies
-        headers: getUserAuthHeader(),
+        credentials: 'include',
       });
     } finally {
       clearUserToken();
@@ -76,10 +79,7 @@ export const authService = {
   async getLinuxdoAuthUrl(nextUrl: string = '/lobby'): Promise<string> {
     const response = await fetch(
       `${API_BASE}/api/auth/oauth/linuxdo?next=${encodeURIComponent(nextUrl)}`,
-      {
-        credentials: 'include',  // Send cookies
-        headers: getUserAuthHeader()
-      }
+      { credentials: 'include' }
     );
 
     if (!response.ok) {
@@ -92,12 +92,14 @@ export const authService = {
 
   async getCurrentUser(): Promise<User> {
     const response = await fetch(`${API_BASE}/api/users/me`, {
-      credentials: 'include',  // Send cookies
-      headers: getUserAuthHeader(),
+      credentials: 'include',
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch user');
+      throw new AuthError(
+        response.status === 401 || response.status === 403 ? 'Unauthorized' : 'Failed to fetch user',
+        response.status
+      );
     }
 
     return response.json();
@@ -106,11 +108,8 @@ export const authService = {
   async updateProfile(updates: { nickname?: string; bio?: string; avatar_url?: string }): Promise<User> {
     const response = await fetch(`${API_BASE}/api/users/me`, {
       method: 'PUT',
-      credentials: 'include',  // Send cookies
-      headers: {
-        ...getUserAuthHeader(),
-        'Content-Type': 'application/json',
-      },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     });
 
@@ -123,8 +122,7 @@ export const authService = {
 
   async getStats(): Promise<any> {
     const response = await fetch(`${API_BASE}/api/users/me/stats`, {
-      credentials: 'include',  // Send cookies
-      headers: getUserAuthHeader(),
+      credentials: 'include',
     });
 
     if (!response.ok) {

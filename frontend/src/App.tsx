@@ -3,9 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // 路由懒加载，减少主包体积
 const RoomLobby = lazy(() => import("./pages/RoomLobby"));
@@ -49,17 +50,19 @@ const App = () => (
           <AuthProvider>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
-                {/* Auth routes */}
+                {/* Public Auth routes */}
                 <Route path="/auth/login" element={<LoginPage />} />
                 <Route path="/auth/register" element={<RegisterPage />} />
                 <Route path="/auth/callback" element={<OAuthCallback />} />
-                <Route path="/profile" element={<ProfilePage />} />
 
-                {/* Game routes */}
-                <Route path="/" element={<RoomLobby />} />
-                <Route path="/lobby" element={<RoomLobby />} />
-                <Route path="/room/:roomId/waiting" element={<RoomWaiting />} />
-                <Route path="/game/:gameId" element={<GamePage />} />
+                {/* Protected routes - using Outlet to reduce duplication */}
+                <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+                  <Route path="/" element={<RoomLobby />} />
+                  <Route path="/lobby" element={<RoomLobby />} />
+                  <Route path="/room/:roomId/waiting" element={<RoomWaiting />} />
+                  <Route path="/game/:gameId" element={<GamePage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

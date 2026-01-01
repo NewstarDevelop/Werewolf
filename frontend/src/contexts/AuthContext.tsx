@@ -1,9 +1,9 @@
 /**
  * Authentication context for global user state management.
  */
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, User } from '@/services/authService';
-import { getUserToken, saveUserToken, clearUserToken, decodeToken, isTokenExpired } from '@/utils/token';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import { authService, User, AuthError } from '@/services/authService';
+import { clearUserToken } from '@/utils/token';
 
 interface AuthContextType {
   user: User | null;
@@ -22,23 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const initAuth = async () => {
-      const token = getUserToken();
-
-      if (!token || isTokenExpired(token)) {
-        clearUserToken();
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-        clearUserToken();
+      } catch (error: unknown) {
+        const status = error instanceof AuthError ? error.status : 0;
+        if (status === 401 || status === 403) {
+          console.error('Authentication failed:', error);
+          clearUserToken();
+          setUser(null);
+        } else {
+          console.warn('Network error during auth init, keeping current state:', error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -47,28 +44,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login(email, password);
     setUser(response.user);
-  };
+  }, []);
 
-  const register = async (email: string, password: string, nickname: string) => {
+  const register = useCallback(async (email: string, password: string, nickname: string) => {
     const response = await authService.register(email, password, nickname);
     setUser(response.user);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
-  };
+  }, []);
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...updates });
-    }
-  };
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : null));
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
@@ -76,9 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Failed to refresh user:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const value: AuthContextType = {
+  const value = useMemo<AuthContextType>(() => ({
     user,
     isAuthenticated: !!user,
     isLoading,
@@ -87,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     updateUser,
     refreshUser,
-  };
+  }), [user, isLoading, login, register, logout, updateUser, refreshUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

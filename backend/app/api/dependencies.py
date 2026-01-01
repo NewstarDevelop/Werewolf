@@ -16,7 +16,7 @@ async def get_current_player(
     Dependency to get current authenticated player from JWT token.
 
     Security: Supports both Authorization header and HttpOnly cookie.
-    Cookie takes precedence for user tokens (OAuth flow).
+    Authorization header takes precedence (for room/game tokens).
 
     Args:
         authorization: Authorization header (format: "Bearer <token>")
@@ -28,11 +28,9 @@ async def get_current_player(
     Raises:
         HTTPException: 401 if token is missing or invalid
     """
-    # Try cookie first (OAuth flow), then Authorization header (legacy/game tokens)
+    # Try Authorization header first (room/game tokens), then cookie (user sessions)
     token = None
-    if user_access_token:
-        token = user_access_token
-    elif authorization:
+    if authorization:
         # Extract token from "Bearer <token>" format
         parts = authorization.split()
         if len(parts) == 2 and parts[0].lower() == "bearer":
@@ -43,6 +41,8 @@ async def get_current_player(
                 detail="Invalid authorization header format. Expected: Bearer <token>",
                 headers={"WWW-Authenticate": "Bearer"}
             )
+    elif user_access_token:
+        token = user_access_token
 
     if not token:
         raise HTTPException(
@@ -76,17 +76,19 @@ async def get_current_player(
 
 async def get_current_user(
     authorization: Optional[str] = Header(None),
+    user_access_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ) -> Dict:
     """
     Dependency to get current authenticated user from JWT token.
     Requires user_id in token payload (user must be logged in).
 
-    Security: Validates user exists and is active in real-time
-    to enable effective token revocation.
+    Security: Supports both Authorization header and HttpOnly cookie.
+    Validates user exists and is active in real-time to enable effective token revocation.
 
     Args:
         authorization: Authorization header (format: "Bearer <token>")
+        user_access_token: HttpOnly cookie containing JWT token
         db: Database session
 
     Returns:
@@ -96,7 +98,7 @@ async def get_current_user(
         HTTPException: 401 if token is missing/invalid or no user_id
                       403 if user account is disabled
     """
-    payload = await get_current_player(authorization)
+    payload = await get_current_player(authorization, user_access_token)
 
     # Verify user_id exists (distinguishes user tokens from anonymous player tokens)
     user_id = payload.get("user_id")
@@ -177,7 +179,7 @@ async def get_admin(
         HTTPException: 401 if token is missing/invalid, 403 if not admin
     """
     # First verify it's a valid player token
-    player = await get_current_player(authorization)
+    player = await get_current_player(authorization, user_access_token=None)
 
     # Check if player has admin privileges
     if not player.get("is_admin", False):

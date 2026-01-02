@@ -30,8 +30,16 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const pingIntervalRef = useRef<NodeJS.Timeout>();
   const shouldReconnectRef = useRef(false);
+  const onErrorRef = useRef(onError);
+  const onFirstUpdateRef = useRef(onFirstUpdate);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  // Keep refs updated
+  useEffect(() => {
+    onErrorRef.current = onError;
+    onFirstUpdateRef.current = onFirstUpdate;
+  });
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -122,8 +130,8 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
               };
 
               // Trigger onFirstUpdate callback
-              if (onFirstUpdate) {
-                onFirstUpdate();
+              if (onFirstUpdateRef.current) {
+                onFirstUpdateRef.current();
               }
 
               return merged;
@@ -131,14 +139,14 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
           } else if (message.type === 'connected') {
             // Initial connection: directly set data
             queryClient.setQueryData(['gameState', gameId], message.data);
-            if (onFirstUpdate) {
-              onFirstUpdate();
+            if (onFirstUpdateRef.current) {
+              onFirstUpdateRef.current();
             }
           } else if (message.type === 'error') {
             console.error('[WebSocket] Server error:', message.data);
             setConnectionError(message.data.message || 'WebSocket error');
-            if (onError) {
-              onError(new Error(message.data.message || 'WebSocket error'));
+            if (onErrorRef.current) {
+              onErrorRef.current(new Error(message.data.message || 'WebSocket error'));
             }
           }
         } catch (error) {
@@ -149,8 +157,8 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
       ws.onerror = (event) => {
         console.error('[WebSocket] Error:', event);
         setConnectionError('WebSocket connection error');
-        if (onError) {
-          onError(new Error('WebSocket connection error'));
+        if (onErrorRef.current) {
+          onErrorRef.current(new Error('WebSocket connection error'));
         }
       };
 
@@ -167,8 +175,8 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
     } catch (error) {
       console.error('[WebSocket] Connection failed:', error);
       setConnectionError('Failed to establish WebSocket connection');
-      if (onError) {
-        onError(error as Error);
+      if (onErrorRef.current) {
+        onErrorRef.current(error as Error);
       }
 
       // Retry connection after delay
@@ -176,7 +184,7 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
         reconnectTimeoutRef.current = setTimeout(connect, 5000);
       }
     }
-  }, [gameId, enabled, cleanup, sendPing, queryClient, onError, onFirstUpdate]);
+  }, [gameId, enabled, cleanup, sendPing, queryClient]); // 移除 onError, onFirstUpdate 依赖
 
   // Connect on mount and when gameId changes
   useEffect(() => {
@@ -185,7 +193,7 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
     }
 
     return cleanup;
-  }, [gameId, enabled, connect, cleanup]);
+  }, [gameId, enabled]); // 移除 connect 和 cleanup 依赖避免无限重连
 
   return {
     isConnected,

@@ -40,10 +40,10 @@ const PlayerCard = ({
   const isMobile = useIsMobile();
 
   // Responsive sizing constants
-  const padding = isMobile ? "p-2" : "p-4";
-  const avatarSize = isMobile ? "w-14 h-14" : "w-20 h-20";
-  const iconSize = isMobile ? "w-7 h-7" : "w-10 h-10";
-  const nameMaxWidth = isMobile ? "max-w-[72px]" : "max-w-[116px]";
+  const padding = isMobile ? "p-2.5" : "p-3";
+  const avatarSize = isMobile ? "w-12 h-12" : "w-14 h-14";
+  const iconSize = isMobile ? "w-6 h-6" : "w-7 h-7";
+  const nameMaxWidth = isMobile ? "max-w-[60px]" : "max-w-[90px]";
   const badgeOffset = isMobile ? "-top-1 -left-1" : "-top-2 -left-2";
   const badgeOffsetRight = isMobile ? "-top-1 -right-1" : "-top-2 -right-2";
 

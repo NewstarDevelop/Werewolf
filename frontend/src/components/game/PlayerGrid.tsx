@@ -42,7 +42,7 @@ const PlayerGrid = ({
   const isMobile = useIsMobile();
 
   // Responsive sizing constants
-  const cardContainerWidth = isMobile ? 'w-20' : 'w-32';
+  const cardContainerWidth = isMobile ? 'w-16' : 'w-24';
 
   // Determine which players can be selected based on pending action
   const selectableIds = pendingAction?.choices || [];
@@ -62,7 +62,7 @@ const PlayerGrid = ({
 
       {/* Responsive Grid Layout */}
       <div className={`grid w-full place-items-center ${isMobile ? 'content-start' : 'content-center'} gap-2 sm:gap-6 ${
-        players.length >= 12 ? 'grid-cols-4' : 'grid-cols-3'
+        players.length >= 12 ? 'grid-cols-3' : 'grid-cols-3'
       } ${isMobile ? 'auto-rows-min' : ''}`}>
         {players.map((player) => {
           // Check if this player is a wolf teammate (for any wolf role)

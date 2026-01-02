@@ -3,8 +3,8 @@ import logging
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -95,17 +95,15 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
     # Generate token
     access_token = create_user_token(user_id=user.id)
 
-    # Create response with cookie
-    response = Response(
-        content=AuthResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user=UserResponse.from_orm(user)
-        ).json(),
-        media_type="application/json"
+    # Create response data
+    response_data = AuthResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
     )
 
-    # Set HttpOnly cookie
+    # Create JSON response with cookie (mode='json' ensures datetime serialization)
+    response = JSONResponse(content=response_data.model_dump(mode='json'))
     response.set_cookie(
         key="user_access_token",
         value=access_token,
@@ -147,17 +145,15 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
     # Generate token
     access_token = create_user_token(user_id=user.id)
 
-    # Create response with cookie
-    response = Response(
-        content=AuthResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user=UserResponse.from_orm(user)
-        ).json(),
-        media_type="application/json"
+    # Create response data
+    response_data = AuthResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
     )
 
-    # Set HttpOnly cookie
+    # Create JSON response with cookie (mode='json' ensures datetime serialization)
+    response = JSONResponse(content=response_data.model_dump(mode='json'))
     response.set_cookie(
         key="user_access_token",
         value=access_token,
@@ -178,11 +174,7 @@ async def logout(current_user: dict = Depends(get_current_user)):
 
     Security: Deletes the user_access_token cookie to prevent automatic re-login.
     """
-    response = Response(
-        content='{"message":"Logged out successfully"}',
-        media_type="application/json",
-        status_code=200
-    )
+    response = JSONResponse(content={"message": "Logged out successfully"})
 
     # Delete the HttpOnly cookie
     response.delete_cookie(
@@ -251,10 +243,11 @@ async def oauth_callback(
         # Fetch user info
         userinfo = await LinuxdoOAuthService.fetch_userinfo(access_token)
 
-        provider_user_id = userinfo.get("sub") or userinfo.get("id")
-        provider_email = userinfo.get("email")
-        provider_username = userinfo.get("preferred_username") or userinfo.get("username") or userinfo.get("name")
-        avatar_url = userinfo.get("picture") or userinfo.get("avatar_url")
+        # LinuxDO returns: id, username, name, avatar_template (no email field)
+        provider_user_id = userinfo.get("id")
+        provider_email = None  # LinuxDO doesn't provide email
+        provider_username = userinfo.get("username") or userinfo.get("name")
+        avatar_url = userinfo.get("avatar_template")
 
         if not provider_user_id:
             raise HTTPException(status_code=400, detail="Failed to get user ID from OAuth provider")
@@ -309,29 +302,3 @@ async def reset_password(body: PasswordResetRequest, db: Session = Depends(get_d
     # In production, send email with reset link here
 
     return {"message": "If the email exists, a password reset link has been sent"}
-
-
-@router.post("/logout")
-async def logout():
-    """
-    用户退出登录
-    POST /api/auth/logout
-
-    清除 HttpOnly Cookie 中的 JWT token
-    前端需要额外清除 localStorage 中的 player_id
-    """
-    response = Response(
-        content='{"message":"退出登录成功"}',
-        media_type="application/json"
-    )
-
-    # 清除 user_access_token cookie
-    response.delete_cookie(
-        key="user_access_token",
-        path="/",
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="lax"
-    )
-
-    return response

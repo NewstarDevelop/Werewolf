@@ -81,7 +81,10 @@ class LinuxdoOAuthService:
                     "client_id": settings.LINUXDO_CLIENT_ID,
                     "client_secret": settings.LINUXDO_CLIENT_SECRET,
                 },
-                headers={"Accept": "application/json"},
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
             )
             response.raise_for_status()
             return response.json()

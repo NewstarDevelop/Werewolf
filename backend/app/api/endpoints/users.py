@@ -75,7 +75,7 @@ async def get_user_stats(
     # Query game statistics
     stats = db.query(
         func.count(GameParticipant.id).label("games_played"),
-        func.sum(func.cast(GameParticipant.is_winner, db.bind.dialect.type_descriptor(int))).label("games_won")
+        func.sum(GameParticipant.is_winner).label("games_won")
     ).filter(
         GameParticipant.user_id == user_id
     ).first()

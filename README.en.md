@@ -288,7 +288,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 # OAuth Configuration (linux.do)
 LINUXDO_CLIENT_ID=your_client_id
 LINUXDO_CLIENT_SECRET=your_client_secret
-LINUXDO_REDIRECT_URI=http://localhost:8082/api/auth/oauth/linuxdo/callback
+LINUXDO_REDIRECT_URI=http://localhost:8082/api/auth/callback/linuxdo
 ```
 
 ### Production Security Configuration
@@ -357,7 +357,7 @@ After starting the service, visit http://localhost:8082/docs to view the complet
 - `POST /api/auth/logout` - User logout
 - `POST /api/auth/refresh` - Refresh token
 - `GET /api/auth/oauth/linuxdo` - OAuth login
-- `GET /api/auth/oauth/linuxdo/callback` - OAuth callback
+- `GET /api/auth/callback/linuxdo` - OAuth callback
 
 #### Users
 - `GET /api/users/me` - Get current user info

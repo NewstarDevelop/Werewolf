@@ -288,7 +288,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 # OAuth 配置 (linux.do)
 LINUXDO_CLIENT_ID=your_client_id
 LINUXDO_CLIENT_SECRET=your_client_secret
-LINUXDO_REDIRECT_URI=http://localhost:8082/api/auth/oauth/linuxdo/callback
+LINUXDO_REDIRECT_URI=http://localhost:8082/api/auth/callback/linuxdo
 ```
 
 ### 生产环境安全配置
@@ -357,7 +357,7 @@ ANALYSIS_TEMPERATURE=0.7
 - `POST /api/auth/logout` - 用户登出
 - `POST /api/auth/refresh` - 刷新 Token
 - `GET /api/auth/oauth/linuxdo` - OAuth 登录
-- `GET /api/auth/oauth/linuxdo/callback` - OAuth 回调
+- `GET /api/auth/callback/linuxdo` - OAuth 回调
 
 #### 用户
 - `GET /api/users/me` - 获取当前用户信息

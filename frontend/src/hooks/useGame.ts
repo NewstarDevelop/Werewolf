@@ -34,6 +34,8 @@ export function useGame(options: UseGameOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   // H-H3 FIX: Track consecutive step errors to prevent infinite loop hammering
   const [stepErrorCount, setStepErrorCount] = useState(0);
+  // Phase 2.2: Track if WebSocket has delivered first update
+  const [wsReceivedFirstUpdate, setWsReceivedFirstUpdate] = useState(false);
   const queryClient = useQueryClient();
   // M4 FIX: Use ReturnType<typeof setTimeout> for cross-platform compatibility
   const stepTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,8 +46,10 @@ export function useGame(options: UseGameOptions = {}) {
   const { isConnected: isWebSocketConnected, connectionError: wsError } = useGameWebSocket({
     gameId,
     enabled: enableWebSocket && !!gameId,
+    onFirstUpdate: () => setWsReceivedFirstUpdate(true),
     onError: (err) => {
       console.warn('[WebSocket] Connection error, falling back to polling:', err.message);
+      setWsReceivedFirstUpdate(false);  // Reset on error
     },
   });
 
@@ -65,9 +69,9 @@ export function useGame(options: UseGameOptions = {}) {
       // Stop polling when game is finished
       if (state?.status === 'finished') return false;
 
-      // If WebSocket is connected, poll less frequently as fallback (every 10s)
-      // Otherwise, poll every 2s for near real-time updates
-      return isWebSocketConnected ? 10000 : 2000;
+      // Phase 2.2: Only slow down polling AFTER receiving first WS message
+      // If WS hasn't delivered yet, keep polling frequently (2s)
+      return wsReceivedFirstUpdate ? 10000 : 2000;
     },
     refetchIntervalInBackground: false,
     staleTime: 0,

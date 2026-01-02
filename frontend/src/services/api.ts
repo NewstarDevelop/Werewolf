@@ -85,6 +85,7 @@ export interface PendingAction {
 export interface GameState {
   game_id: string;
   status: GameStatus;
+  state_version: number;  // State version for race condition prevention
   day: number;
   phase: GamePhase;
   current_actor?: number | null;

@@ -408,20 +408,19 @@ async def step_game(
         try:
             # Get all player IDs for this game to broadcast to
             if game.player_mapping:
-                # Multi-player mode: broadcast to all players
-                for player_id in game.player_mapping.keys():
-                    player_state = game.get_state_for_player(player_id)
-                    await websocket_manager.broadcast_to_game(
-                        game_id,
-                        "game_update",
-                        player_state
-                    )
+                # Multi-player mode: use new broadcast_to_game_players with per-player filtering
+                await websocket_manager.broadcast_to_game_players(
+                    game_id,
+                    "game_update",
+                    lambda pid: game.get_state_for_player(pid)
+                )
             else:
-                # Single-player mode: broadcast general update
+                # Single-player mode: send full state
+                full_state = game.get_state_for_player(None)
                 await websocket_manager.broadcast_to_game(
                     game_id,
                     "game_update",
-                    {"status": status, "new_phase": new_phase}
+                    full_state
                 )
         except Exception as e:
             logger.warning(f"Failed to broadcast game update via WebSocket: {e}")
@@ -481,14 +480,12 @@ async def submit_action(
         # WebSocket: 推送游戏状态更新到所有连接的客户端
         try:
             if game.player_mapping:
-                # Multi-player mode: broadcast to all players
-                for pid in game.player_mapping.keys():
-                    player_state = game.get_state_for_player(pid)
-                    await websocket_manager.broadcast_to_game(
-                        game_id,
-                        "game_update",
-                        player_state
-                    )
+                # Multi-player mode: use new broadcast_to_game_players with per-player filtering
+                await websocket_manager.broadcast_to_game_players(
+                    game_id,
+                    "game_update",
+                    lambda pid: game.get_state_for_player(pid)
+                )
             else:
                 # Single-player mode
                 player_state = game.get_state_for_player(player_id)

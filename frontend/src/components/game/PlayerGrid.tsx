@@ -42,13 +42,13 @@ const PlayerGrid = ({
   const isMobile = useIsMobile();
 
   // Responsive sizing constants
-  const cardContainerWidth = isMobile ? 'w-16' : 'w-24';
+  const cardContainerWidth = isMobile ? 'w-20' : 'w-32';
 
   // Determine which players can be selected based on pending action
   const selectableIds = pendingAction?.choices || [];
 
   return (
-    <div className={`bg-card/50 rounded-xl border border-border flex flex-col ${isMobile ? 'p-2 h-full overflow-y-auto scrollbar-thin' : 'p-3 min-h-[500px] max-h-[70vh]'}`}>
+    <div className={`bg-card/50 rounded-xl border border-border flex flex-col ${isMobile ? 'p-2 h-full overflow-y-auto scrollbar-thin' : 'p-3 min-h-[500px] max-h-[70vh] overflow-y-auto scrollbar-thin'}`}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border shrink-0">
         <Users className="w-4 h-4 text-accent" />
@@ -61,7 +61,7 @@ const PlayerGrid = ({
       </div>
 
       {/* Responsive Grid Layout */}
-      <div className={`grid w-full place-items-center ${isMobile ? 'content-start' : 'content-center'} gap-2 sm:gap-4 ${
+      <div className={`grid w-full place-items-center ${isMobile ? 'content-start' : 'content-center'} gap-2 sm:gap-6 ${
         players.length >= 12 ? 'grid-cols-4' : 'grid-cols-3'
       } ${isMobile ? 'auto-rows-min' : ''}`}>
         {players.map((player) => {

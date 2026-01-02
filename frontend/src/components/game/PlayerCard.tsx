@@ -40,10 +40,12 @@ const PlayerCard = ({
   const isMobile = useIsMobile();
 
   // Responsive sizing constants
-  const padding = isMobile ? "p-2.5" : "p-3";
-  const avatarSize = isMobile ? "w-12 h-12" : "w-14 h-14";
-  const iconSize = isMobile ? "w-6 h-6" : "w-7 h-7";
-  const nameMaxWidth = isMobile ? "max-w-[60px]" : "max-w-[90px]";
+  const padding = isMobile ? "p-2" : "p-4";
+  const avatarSize = isMobile ? "w-14 h-14" : "w-20 h-20";
+  const iconSize = isMobile ? "w-7 h-7" : "w-10 h-10";
+  const nameMaxWidth = isMobile ? "max-w-[72px]" : "max-w-[116px]";
+  const badgeOffset = isMobile ? "-top-1 -left-1" : "-top-2 -left-2";
+  const badgeOffsetRight = isMobile ? "-top-1 -right-1" : "-top-2 -right-2";
 
   const getRoleIcon = () => {
     if (!role) return null;
@@ -157,7 +159,7 @@ const PlayerCard = ({
       `}
     >
       {/* Seat number badge */}
-      <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center z-10">
+      <div className={`absolute ${badgeOffset} w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center z-10`}>
         <span className="text-[10px] font-bold text-muted-foreground">
           {seatId}
         </span>
@@ -165,14 +167,14 @@ const PlayerCard = ({
 
       {/* Current actor indicator - highest priority */}
       {isCurrentActor && isAlive && (
-        <div className="absolute -top-2 -right-2 z-10">
+        <div className={`absolute ${badgeOffsetRight} z-10`}>
           <Target className="w-4 h-4 text-accent animate-pulse" />
         </div>
       )}
 
       {/* Wolf teammate indicator - only show when not current actor */}
       {isWolfTeammate && !isUser && !isCurrentActor && (
-        <div className="absolute -top-2 -right-2 z-10">
+        <div className={`absolute ${badgeOffsetRight} z-10`}>
           <Skull className="w-4 h-4 text-werewolf" />
         </div>
       )}
@@ -180,7 +182,7 @@ const PlayerCard = ({
       {/* Verification result indicator - only show when no other right indicators */}
       {verificationResult !== undefined && !isUser && !isCurrentActor && !isWolfTeammate && (
         <div
-          className={`absolute -top-2 -right-2 w-4 h-4 rounded-full z-10 ${
+          className={`absolute ${badgeOffsetRight} w-4 h-4 rounded-full z-10 ${
             verificationResult ? "bg-werewolf" : "bg-villager"
           }`}
         />
@@ -234,7 +236,7 @@ const PlayerCard = ({
           {name}
         </p>
         {role && (
-          <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[11px] font-semibold ${getRoleBadgeStyle(role)}`}>
+          <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 border text-[11px] font-semibold max-w-full truncate ${getRoleBadgeStyle(role)}`}>
             {t(`roles:${role}`)}
           </span>
         )}

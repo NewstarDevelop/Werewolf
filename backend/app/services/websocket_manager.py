@@ -1,72 +1,118 @@
 """WebSocket connection manager for real-time game updates."""
 import logging
-from typing import Dict, Set
+from typing import Dict, Tuple, Set, Optional, Callable
 from fastapi import WebSocket
-import json
 
 logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    """Manages WebSocket connections for game rooms."""
+    """Manages per-player WebSocket connections for game rooms."""
 
     def __init__(self):
-        # game_id -> set of WebSocket connections
-        self.active_connections: Dict[str, Set[WebSocket]] = {}
+        # (game_id, player_id) -> WebSocket for precise player routing
+        self.connections: Dict[Tuple[str, str], WebSocket] = {}
+        # game_id -> set of player_ids (auxiliary index for broadcasts)
+        self._game_players: Dict[str, Set[str]] = {}
 
-    async def connect(self, websocket: WebSocket, game_id: str):
-        """Accept a new WebSocket connection for a game."""
+    async def connect(self, game_id: str, player_id: str, websocket: WebSocket):
+        """Accept a new WebSocket connection for a specific player in a game."""
         await websocket.accept()
 
-        if game_id not in self.active_connections:
-            self.active_connections[game_id] = set()
+        key = (game_id, player_id)
+        existing = self.connections.get(key)
+        self.connections[key] = websocket
 
-        self.active_connections[game_id].add(websocket)
-        logger.info(f"WebSocket connected to game {game_id}. Total connections: {len(self.active_connections[game_id])}")
+        if game_id not in self._game_players:
+            self._game_players[game_id] = set()
+        self._game_players[game_id].add(player_id)
 
-    def disconnect(self, websocket: WebSocket, game_id: str):
-        """Remove a WebSocket connection."""
-        if game_id in self.active_connections:
-            self.active_connections[game_id].discard(websocket)
-            logger.info(f"WebSocket disconnected from game {game_id}. Remaining connections: {len(self.active_connections[game_id])}")
+        logger.info(f"Player {player_id} connected to game {game_id}. Total players: {len(self._game_players[game_id])}")
+        if existing and existing is not websocket:
+            try:
+                await existing.close(code=1000)
+            except Exception:
+                pass
 
-            # Clean up empty game rooms
-            if not self.active_connections[game_id]:
-                del self.active_connections[game_id]
-                logger.info(f"Removed empty game room {game_id}")
+    def disconnect(self, game_id: str, player_id: str, websocket: Optional[WebSocket] = None):
+        """Disconnect a specific player's WebSocket."""
+        key = (game_id, player_id)
+        current = self.connections.get(key)
+        if current and (websocket is None or current is websocket):
+            del self.connections[key]
 
-    async def send_game_update(self, game_id: str, message: dict):
-        """Send a game state update to all connected clients."""
-        if game_id not in self.active_connections:
+        if game_id in self._game_players:
+            # Only drop the player index if we actually removed the active connection
+            if current and (websocket is None or current is websocket):
+                self._game_players[game_id].discard(player_id)
+                if not self._game_players[game_id]:
+                    del self._game_players[game_id]
+                    logger.info(f"Removed empty game room {game_id}")
+
+        logger.info(f"Player {player_id} disconnected from game {game_id}")
+
+    async def send_to_player(
+        self,
+        game_id: str,
+        player_id: str,
+        message_type: str,
+        data: dict
+    ):
+        """Send a message to a specific player."""
+        ws = self.connections.get((game_id, player_id))
+        if ws:
+            try:
+                await ws.send_json({
+                    "type": message_type,
+                    "data": data
+                })
+            except Exception as e:
+                logger.error(f"Failed to send to player {player_id} in game {game_id}: {e}")
+                try:
+                    await ws.close(code=1011)
+                except Exception:
+                    pass
+                self.disconnect(game_id, player_id, ws)
+
+    async def broadcast_to_game_players(
+        self,
+        game_id: str,
+        message_type: str,
+        state_builder: Callable[[str], dict]
+    ):
+        """
+        Broadcast to all players in a game with per-player state filtering.
+
+        Args:
+            game_id: Game identifier
+            message_type: Message type (e.g., "game_update")
+            state_builder: Function that takes player_id and returns player-specific state
+        """
+        if game_id not in self._game_players:
             logger.debug(f"No active connections for game {game_id}")
             return
 
-        # Create list copy to avoid modification during iteration
-        connections = list(self.active_connections[game_id])
-        disconnected = []
-
-        for connection in connections:
+        for player_id in list(self._game_players[game_id]):
             try:
-                await connection.send_json(message)
+                player_state = state_builder(player_id)
+                await self.send_to_player(game_id, player_id, message_type, player_state)
             except Exception as e:
-                logger.warning(f"Failed to send message to WebSocket: {e}")
-                disconnected.append(connection)
-
-        # Clean up failed connections
-        for connection in disconnected:
-            self.disconnect(connection, game_id)
+                logger.error(f"Failed to build/send state for player {player_id}: {e}")
 
     async def broadcast_to_game(self, game_id: str, event_type: str, data: dict):
-        """Broadcast an event to all clients in a game."""
-        message = {
-            "type": event_type,
-            "data": data
-        }
-        await self.send_game_update(game_id, message)
+        """
+        Legacy broadcast method (sends same data to all players).
+        Use for single-player mode or non-role-sensitive updates.
+        """
+        if game_id not in self._game_players:
+            return
+
+        for player_id in list(self._game_players[game_id]):
+            await self.send_to_player(game_id, player_id, event_type, data)
 
     def get_connection_count(self, game_id: str) -> int:
         """Get the number of active connections for a game."""
-        return len(self.active_connections.get(game_id, set()))
+        return len(self._game_players.get(game_id, set()))
 
 
 # Global WebSocket manager instance

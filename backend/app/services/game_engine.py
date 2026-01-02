@@ -194,9 +194,12 @@ class GameEngine:
         )
 
         # Validate action based on current phase
+        start_version = game.state_version
         result = self._validate_and_execute_action(
             game, player, action_type, target_id, content
         )
+        if result.get("success") and game.state_version == start_version:
+            game.increment_version()
 
         return result
 
@@ -486,6 +489,7 @@ class GameEngine:
         game.seer_verified_this_night = False  # Reset seer verification tracker
         game.witch_save_decided = False
         game.witch_poison_decided = False
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_night_werewolf_chat(self, game: Game) -> dict:
@@ -511,6 +515,7 @@ class GameEngine:
         # All werewolves have chatted, move to kill vote phase
         game.add_message(0, t("system_messages.werewolf_discussion_end", language=game.language), MessageType.SYSTEM)
         game.phase = GamePhase.NIGHT_WEREWOLF
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_night_werewolf(self, game: Game) -> dict:
@@ -558,6 +563,7 @@ class GameEngine:
                 game.pending_deaths.append(game.night_kill_target)
 
         game.phase = GamePhase.NIGHT_GUARD if game.get_player_by_role(Role.GUARD) else GamePhase.NIGHT_SEER
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_night_guard(self, game: Game) -> dict:
@@ -585,6 +591,7 @@ class GameEngine:
                         game.add_action(guard.seat_id, ActionType.PROTECT, game.guard_target)
 
         game.phase = GamePhase.NIGHT_SEER
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_night_seer(self, game: Game) -> dict:
@@ -596,6 +603,7 @@ class GameEngine:
                 # If human has already verified (or cannot verify anyone), move on.
                 if game.seer_verified_this_night:
                     game.phase = GamePhase.NIGHT_WITCH
+                    game.increment_version()
                     return {"status": "updated", "new_phase": game.phase}
 
                 targets = [
@@ -605,6 +613,7 @@ class GameEngine:
                 ]
                 if not targets:
                     game.phase = GamePhase.NIGHT_WITCH
+                    game.increment_version()
                     return {"status": "updated", "new_phase": game.phase}
 
                 return {"status": "waiting_for_human", "phase": game.phase}
@@ -623,6 +632,7 @@ class GameEngine:
                         game.add_action(seer.seat_id, ActionType.VERIFY, target)
 
         game.phase = GamePhase.NIGHT_WITCH
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_night_witch(self, game: Game) -> dict:
@@ -709,6 +719,7 @@ class GameEngine:
             game.kill_player(seat_id, by_poison=was_poisoned)
 
         game.phase = GamePhase.DAY_ANNOUNCEMENT
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_day_announcement(self, game: Game) -> dict:
@@ -759,6 +770,7 @@ class GameEngine:
         game._spoken_seats_this_round.clear()  # P0 Fix: Reset speech tracker
         seat_suffix = "号" if game.language == "zh" else ""
         game.add_message(0, t("system_messages.speech_start", language=game.language, seat_id=f"{game.speech_order[0]}{seat_suffix}"), MessageType.SYSTEM)
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_day_last_words(self, game: Game) -> dict:
@@ -766,6 +778,7 @@ class GameEngine:
         # For simplicity, skip last words in MVP
         game.phase = GamePhase.DAY_SPEECH
         game._spoken_seats_this_round.clear()  # P0 Fix: Reset speech tracker
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_day_speech(self, game: Game) -> dict:
@@ -775,6 +788,7 @@ class GameEngine:
             game.phase = GamePhase.DAY_VOTE
             game.day_votes = {}
             game.add_message(0, t("system_messages.speech_end", language=game.language), MessageType.SYSTEM)
+            game.increment_version()
             return {"status": "updated", "new_phase": game.phase}
 
         current_seat = game.speech_order[game.current_speech_index]
@@ -799,6 +813,7 @@ class GameEngine:
         else:
             game.current_actor_seat = None
 
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_day_vote(self, game: Game) -> dict:
@@ -830,6 +845,7 @@ class GameEngine:
                 game.add_action(player.seat_id, ActionType.VOTE, target)
 
         game.phase = GamePhase.DAY_VOTE_RESULT
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_day_vote_result(self, game: Game) -> dict:
@@ -900,6 +916,7 @@ class GameEngine:
         # Next night
         game.day += 1
         game.phase = GamePhase.NIGHT_START
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_death_shoot(self, game: Game) -> dict:
@@ -942,6 +959,7 @@ class GameEngine:
                 abstain_message = f"{shooter_name}{shooter.seat_id}{seat_suffix}放弃开枪"
                 game.add_message(0, abstain_message, MessageType.SYSTEM)
 
+        game.increment_version()
         return self._continue_after_death_shoot(game)
 
     def _continue_after_death_shoot(self, game: Game) -> dict:
@@ -983,6 +1001,7 @@ class GameEngine:
                 game.day += 1
                 game.phase = GamePhase.NIGHT_START
 
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_hunter_shoot(self, game: Game) -> dict:
@@ -1056,12 +1075,14 @@ class GameEngine:
                 game.day += 1
                 game.phase = GamePhase.NIGHT_START
 
+        game.increment_version()
         return {"status": "updated", "new_phase": game.phase}
 
     async def _handle_game_over(self, game: Game) -> dict:
         """Handle game over (WL-010: async)."""
         winner_text = t("winners.villagers", language=game.language) if game.winner == Winner.VILLAGER else t("winners.werewolves", language=game.language)
         game.add_message(0, t("system_messages.game_over", language=game.language, winner=winner_text), MessageType.SYSTEM)
+        game.increment_version()
         return {"status": "game_over", "winner": game.winner}
 
 

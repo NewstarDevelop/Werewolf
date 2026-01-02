@@ -146,6 +146,7 @@ class Game:
     phase: GamePhase = GamePhase.NIGHT_START
     winner: Optional[Winner] = None
     language: str = "zh"  # Game language: "zh" or "en"
+    state_version: int = 0  # State version for preventing race conditions
     players: dict[int, Player] = field(default_factory=dict)
     messages: list[Message] = field(default_factory=list)
     actions: list[Action] = field(default_factory=list)
@@ -178,6 +179,11 @@ class Game:
     _message_counter: int = 0
     _action_counter: int = 0
 
+    def increment_version(self) -> int:
+        """Increment state version on critical state changes."""
+        self.state_version += 1
+        return self.state_version
+
     def get_player(self, seat_id: int) -> Optional[Player]:
         """Get player by seat ID."""
         return self.players.get(seat_id)
@@ -205,6 +211,13 @@ class Game:
                 return p
         return None
 
+    def get_player_by_id(self, player_id: str) -> Optional[Player]:
+        """Get player by JWT player_id using player_mapping."""
+        seat_id = self.player_mapping.get(player_id)
+        if seat_id:
+            return self.players.get(seat_id)
+        return None
+
     def add_message(
         self,
         seat_id: int,
@@ -222,6 +235,7 @@ class Game:
             msg_type=msg_type
         )
         self.messages.append(msg)
+        self.increment_version()
         return msg
 
     def add_action(
@@ -251,6 +265,7 @@ class Game:
             player.is_alive = False
             if by_poison and player.role == Role.HUNTER:
                 player.can_shoot = False
+            self.increment_version()
 
     def check_winner(self) -> Optional[Winner]:
         """
@@ -504,6 +519,7 @@ class Game:
         state = {
             "game_id": self.id,
             "status": self.status.value,
+            "state_version": self.state_version,
             "day": self.day,
             "phase": self.phase.value,
             "current_actor": self.current_actor_seat,  # Renamed: current_actor_seat -> current_actor

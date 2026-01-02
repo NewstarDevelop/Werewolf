@@ -29,7 +29,7 @@
     }
   },
   "prompts": {
-    "game_intro": "You are participating in a 9-player Werewolf text-based game.",
+    "game_intro": "You are participating in a {player_count}-player Werewolf text-based game.",
     "your_role": "Your role is: {role}",
     "your_seat": "Your seat number is: {seat_id}",
     "your_name": "Your name is: {name}",
@@ -38,6 +38,10 @@
     "wolf_teammates": "Your wolf teammates are: {teammates}",
     "wolf_info_note": "**Important**: You have known each other's werewolf identities since the first night. You can discuss kill targets privately at night and must cover for each other during the day.",
     "language_instruction": "You must respond in English. All your speech and thoughts should be in English.",
+    "board_config_9": "- Board Configuration: 3 Werewolves, 3 Villagers, 1 Seer, 1 Witch, 1 Hunter",
+    "board_config_12_wolf_king": "- Board Configuration: 4 Werewolves (3 normal + 1 Wolf King), 4 Villagers, 1 Seer, 1 Witch, 1 Hunter, 1 Guard\n- **Wolf King Special Ability**: Can shoot one player when voted out",
+    "board_config_12_white_wolf_king": "- Board Configuration: 4 Werewolves (3 normal + 1 White Wolf King), 4 Villagers, 1 Seer, 1 Witch, 1 Hunter, 1 Guard\n- **White Wolf King Special Ability**: Can self-destruct during the day to eliminate one player",
+    "board_config_custom": "- Board Configuration: {count}-player custom game",
     "seer_verified_header": "\nYour verification results: ",
     "seer_result_wolf": "Werewolf",
     "seer_result_villager": "Villager",

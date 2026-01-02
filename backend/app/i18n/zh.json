@@ -29,7 +29,7 @@
     }
   },
   "prompts": {
-    "game_intro": "你正在参与一场9人《狼人杀》文字游戏。",
+    "game_intro": "你正在参与一场{player_count}人《狼人杀》文字游戏。",
     "your_role": "你的身份是：{role}",
     "your_seat": "你的座位号是：{seat_id}号",
     "your_name": "你的名字是：{name}",
@@ -38,6 +38,10 @@
     "wolf_teammates": "你的狼队友是：{teammates}",
     "wolf_info_note": "**重要**：你们从游戏开始第一晚就知道彼此的狼人身份，夜间可以私下讨论击杀目标，白天需要互相掩护、配合演戏。",
     "language_instruction": "你必须用中文回应。你的发言和思考都应该用中文。",
+    "board_config_9": "- 板子配置：3狼人、3村民、1预言家、1女巫、1猎人",
+    "board_config_12_wolf_king": "- 板子配置：4狼人（3普通狼+1狼王）、4村民、1预言家、1女巫、1猎人、1守卫\n- **狼王特殊能力**：被投票出局时可以开枪带走一名玩家",
+    "board_config_12_white_wolf_king": "- 板子配置：4狼人（3普通狼+1白狼王）、4村民、1预言家、1女巫、1猎人、1守卫\n- **白狼王特殊能力**：白天可以自爆带走一名玩家（仅限白天）",
+    "board_config_custom": "- 板子配置：{count}人自定义局",
     "seer_verified_header": "\n你已查验的结果：",
     "seer_result_wolf": "狼人",
     "seer_result_villager": "好人",

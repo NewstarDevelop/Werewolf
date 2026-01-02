@@ -25,7 +25,7 @@ const translationPatterns: TranslationPattern[] = [
 
   // Night phases
   {
-    pattern: /第(\d+)天?夜晚降临[，,]?请沉睡[。.]?/,
+    pattern: /第(\d+)天?夜晚降临[，,]?请闭眼[。.]?/,
     translate: (match, t) => t('game:system_messages.night_falls', { day: match[1] })
   },
   {

@@ -163,59 +163,63 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
         # 检查是否是狼人夜间讨论阶段
         if game.phase.value == "night_werewolf_chat" and player.role.value == "werewolf":
             # 狼人夜间讨论专用 prompt
-            teammates_str = "、".join([f"{t}号" for t in (player.teammates or [])])
-            phase_instruction = f"""
-# 当前任务：狼人队内讨论
-现在是夜晚，你和狼队友正在私下讨论今晚的击杀目标和明天的策略。
+            separator = "、" if language == "zh" else ", "
+            seat_suffix = "号" if language == "zh" else ""
+            teammates_str = separator.join([f"{t}{seat_suffix}" for t in (player.teammates or [])])
 
-**重要信息**：
-- 你的队友是：{teammates_str}
-- **所有参与讨论的玩家都是狼人，你们彼此都知道对方的身份**
-- 这是狼人队内的私密讨论，好人阵营看不到
-- 讨论内容应该围绕：分析局势、选择击杀目标、制定白天演戏策略
+            if language == "zh":
+                phase_instruction = f"""
+# 当前阶段：夜晚狼人队内讨论
+**核心任务**：分析局势并确定今晚的击杀目标
 
-# 必须讨论的战术清单（步骤5：结构化协同）
-在发言前，必须在 thought 中评估以下问题，并在 speak 中至少回应其中 2 个：
+你和狼队友（{teammates_str}）正在夜间私密讨论。这是**夜晚行动阶段**，你们需要：
 
----
-## 战术优先级清单
+## 【最高优先级】今晚击杀目标
+- [ ] **今晚刀谁？**
+  * 优先级：预言家 > 女巫 > 猎人 > 强势村民
+  * 理由：这个玩家对我们的威胁是什么？
+- [ ] **是否需要自刀策略？**
+  * 击杀队友做身份或骗解药（高级战术）
 
-### 【优先级1】逻辑漏洞识别与利用（最重要！）
-- [ ] **真预言家今天有没有出现逻辑失误？**
-  * 例如：前后矛盾、记错信息、查验顺序不合理
-  * 如果有，这是我们的机会！必须讨论如何利用
-- [ ] **我们如何统一攻击这个逻辑漏洞？**
-  * 谁来主攻？谁来补刀？谁保持中立？
-  * 避免所有狼人同时攻击同一点（容易暴露）
-- [ ] **有没有好人因为情绪化而错误站边？**
-  * 我们可以顺着他的情绪推波助澜
-
-### 【优先级2】击杀目标确认
-- [ ] **今晚刀谁？**（优先级：预言家 > 女巫 > 猎人 > 强势村民）
-- [ ] **是否需要自刀做身份或骗药？**
-
-### 【优先级3】明天白天的分工策略
-- [ ] **如果某个队友明天被质疑，其他队友的态度是？**
-  * A. 强行保护 ❌（容易暴露）
-  * B. 保持中立 ✅
-  * C. 适度质疑（倒钩做身份）✅
-- [ ] **带节奏的目标是谁？**（选一个发言模糊的好人）
-- [ ] **谁来带节奏？**（避免多人同时攻击）
-
-### 【优先级4】票型伪装
-- [ ] **明天投票时是否要分票？**（避免全员投同一人）
-- [ ] **如果队友嫌疑大，谁适合倒钩？**
-
-### 【可选】高级战术
-- [ ] 是否需要悍跳预言家对抗？
-- [ ] 是否考虑卖队友（Bus）战术？（仅在真预言家疑似已死时）
-
----
+## 【次要优先级】明天白天策略（简要讨论）
+- [ ] **如果队友明天被质疑，其他队友应该？**
+  * 保持中立 ✅ 或 适度倒钩做身份 ✅
+  * 避免强行保护（容易暴露关系）
+- [ ] **是否需要悍跳预言家对抗？**
+- [ ] **带节奏目标是谁？** 避免多狼同时攻击同一人
 
 **讨论要求**：
-- 发言简短（1-2句话），直奔主题
-- 你们是队友，不要表现出惊讶对方是狼人
-- **重点讨论如何避免白天暴露关系**（禁止说"一起保护X号"，要说"该投就投"）
+- 重要信息：你的队友是 {teammates_str}，你们彼此知道身份
+- 发言1-2句话，直奔主题
+- **本轮重点是确定今晚刀人目标，其次才是明天演戏策略**
+- 这是私密讨论，好人阵营看不到
+"""
+            else:  # English
+                phase_instruction = f"""
+# Current Phase: Werewolf Night Discussion
+**Core Task**: Analyze the situation and determine tonight's kill target
+
+You and your werewolf teammates ({teammates_str}) are in a private night discussion. This is the **night action phase**, and you need to:
+
+## [Highest Priority] Tonight's Kill Target
+- [ ] **Who should we kill tonight?**
+  * Priority: Seer > Witch > Hunter > Strong Villagers
+  * Reason: What threat does this player pose to us?
+- [ ] **Do we need a self-kill strategy?**
+  * Kill a teammate to gain trust or bait the witch's antidote (advanced tactic)
+
+## [Secondary Priority] Tomorrow's Daytime Strategy (Brief Discussion)
+- [ ] **If a teammate is questioned tomorrow, what should others do?**
+  * Stay neutral ✅ or Moderately distance yourself ✅
+  * Avoid strong defense (easy to expose relationship)
+- [ ] **Do we need to counter-claim as seer?**
+- [ ] **Who to lead the vote against?** Avoid multiple wolves attacking the same person
+
+**Discussion Requirements**:
+- Important info: Your teammates are {teammates_str}, you all know each other's identities
+- Keep it brief (1-2 sentences), get to the point
+- **This round's focus is determining tonight's kill target, then tomorrow's strategy**
+- This is a private discussion, the village team cannot see it
 """
         else:
             # 普通白天发言 - 根据发言位置提供不同策略
@@ -223,10 +227,9 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
             total_speakers = len(game.speech_order or [])
 
             # 位置策略指导
-            position_strategy = ""
-            if speech_position == 1:
-                # 首发位
-                position_strategy = """
+            if language == "zh":
+                if speech_position == 1:
+                    position_strategy = """
 **首发位策略（你是第一个发言）**：
 - **信息量有限**：你之前没有任何人的发言可以参考
 - **设定基调**：你的发言会影响后续玩家的思路和节奏
@@ -239,9 +242,8 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
   - 提出1-2个疑点或观察
   - 不要过早站队或下死结论
 """
-            elif speech_position >= total_speakers - 1:
-                # 后置位（倒数第1-2个）
-                position_strategy = f"""
+                elif speech_position >= total_speakers - 1:
+                    position_strategy = f"""
 **后置位策略（你是第 {speech_position}/{total_speakers} 个发言）**：
 - **总结能力**：你听到了几乎所有人的发言，拥有全局视角
 - **找矛盾**：
@@ -258,9 +260,8 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
   - 如果你是狼人，要做好身份、跟随主流或带节奏
 - **优势**：你可以回应之前所有人的发言，说服力更强
 """
-            else:
-                # 中间位
-                position_strategy = f"""
+                else:
+                    position_strategy = f"""
 **中间位策略（你是第 {speech_position}/{total_speakers} 个发言）**：
 - **平衡信息**：你既有部分发言可参考，又不用总结全局
 - **回应前者**：
@@ -275,7 +276,7 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 - **保持灵活**：后面还有玩家发言，不要把话说死
 """
 
-            phase_instruction = f"""
+                phase_instruction = f"""
 # 当前任务：发言
 现在轮到你发言了。请根据当前局势和你的发言位置发表看法。
 
@@ -287,214 +288,224 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 - 可以分析局势、质疑他人、为自己辩护、表明立场等
 - 每句话都要有信息量，避免废话
 """
+            else:  # English
+                if speech_position == 1:
+                    position_strategy = """
+**First Speaker Strategy (You speak first)**:
+- **Limited information**: You have no previous speeches to reference
+- **Set the tone**: Your speech will influence subsequent players' thinking
+- **Cautious stance**:
+  - If you're the seer, decide whether to claim (depends on situation)
+  - If you're a werewolf, don't expose teammates early, observe first
+  - If you're a villager, raise some suspicions to guide discussion
+- **Suggested content**:
+  - Summarize night results (who died, how)
+  - Raise 1-2 suspicions or observations
+  - Don't take early sides or make absolute conclusions
+"""
+                elif speech_position >= total_speakers - 1:
+                    position_strategy = f"""
+**Late Speaker Strategy (You are speaker {speech_position}/{total_speakers})**:
+- **Summary ability**: You've heard almost everyone, you have a global perspective
+- **Find contradictions**:
+  - Who contradicted themselves?
+  - Who is deliberately avoiding certain topics?
+  - Whose logic doesn't hold up?
+- **Integrate information**:
+  - Sort out the current situation: who claimed seer, who got gold/kill checks
+  - Summarize different camps' speech patterns
+  - Point out the 1-2 most suspicious players
+- **Clear stance**:
+  - Late speakers should provide clear judgments
+  - If you're seer and haven't claimed, consider whether to reveal now
+  - If you're werewolf, blend in, follow mainstream, or lead voting
+- **Advantage**: You can respond to everyone's speech, more persuasive
+"""
+                else:
+                    position_strategy = f"""
+**Middle Speaker Strategy (You are speaker {speech_position}/{total_speakers})**:
+- **Balanced information**: You have some speeches to reference, but don't need to summarize everything
+- **Respond to previous speakers**:
+  - Agree or question previous players' views
+  - Point out logical flaws or suspicious points
+  - If someone claimed seer, express your stance
+- **Add perspective**:
+  - Raise suspicions previous players missed
+  - Analyze from different angles
+  - If you have key info (seer results), consider whether to reveal
+- **Avoid repetition**: Don't repeat what others already said, provide new information
+- **Stay flexible**: More players will speak after you, don't be absolute
+"""
+
+                phase_instruction = f"""
+# Current Task: Speech
+It's your turn to speak. Analyze the situation and share your thoughts based on your speaking position.
+
+{position_strategy}
+
+**Basic requirements**:
+- Speech length: 50-150 words (3-6 sentences), ensure complete and persuasive logic
+- Match your role and personality
+- Can analyze situation, question others, defend yourself, express stance, etc.
+- Every sentence should have substance, avoid filler
+"""
     elif action_type == "vote":
         # 计算场上局势
         alive_count = len(game.get_alive_players())
 
-        # 身份特定策略
-        role_specific_strategy = ""
-        if player.role.value == "werewolf":
-            role_specific_strategy = """
+        # 身份特定策略 (根据语言选择)
+        if language == "zh":
+            if player.role.value == "werewolf":
+                role_specific_strategy = """
 **狼人投票策略（极其重要）**：
 
 **核心原则**：保命优先，队友其次。绝不能为了保护队友而暴露自己！
 
-**队友保护决策树（必须严格遵守）**：
+**队友保护决策树**：
+1. **判断队友生存几率**：被查杀+多人质疑=必死 → 果断投他（倒钩做身份）
+2. **评估保护风险**：为队友辩护会暴露关系吗？风险高=放弃队友
+3. **倒钩技巧**：跟随2-3个好人后再投，表现出"失望""被骗"等情绪
+4. **间接保护**：转移话题、提出其他疑点，不要直接辩护
+5. **带节奏**：等好人先质疑，你再跟随；寻找替罪羊而非保护队友
+6. **票型伪装**：偶尔投狼队友，制造你们不是一伙的假象
+7. **目标优先级**：真预言家 > 女巫/猎人 > 强势村民 > 避免金水玩家
 
-1. **判断队友的生存几率**：
-   - 如果队友被预言家查杀 + 多人质疑 = 必死无疑 → **果断投他（倒钩做身份）**
-   - 如果队友嫌疑很大但还有辩解空间 → **保持沉默或跟随主流，不要强行辩护**
-   - 如果队友只是轻微被质疑 → **可以适度帮忙，但要装作客观分析，不能显得刻意**
-   - 如果队友完全没被怀疑 → **不需要保护，正常讨论其他人即可**
-
-2. **评估保护的风险**：
-   - 如果你为队友辩护，会不会让好人觉得你们是一伙的？
-   - 如果场上有多人都在质疑队友，你逆着大势为他说话会很可疑
-   - 如果你前面的发言已经站在了反对队友的一边，现在突然改口会很矛盾
-   - **风险高 = 放弃队友；风险低 = 可以间接帮忙**
-
-3. **倒钩（投狼队友）的时机和好处**：
-   - **什么时候必须倒钩**：队友被查杀、证据确凿、大势已去、你再保护就会一起死
-   - **倒钩的好处**：做身份、获得好人信任、保护其他深水狼、延长生存时间
-   - **倒钩技巧**：不要第一个投，跟随2-3个好人后再投，显得你是被说服的
-   - **倒钩后的演技**：表现出"痛心""被骗""愤怒"等情绪，增强真实感
-
-4. **间接保护技巧**（安全的保护方式）**：
-   - **转移话题**："我觉得X号更可疑，他昨天投票很奇怪"
-   - **提出疑点**："除了队友，我还注意到Y号一直在划水"
-   - **模糊立场**："队友确实有点可疑，但Z号也说不清楚"
-   - **不要直接为队友辩护**："队友是好人！你们都错了！"（这是暴露信号）
-
-5. **带节奏技巧**：
-   - **不要第一个提出投某人**，等好人先质疑，你再跟随附和
-   - **适度质疑真预言家**，但不要太激进（"我有点怀疑他的查验逻辑"）
-   - **寻找替罪羊**：找一个发言模糊的好人，带节奏投他而不是队友
-   - **关键时刻保持中立**：如果场上分歧很大，你可以说"我还需要再想想"
-
-6. **票型伪装**：
-   - **偶尔投狼队友**，制造你们不是一伙的假象（特别是队友嫌疑不大时）
-   - **不要总是和队友投同一个人**，这会暴露你们的关系
-   - **观察好人的投票倾向**，跟随大部分好人的选择
-
-7. **目标选择优先级**：
-   - 最优：真预言家（如果能推出去）
-   - 次优：女巫、猎人等强势神职
-   - 可选：逻辑清晰、带队能力强的村民
-   - 避免：明显的好人、金水玩家（推他们会暴露你）
-
-**示例场景**：
-
-场景A：队友被预言家查杀，3个好人都在质疑他
-- **正确做法**：跟随好人投队友，表现出"失望""被骗"的情绪
-- **错误做法**：强行为队友辩护"他不可能是狼！预言家才是假的！"
-
-场景B：队友稍微被1-2个人质疑，但证据不足
-- **正确做法**：转移话题"我觉得X号更可疑"，或者保持沉默
-- **错误做法**：直接跳出来"队友绝对是好人！"
-
-场景C：队友完全没被怀疑，但场上有其他人被质疑
-- **正确做法**：正常讨论，投那个被质疑的好人
-- **错误做法**：刻意提起队友"我觉得队友是好人"（没人问你，你为什么提？）
-
-**最终提醒**：
-- 狼人能赢不是因为保护队友，而是因为隐藏身份、带节奏、推好人
-- 如果你因为保护队友而暴露，那队友的牺牲就白费了
-- 深水狼的价值远大于冲锋狼，活到最后才能赢
+**最终提醒**：深水狼价值远大于冲锋狼，活到最后才能赢
 """
-        elif player.role.value == "seer":
-            role_specific_strategy = """
-**预言家投票策略（重要）**：
-- **坚定带队**：如果你已跳身份，要强势带队投出查杀
-- **保护自己**：如果有假跳，要通过逻辑证明自己是真预
-- **报验时机**：投票前可以报出新的查验结果，增强说服力
-- **金水利用**：让你的金水玩家帮你发言、站队、冲锋
-- **遗言准备**：如果你即将被投出，提前在发言中留下关键信息
+            elif player.role.value == "seer":
+                role_specific_strategy = """
+**预言家投票策略**：
+- 坚定带队投出查杀
+- 通过逻辑证明自己是真预
+- 利用金水玩家帮你站队
 """
-        elif player.role.value == "witch":
-            role_specific_strategy = """
-**女巫投票策略（重要）**：
-- **隐藏身份**：不要暴露你是女巫，避免被狼人针对
-- **理性站队**：根据逻辑判断，不要因为救过某人就盲目相信他
-- **毒药威慑**：必要时可以暗示"我有办法处理XX"，但不要明说
-- **银水价值**：如果你救过某人，他的身份会更可信（但警惕狼自刀）
+            elif player.role.value == "witch":
+                role_specific_strategy = """
+**女巫投票策略**：
+- 隐藏身份，避免被狼针对
+- 理性站队，不因救人而盲目信任
 """
-        elif player.role.value == "hunter":
-            role_specific_strategy = """
-**猎人投票策略（重要）**：
-- **绝对隐藏**：永远不要暴露猎人身份，让狼人误以为你是民
-- **保持活跃**：适度发言和投票，不要太划水也不要太跳
-- **记录信息**：记住所有可疑玩家，为死后开枪做准备
-- **不怕被刀**：即使被刀也能开枪，所以可以勇敢发言
+            elif player.role.value == "hunter":
+                role_specific_strategy = """
+**猎人投票策略**：
+- 绝对隐藏身份
+- 记录可疑玩家，为死后开枪准备
 """
-        else:  # villager
-            role_specific_strategy = """
-**村民投票策略（重要）**：
-- **积极推理**：虽然没有特殊能力，但可以通过逻辑分析找狼
-- **保护神职**：相信真预言家，保护好人阵营的关键角色
-- **主流≠正确**：
-  * 当主流由 1-2 个强势玩家驱动时，必须先判断其动机与收益
-  * 若你跟票，必须在 thought 中写清：你跟的是**逻辑链**还是**音量/情绪**
-  * 若是后者（音量/情绪），必须降权并提出反证问题
-- **发挥价值**：通过发言和投票，帮助好人阵营找出狼人
+            else:  # villager
+                role_specific_strategy = """
+**村民投票策略**：
+- 积极推理找狼
+- 保护神职，相信真预言家
+- 主流≠正确：判断你跟的是逻辑还是情绪
 """
 
-        phase_instruction = f"""
+            phase_instruction = f"""
 # 当前任务：投票放逐
 现在是投票阶段，你需要选择一名玩家投票放逐。
 
 **局势分析**：
 - 场上剩余 {alive_count} 人
-- 今天的投票至关重要：投错人可能导致局势逆转
-- 根据已有信息推断剩余狼人数量，评估好人是领先还是落后
+- 投票至关重要：投错人可能导致局势逆转
 
-**通用投票策略**：
+**通用策略**：
 1. 优先投出发言最可疑、逻辑最混乱的玩家
-2. 如果有预言家查杀，优先考虑投查杀对象
-3. 注意观察谁在带节奏、谁在保护可疑玩家
-4. **归票时机判断**：
-   - 关键回合（存活≤5人 或 狼人数≥好人数-1）必须归票，避免票散导致投不出去
-   - 普通回合如果有明确查杀或强势共识，也应该跟票归票
-   - 如果场上意见分散且无强势主导，可以自主投票
+2. 如果有预言家查杀，优先投查杀对象
+3. 关键回合（≤5人）必须归票
 {role_specific_strategy}
 
-# 投票决策表（必填 - 步骤4：强制逻辑链验证）
-你必须在 thought 中按以下格式完成结构化分析：
-
----
-## 投票决策分析（6步验证法）
-1. **我要投的目标**：____号
-
-2. **证据1（可核查的事实）**：
-   - 他在第__天/轮说了："____"（引用原话或概括）
-   - 或：他在第__轮投了__号（投票记录）
-   - 或：他的__行为（具体描述）
-
-3. **证据2（可核查的事实）**：
-   - 他的____行为与____矛盾
-   - 或：他回避了____关键问题
-   - 或：他____（另一个可观察的事实）
-
-4. **推断结论**：
-   - 基于证据1和2，我认为他____（是狼人/假预言家/带节奏/可疑）
-
-5. **反证检验**（关键步骤 - 避免情绪化决策）：
-   - 如果他不是狼人，证据1可以解释为：____
-   - 如果他不是狼人，证据2可以解释为：____
-   - 他有没有做过对好人有利的事？（例如：____）
-
-6. **最终决策**：
-   - 经过反证检验，我____（仍然投他 / 改投____号 / 弃票观望）
-   - 理由：____
----
-
-**严格要求**：
-- 必须填写完整的 6 个步骤
-- 证据必须是可核查的事实（发言内容、投票记录、出局信息），禁止使用"我觉得"、"感觉"
-- 如果找不到 2 条证据，必须在步骤 6 中说明"证据不足，我选择____（跟随主流/随机/弃票）"
-- **禁止因为单一错误就全盘否定一个玩家**（例如：预言家说错一个信息不代表他是假的）
-
 **决策要求**：
-- 在 thought 中完成上述 6 步分析
-- 在 speak 中用 30-80字 说明你的投票理由（简明有力，会被其他玩家看到）
-- 在 action_target 中填写你要投票的座位号（不能投自己；弃票填0）
+- 在 thought 中完成结构化分析（目标、证据、推断、反证、决策）
+- 在 speak 中用 30-80字说明投票理由
+- 在 action_target 中填写座位号（不能投自己；弃票填0）
 
 可选目标：{alive_str}（不能投自己）
+"""
+        else:  # English
+            if player.role.value == "werewolf":
+                role_specific_strategy = """
+**Werewolf Voting Strategy**:
+
+**Core Principle**: Survival first, teammates second. Never expose yourself to protect teammates!
+
+**Key Tactics**:
+1. **Assess teammate's survival chance**: If checked by seer + multiple accusations = doomed → Vote them (gain trust)
+2. **Risk assessment**: Will defending expose your relationship? High risk = abandon teammate
+3. **Distancing tactics**: Follow 2-3 villagers before voting, show "disappointment" emotions
+4. **Indirect protection**: Redirect attention, don't directly defend
+5. **Lead votes**: Wait for villagers to question first, then follow; find scapegoats
+6. **Vote pattern disguise**: Occasionally vote wolf teammates to hide relationship
+7. **Priority targets**: Real seer > Witch/Hunter > Strong villagers > Avoid gold checks
+
+**Remember**: Deep wolves are more valuable than charging wolves, survive to win
+"""
+            elif player.role.value == "seer":
+                role_specific_strategy = """
+**Seer Voting Strategy**:
+- Lead team to vote out your checked wolves
+- Prove you're real seer through logic
+- Use your gold checks to support you
+"""
+            elif player.role.value == "witch":
+                role_specific_strategy = """
+**Witch Voting Strategy**:
+- Hide your identity to avoid wolf targeting
+- Rational stance, don't blindly trust saved players
+"""
+            elif player.role.value == "hunter":
+                role_specific_strategy = """
+**Hunter Voting Strategy**:
+- Absolutely hide your identity
+- Remember suspicious players for your final shot
+"""
+            else:  # villager
+                role_specific_strategy = """
+**Villager Voting Strategy**:
+- Actively deduce to find wolves
+- Protect key roles, trust real seer
+- Mainstream ≠ Correct: Judge if you're following logic or emotions
+"""
+
+            phase_instruction = f"""
+# Current Task: Vote for Exile
+You need to vote for a player to exile.
+
+**Situation Analysis**:
+- {alive_count} players alive
+- This vote is crucial: wrong vote may reverse the situation
+
+**General Strategy**:
+1. Prioritize most suspicious, illogical players
+2. If seer has checked someone, prioritize that target
+3. Critical rounds (≤5 players) must consolidate votes
+{role_specific_strategy}
+
+**Requirements**:
+- In thought: Complete structured analysis (target, evidence, deduction, verification, decision)
+- In speak: Explain your vote in 30-80 words
+- In action_target: Fill seat number (can't vote yourself; 0 to abstain)
+
+Available targets: {alive_str} (can't vote yourself)
 """
     elif action_type == "kill":
         # 狼人可以击杀任何存活玩家（包括队友，实现自刀策略）
         kill_targets = [p.seat_id for p in game.get_alive_players() if p.seat_id != player.seat_id]
-        targets_str = "、".join([f"{s}号" for s in kill_targets])
 
-        # 显示队友的投票情况
-        votes_info = ""
-        if game.wolf_votes:
-            teammate_votes = []
-            for seat, target in game.wolf_votes.items():
-                if seat in player.teammates:
-                    teammate_votes.append(f"- {seat}号队友投给了 {target}号")
-            if teammate_votes:
-                votes_info = "\n\n**队友投票情况**：\n" + "\n".join(teammate_votes) + "\n\n**建议**：和队友保持一致，统一击杀目标。"
+        if language == "zh":
+            targets_str = "、".join([f"{s}号" for s in kill_targets])
 
-        # 生成出局玩家历史（步骤3：辅助狼人制定击杀策略）
-        dead_players_info = ""
-        dead_players = [p for p in game.players.values() if not p.is_alive]
-        if dead_players:
-            dead_players_info = "\n# 已出局玩家列表（参考避免重复击杀同类型）\n"
-            dead_players_info += "| 座位号 | 角色（如已知） | 备注 |\n"
-            dead_players_info += "|--------|-------------|------|\n"
-            for dp in dead_players:
-                # 狼人可以看到所有出局玩家，但角色仅在明确暴露时显示
-                role_display = "未知"
-                if dp.role.value == "werewolf":
-                    role_display = "狼人（队友）"
-                # 如果玩家生前明确暴露身份，可以在这里显示（简化版本先显示"未知"）
-                dead_players_info += f"| {dp.seat_id}号 | {role_display} | 第{game.day}天前出局 |\n"
-            dead_players_info += "\n**参考建议**：优先击杀未出局的神职，避免浪费刀在已知狼人或低价值目标上\n"
+            # 显示队友的投票情况
+            votes_info = ""
+            if game.wolf_votes:
+                teammate_votes = []
+                for seat, target in game.wolf_votes.items():
+                    if seat in player.teammates:
+                        teammate_votes.append(f"- {seat}号队友投给了 {target}号")
+                if teammate_votes:
+                    votes_info = "\n\n**队友投票情况**：\n" + "\n".join(teammate_votes) + "\n\n**建议**：和队友保持一致，统一击杀目标。"
 
-        phase_instruction = f"""
+            phase_instruction = f"""
 # 当前任务：狼人杀人
 现在是夜晚，你和狼队友需要选择今晚要击杀的目标。
-{dead_players_info}
 可选目标：{targets_str}（包括狼队友，可实现自刀策略）{votes_info}
 
 **注意**：
@@ -504,202 +515,201 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
 
 在 action_target 中填写你要击杀的座位号。
 """
+        else:  # English
+            targets_str = ", ".join([f"#{s}" for s in kill_targets])
+
+            # Display teammate votes
+            votes_info = ""
+            if game.wolf_votes:
+                teammate_votes = []
+                for seat, target in game.wolf_votes.items():
+                    if seat in player.teammates:
+                        teammate_votes.append(f"- Teammate #{seat} voted for #{target}")
+                if teammate_votes:
+                    votes_info = "\n\n**Teammate Votes**:\n" + "\n".join(teammate_votes) + "\n\n**Suggestion**: Coordinate with teammates for unified kill target."
+
+            phase_instruction = f"""
+# Current Task: Werewolf Kill
+It's night time. You and your werewolf teammates need to choose tonight's kill target.
+Available targets: {targets_str} (including wolf teammates for self-kill strategy){votes_info}
+
+**Note**:
+- You can kill any alive player, including your wolf teammates
+- Self-kill (killing teammate) can be used for gaining trust or baiting witch's antidote
+- Coordinate with teammates for unified target
+
+Fill action_target with the seat number to kill.
+"""
     elif action_type == "verify":
         unverified = [p.seat_id for p in game.get_alive_players()
                      if p.seat_id != player.seat_id and p.seat_id not in (player.verified_players or {})]
-        targets_str = "、".join([f"{s}号" for s in unverified])
         is_first_night = game.day == 1
 
-        # 生成查验历史表格（步骤1：结构化记忆）
-        verification_table = ""
-        if player.verified_players:
-            verification_table = "\n# 你的查验历史（必须参考此表，禁止凭记忆）\n"
-            verification_table += "| 夜晚 | 查验对象 | 结果 | 当前状态 |\n"
-            verification_table += "|------|---------|------|----------|\n"
+        if language == "zh":
+            targets_str = "、".join([f"{s}号" for s in unverified])
 
-            # 按查验顺序生成表格（使用 game.day 推算夜晚顺序）
-            night_counter = 1
-            for seat_id, is_wolf in player.verified_players.items():
-                result = "狼人" if is_wolf else "好人"
-                alive_status = "存活" if game.players[seat_id].is_alive else "已出局"
-                verification_table += f"| 第{night_counter}晚 | {seat_id}号 | {result} | {alive_status} |\n"
-                night_counter += 1
+            # 生成查验历史表格
+            verification_table = ""
+            if player.verified_players:
+                verification_table = "\n# 你的查验历史\n"
+                verification_table += "| 夜晚 | 查验对象 | 结果 | 当前状态 |\n"
+                verification_table += "|------|---------|------|----------|\n"
 
-            verification_table += "\n**严格规则**：\n"
-            verification_table += "- 在 speak 中引用查验结果时，必须直接复制上表内容\n"
-            verification_table += "- 在 thought 中必须写明：'根据上表，第X晚查验Y号，结果是Z'\n"
-            verification_table += "- 禁止凭记忆！如果不确定，重新查看上表\n"
-            verification_table += "- 每次报验前，先在 thought 中自检：'我确定是第几晚查验的谁吗？'\n"
+                night_counter = 1
+                for seat_id, is_wolf in player.verified_players.items():
+                    result = "狼人" if is_wolf else "好人"
+                    alive_status = "存活" if game.players[seat_id].is_alive else "已出局"
+                    verification_table += f"| 第{night_counter}晚 | {seat_id}号 | {result} | {alive_status} |\n"
+                    night_counter += 1
 
-        phase_instruction = f"""
+            phase_instruction = f"""
 # 当前任务：预言家查验
 现在是夜晚，你可以查验一名玩家的身份。
 {verification_table}
 可选目标：{targets_str}
 
-**查验策略指南**：
-
-**第一晚查验建议**{"（当前就是第一晚）" if is_first_night else ""}：
-1. **发言激进者**：白天如果有人发言特别激进或带节奏，优先查验
-2. **边缘位置参考**：座位号边角位可作为参考，但不是绝对标准
-3. **随机性**：第一晚信息有限，可适当随机选择
-
-**后续晚上查验建议**：
-1. **发言矛盾者**：前后发言逻辑不一致、站队突然变化的玩家
-2. **模糊划水者**：全程不表态、跟随主流意见、没有明确立场
-3. **保护特定玩家者**：刻意为某人开脱、转移话题的玩家
-4. **投票异常者**：投票与发言不符、关键时刻弃票或站错队
-
-**查验价值排序**：
-- 高价值：发言可疑+站队摇摆+投票异常+单边权威的高度绑定者
-- 中价值：划水摸鱼+模糊表态+拙劣表水但收益巨大者
-- 低价值：明确站队好人+逻辑清晰+发言正常
-
-**特殊情况**：
-- 如果场上有悍跳预言家，优先查验他给出的金水/查杀对象
-- 如果某玩家被多人质疑，可以查验后第二天报出结果
-- 避免重复查验已知身份玩家，浪费查验机会
+**查验策略**：
+- 第一晚：发言激进者、边缘位置
+- 后续晚上：发言矛盾者、模糊划水者、投票异常者
+- 优先查验：发言可疑+站队摇摆+投票异常的玩家
 
 在 action_target 中填写你要查验的座位号。
 """
+        else:  # English
+            targets_str = ", ".join([f"#{s}" for s in unverified])
+
+            # Generate verification history table
+            verification_table = ""
+            if player.verified_players:
+                verification_table = "\n# Your Verification History\n"
+                verification_table += "| Night | Target | Result | Current Status |\n"
+                verification_table += "|-------|--------|--------|----------------|\n"
+
+                night_counter = 1
+                for seat_id, is_wolf in player.verified_players.items():
+                    result = "Wolf" if is_wolf else "Villager"
+                    alive_status = "Alive" if game.players[seat_id].is_alive else "Eliminated"
+                    verification_table += f"| Night {night_counter} | #{seat_id} | {result} | {alive_status} |\n"
+                    night_counter += 1
+
+            phase_instruction = f"""
+# Current Task: Seer Verification
+It's night time. You can verify a player's identity.
+{verification_table}
+Available targets: {targets_str}
+
+**Verification Strategy**:
+- First night: Aggressive speakers, edge positions
+- Later nights: Contradictory speakers, silent players, abnormal voters
+- Priority: Suspicious speech + wavering stance + abnormal voting
+
+Fill action_target with the seat number to verify.
+"""
     elif action_type == "witch_save":
-        # 计算当前天数和局势
         is_first_night = game.day == 1
         alive_count = len(game.get_alive_players())
-        target_id = game.night_kill_target or "未知"
+        target_id = game.night_kill_target or ("未知" if language == "zh" else "Unknown")
 
-        # 生成药水状态表格（步骤2：结构化记忆）
-        potion_status = "\n# 你的药水状态（决策前必须确认）\n"
-        potion_status += "| 药水类型 | 剩余数量 | 状态说明 |\n"
-        potion_status += "|---------|---------|----------|\n"
-        save_status = "1瓶（可用）" if player.has_save_potion else "0瓶（已使用）"
-        poison_status = "1瓶（可用）" if player.has_poison_potion else "0瓶（已使用）"
-        potion_status += f"| 解药 | {save_status} | {'本轮可使用' if player.has_save_potion else '已无法使用'} |\n"
-        potion_status += f"| 毒药 | {poison_status} | {'本轮可使用' if player.has_poison_potion else '已无法使用'} |\n"
-        potion_status += "\n**严格规则**：\n"
-        potion_status += "- 在 thought 中决策前，必须先确认上表中的剩余数量\n"
-        potion_status += "- 如果解药显示'0瓶'，禁止填写救人目标\n"
-        potion_status += "- 同一晚使用解药后，当晚无法使用毒药\n"
-
-        phase_instruction = f"""
+        if language == "zh":
+            phase_instruction = f"""
 # 当前任务：女巫救人
-今晚 {target_id}号 被狼人杀害。
-你有解药，是否要救他？
-{potion_status}
+今晚 {target_id}号 被狼人杀害。你有解药，是否要救他？
 
-**解药使用策略（非常重要）**：
-- 解药全场只能用一次，用完就永远没了
-- **首夜救人条件式决策**：
-  - 默认：首夜保留解药，等待后续救关键角色
-  - **例外情况（首夜应该救）**：
-    * {target_id}号 在白天发言中明确暴露了预言家、猎人等关键身份
-    * {target_id}号 是被真预言家发过金水的高价值玩家
-    * {target_id}号 表现出高组织能力/能提供强信息源的特征
-  - **风险警惕**：首夜救人需警惕狼人自刀骗药
-
-- **后续晚上救人评估**：
-  - 必须在 thought 中分析：救/不救对轮次与信息结构的影响
-  - {target_id}号 的价值评估：是否神职？是否能提供关键信息？
-  - 场上好人数量是否劣势，必须救人才能保持轮次？
-
-- **不建议救人的情况**：
-  - {target_id}号 没有明确表现出神职身份或高价值
-  - {target_id}号 是边缘位置的可疑玩家/划水玩家
-  - 怀疑是狼人自刀骗解药（多个证据支持）
-
-**当前局势分析**：
-- 场上还有 {alive_count} 人存活
-- 这是第 {game.day} 天{"（第一晚，默认保留解药，除非被刀者是高价值目标）" if is_first_night else ""}
+**解药使用策略**：
+- 解药全场只能用一次
+- 首夜默认保留，除非被刀者是明确的关键角色
+- 警惕狼人自刀骗药
 
 **决定**：
 - 如果要救，在 action_target 中填写 {game.night_kill_target}
 - 如果不救，填写 0
-- **必须在 thought 中说明你的决策理由**
+"""
+        else:  # English
+            phase_instruction = f"""
+# Current Task: Witch Save
+Tonight player #{target_id} was killed by werewolves. You have antidote, will you save them?
+
+**Antidote Strategy**:
+- Antidote can only be used once per game
+- First night: save by default, unless target is clearly a key role
+- Beware of werewolf self-kill to waste your antidote
+
+**Decision**:
+- To save: Fill action_target with {game.night_kill_target}
+- Not to save: Fill 0
 """
     elif action_type == "witch_poison":
         alive_others = [p.seat_id for p in game.get_alive_players() if p.seat_id != player.seat_id]
-        targets_str = "、".join([f"{s}号" for s in alive_others])
 
-        # 生成药水状态表格（步骤2：结构化记忆）
-        potion_status = "\n# 你的药水状态（决策前必须确认）\n"
-        potion_status += "| 药水类型 | 剩余数量 | 状态说明 |\n"
-        potion_status += "|---------|---------|----------|\n"
-        save_status = "1瓶（可用）" if player.has_save_potion else "0瓶（已使用）"
-        poison_status = "1瓶（可用）" if player.has_poison_potion else "0瓶（已使用）"
-        potion_status += f"| 解药 | {save_status} | {'本轮可使用' if player.has_save_potion else '已无法使用'} |\n"
-        potion_status += f"| 毒药 | {poison_status} | {'本轮可使用' if player.has_poison_potion else '已无法使用'} |\n"
-        potion_status += "\n**严格规则**：\n"
-        potion_status += "- 在 thought 中决策前，必须先确认上表中的剩余数量\n"
-        potion_status += "- 如果毒药显示'0瓶'，必须填写 action_target = 0\n"
-
-        phase_instruction = f"""
+        if language == "zh":
+            targets_str = "、".join([f"{s}号" for s in alive_others])
+            phase_instruction = f"""
 # 当前任务：女巫毒人
 你有毒药，是否要使用？
-{potion_status}
 可选目标：{targets_str}
 
 **重要警告**：
-- 毒药全场只能用一次，用完就没了，必须谨慎使用
-- **不要轻易在第一晚使用毒药**，因为信息太少容易误毒好人
-- 只在有**充分证据**时使用（如：预言家查杀+发言可疑、狼人暴露身份等）
-- 如果不确定，建议保留毒药到后期再用
-- 两个预言家对跳时，**不要立即毒死其中一个**，等白天听发言和逻辑再决定
+- 毒药全场只能用一次
+- 不要轻易在第一晚使用，信息太少易误毒好人
+- 只在有充分证据时使用
 
-决定：
+**决定**：
 - 如果要毒人，在 action_target 中填写目标座位号
-- **如果不确定或信息不足，强烈建议填写 0（不使用）**
+- 如果不确定，填写 0（不使用）
+"""
+        else:  # English
+            targets_str = ", ".join([f"#{s}" for s in alive_others])
+            phase_instruction = f"""
+# Current Task: Witch Poison
+You have poison, will you use it?
+Available targets: {targets_str}
+
+**Warning**:
+- Poison can only be used once per game
+- Don't use on first night easily, too little info may poison villagers
+- Only use with solid evidence
+
+**Decision**:
+- To poison: Fill action_target with seat number
+- If uncertain: Fill 0 (don't use)
 """
     elif action_type == "shoot":
         alive_others = [p.seat_id for p in game.get_alive_players() if p.seat_id != player.seat_id]
-        targets_str = "、".join([f"{s}号" for s in alive_others])
-
-        # 分析场上局势
         alive_count = len(game.get_alive_players())
-        dead_count = 9 - alive_count
 
-        phase_instruction = f"""
+        if language == "zh":
+            targets_str = "、".join([f"{s}号" for s in alive_others])
+            phase_instruction = f"""
 # 当前任务：猎人开枪
-你已出局，可以开枪带走一名玩家（这是你最后的机会为好人阵营做贡献）。
+你已出局，可以开枪带走一名玩家（最后机会为好人阵营做贡献）。
 可选目标：{targets_str}
 
 **开枪目标优先级**：
-
-**最高优先级（必带走）**：
-1. **确定的狼人**：
-   - 被真预言家查杀的玩家
-   - 悍跳预言家的假预言家
-   - 狼人自爆或暴露身份的玩家
-
-2. **场上最大嫌疑**：
-   - 发言逻辑混乱、前后矛盾的玩家
-   - 一直带节奏、误导好人的玩家
-   - 投票与发言严重不符的玩家
-
-**中等优先级（可以考虑）**：
-3. **站队异常者**：
-   - 关键时刻站错队、保护狼人的玩家
-   - 全程划水摸鱼、没有贡献的边缘玩家
-
-**低优先级（不建议）**：
-4. **金水/明确好人**：
-   - 被真预言家发过金水的玩家
-   - 发言逻辑清晰、明确站好人队的玩家
-   - 已知身份的其他神职（预言家、女巫）
-
-**特殊情况**：
-- **场上有对跳预言家**：带走假预言家（根据逻辑判断谁是假的）
-- **场上狼人优势**：必须带走最可能是狼的玩家，阻止狼人胜利
-- **不确定时**：宁可带走嫌疑最大的，也不要放弃开枪（浪费猎人价值）
-
-**当前局势**：
-- 场上剩余 {alive_count} 人，已出局 {dead_count} 人
-- 回顾历史发言和投票记录，找出最可疑的玩家
+1. 确定的狼人（被真预言家查杀、假预言家）
+2. 场上最大嫌疑（发言矛盾、带节奏、投票异常）
+3. 站队异常者
+4. 避免：金水玩家、明确好人
 
 **决定**：
 - 如果要开枪，在 action_target 中填写目标座位号
-- **强烈建议不要放弃开枪**，除非场上全是明确的好人（极少见）
-- 如果实在不确定，选择发言最可疑或最划水的玩家
-- 如果放弃开枪，填写 0（但请三思）
+- 强烈建议不要放弃开枪（填0）
+"""
+        else:  # English
+            targets_str = ", ".join([f"#{s}" for s in alive_others])
+            phase_instruction = f"""
+# Current Task: Hunter Shoot
+You're eliminated. You can shoot a player (last chance to help villagers).
+Available targets: {targets_str}
+
+**Target Priority**:
+1. Confirmed wolves (checked by real seer, fake seer)
+2. Most suspicious (contradictory speech, leading votes, abnormal voting)
+3. Abnormal stance
+4. Avoid: Gold-checked players, confirmed villagers
+
+**Decision**:
+- To shoot: Fill action_target with seat number
+- Strongly recommend don't skip (filling 0)
 """
 
     # Assemble context with language-specific headers

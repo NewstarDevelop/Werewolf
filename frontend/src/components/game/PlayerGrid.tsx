@@ -62,7 +62,7 @@ const PlayerGrid = ({
 
       {/* Responsive Grid Layout */}
       <div className={`grid w-full place-items-center ${isMobile ? 'content-start' : 'content-center'} gap-2 sm:gap-4 ${
-        players.length >= 12 ? (isMobile ? 'grid-cols-4' : 'grid-cols-3 sm:grid-cols-4') : 'grid-cols-3'
+        players.length >= 12 ? 'grid-cols-4' : 'grid-cols-3'
       } ${isMobile ? 'auto-rows-min' : ''}`}>
         {players.map((player) => {
           // Check if this player is a wolf teammate (for any wolf role)

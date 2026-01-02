@@ -39,9 +39,11 @@ const PlayerCard = ({
   const { t } = useTranslation(['common', 'roles']);
   const isMobile = useIsMobile();
 
-  const padding = isMobile ? "p-1.5" : "p-3";
-  const avatarSize = isMobile ? "w-10 h-10" : "w-14 h-14";
-  const iconSize = isMobile ? "w-5 h-5" : "w-7 h-7";
+  // Responsive sizing constants
+  const padding = isMobile ? "p-2.5" : "p-3";
+  const avatarSize = isMobile ? "w-12 h-12" : "w-14 h-14";
+  const iconSize = isMobile ? "w-6 h-6" : "w-7 h-7";
+  const nameMaxWidth = isMobile ? "max-w-[60px]" : "max-w-[90px]";
 
   const getRoleIcon = () => {
     if (!role) return null;
@@ -146,7 +148,7 @@ const PlayerCard = ({
         ${
           isAlive && isSelectable
             ? "hover:scale-105 hover:bg-muted/50 cursor-pointer"
-            : "opacity-40 cursor-not-allowed"
+            : "opacity-50 cursor-not-allowed"
         }
         ${!isAlive ? "grayscale" : ""}
         ${getBackgroundClass()}
@@ -155,30 +157,30 @@ const PlayerCard = ({
       `}
     >
       {/* Seat number badge */}
-      <div className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center">
+      <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center z-10">
         <span className="text-[10px] font-bold text-muted-foreground">
           {seatId}
         </span>
       </div>
 
-      {/* Current actor indicator */}
+      {/* Current actor indicator - highest priority */}
       {isCurrentActor && isAlive && (
-        <div className="absolute -top-1 -right-1">
+        <div className="absolute -top-2 -right-2 z-10">
           <Target className="w-4 h-4 text-accent animate-pulse" />
         </div>
       )}
 
-      {/* Wolf teammate indicator */}
-      {isWolfTeammate && !isUser && (
-        <div className="absolute -top-1 -right-1">
+      {/* Wolf teammate indicator - only show when not current actor */}
+      {isWolfTeammate && !isUser && !isCurrentActor && (
+        <div className="absolute -top-2 -right-2 z-10">
           <Skull className="w-4 h-4 text-werewolf" />
         </div>
       )}
 
-      {/* Verification result indicator */}
-      {verificationResult !== undefined && !isUser && (
+      {/* Verification result indicator - only show when no other right indicators */}
+      {verificationResult !== undefined && !isUser && !isCurrentActor && !isWolfTeammate && (
         <div
-          className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${
+          className={`absolute -top-2 -right-2 w-4 h-4 rounded-full z-10 ${
             verificationResult ? "bg-werewolf" : "bg-villager"
           }`}
         />
@@ -221,7 +223,7 @@ const PlayerCard = ({
       {/* Name */}
       <div className="text-center min-h-[32px] flex flex-col items-center justify-center gap-1">
         <p
-          className={`text-sm font-semibold truncate max-w-[70px] ${
+          className={`text-sm font-semibold truncate ${nameMaxWidth} ${
             isAlive
               ? isSelected
                 ? "text-werewolf"

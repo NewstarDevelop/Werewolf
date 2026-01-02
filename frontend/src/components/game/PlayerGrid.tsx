@@ -41,11 +41,14 @@ const PlayerGrid = ({
   const { t } = useTranslation('common');
   const isMobile = useIsMobile();
 
+  // Responsive sizing constants
+  const cardContainerWidth = isMobile ? 'w-16' : 'w-24';
+
   // Determine which players can be selected based on pending action
   const selectableIds = pendingAction?.choices || [];
 
   return (
-    <div className={`bg-card/50 rounded-xl border border-border flex flex-col ${isMobile ? 'p-2 h-full' : 'p-3 h-[600px]'}`}>
+    <div className={`bg-card/50 rounded-xl border border-border flex flex-col ${isMobile ? 'p-2 h-full overflow-y-auto scrollbar-thin' : 'p-3 min-h-[500px] max-h-[70vh]'}`}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border shrink-0">
         <Users className="w-4 h-4 text-accent" />
@@ -58,9 +61,9 @@ const PlayerGrid = ({
       </div>
 
       {/* Responsive Grid Layout */}
-      <div className={`grid w-full h-full place-items-center content-center gap-2 sm:gap-4 ${
-        players.length >= 12 ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-3'
-      }`}>
+      <div className={`grid w-full place-items-center ${isMobile ? 'content-start' : 'content-center'} gap-2 sm:gap-4 ${
+        players.length >= 12 ? (isMobile ? 'grid-cols-4' : 'grid-cols-3 sm:grid-cols-4') : 'grid-cols-3'
+      } ${isMobile ? 'auto-rows-min' : ''}`}>
         {players.map((player) => {
           // Check if this player is a wolf teammate (for any wolf role)
           const isWolfRole = myRole === "werewolf" || myRole === "wolf_king" || myRole === "white_wolf_king";
@@ -81,9 +84,7 @@ const PlayerGrid = ({
           return (
             <div
               key={player.id}
-              className={`flex justify-center items-center transition-all duration-300 ease-in-out ${
-                isMobile ? 'w-14' : 'w-20'
-              }`}
+              className={`flex justify-center items-center transition-all duration-300 ease-in-out min-w-0 ${cardContainerWidth}`}
             >
               <PlayerCard
                 seatId={player.seatId}

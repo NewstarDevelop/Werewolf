@@ -1,5 +1,5 @@
-import { useRef, useEffect } from "react";
-import { List, useListRef } from "react-window";
+import { useRef, useEffect, useCallback } from "react";
+import { FixedSizeList, ListOnScrollProps } from "react-window";
 import { AutoSizer } from "react-virtualized-auto-sizer";
 import ChatMessage from "./ChatMessage";
 import { MessageCircle, Loader2 } from "lucide-react";
@@ -22,16 +22,28 @@ interface ChatLogProps {
 
 const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const listRef = useListRef();
+  const listRef = useRef<FixedSizeList>(null);
+  const isNearBottomRef = useRef(true);
   const { t } = useTranslation('common');
 
   const shouldVirtualize = messages.length > 50;
 
+  // Track scroll position for virtualized list
+  const handleVirtualScroll = useCallback(({ scrollOffset, scrollDirection }: ListOnScrollProps) => {
+    if (!listRef.current) return;
+    const listHeight = (listRef.current.props as { height: number }).height;
+    const totalHeight = messages.length * 80;
+    const isNearBottom = totalHeight - scrollOffset - listHeight < 100;
+    isNearBottomRef.current = isNearBottom;
+  }, [messages.length]);
+
   // P2-3: Smart scroll - only auto-scroll if user is near bottom
   useEffect(() => {
     if (shouldVirtualize && listRef.current) {
-      // Auto-scroll virtualized list to bottom
-      listRef.current.scrollToRow(messages.length - 1, "end");
+      // Only auto-scroll if user is near bottom
+      if (isNearBottomRef.current) {
+        listRef.current.scrollToItem(messages.length - 1, "end");
+      }
     } else if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
@@ -68,13 +80,16 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
         <div className="flex-1">
           <AutoSizer>
             {({ height, width }) => (
-              <List
-                listRef={listRef}
-                defaultHeight={height}
-                defaultWidth={width}
-                rowCount={messages.length}
-                rowHeight={80}
-                rowComponent={({ index, style }) => {
+              <FixedSizeList
+                ref={listRef}
+                height={height}
+                width={width}
+                itemCount={messages.length}
+                itemSize={80}
+                onScroll={handleVirtualScroll}
+                className="p-4 scrollbar-thin"
+              >
+                {({ index, style }) => {
                   const msg = messages[index];
                   return (
                     <div style={style}>
@@ -89,8 +104,7 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
                     </div>
                   );
                 }}
-                className="p-4 scrollbar-thin"
-              />
+              </FixedSizeList>
             )}
           </AutoSizer>
         </div>

@@ -267,7 +267,7 @@ class Settings:
         # Priority 3 (Highest): Individual mapping per seat
         # Format: AI_PLAYER_{seat}_PROVIDER=openai
         # This overrides both auto-mapping and JSON mapping
-        for seat_id in range(1, 10):
+        for seat_id in range(1, 13):  # Support up to 12 players
             provider = os.getenv(f"AI_PLAYER_{seat_id}_PROVIDER")
             if provider:
                 if provider in self._providers:

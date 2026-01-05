@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from app.models.game import Game, Player
     from app.schemas.enums import GamePhase, MessageType
 
+# Wolf roles for checking (includes wolf_king and white_wolf_king)
+WOLF_ROLE_VALUES = {"werewolf", "wolf_king", "white_wolf_king"}
+
 
 def build_system_prompt(player: "Player", game: "Game", language: str = "zh") -> str:
     """Build the system prompt for an AI player."""
@@ -27,9 +30,9 @@ def build_system_prompt(player: "Player", game: "Game", language: str = "zh") ->
 {t('prompts.speaking_style', language=language, style=style_desc)}
 """
 
-    # Wolf teammates info (only for werewolves)
+    # Wolf teammates info (only for werewolves, wolf_king, white_wolf_king)
     wolf_info = ""
-    if player.role.value == "werewolf" and player.teammates:
+    if player.role.value in WOLF_ROLE_VALUES and player.teammates:
         teammates_str = "、".join([f"{t}号" for t in player.teammates]) if language == "zh" else ", ".join([f"#{t}" for t in player.teammates])
         wolf_info = f"\n{t('prompts.wolf_teammates', language=language, teammates=teammates_str)}\n{t('prompts.wolf_info_note', language=language)}"
 
@@ -144,13 +147,13 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
             sender = f"{msg.seat_id}{seat_suffix}"
             if msg.seat_id == player.seat_id:
                 sender = f"{msg.seat_id}{seat_suffix}{you_label}"
-            elif player.role.value == "werewolf" and msg.seat_id in player.teammates:
+            elif player.role.value in WOLF_ROLE_VALUES and msg.seat_id in player.teammates:
                 sender = f"{msg.seat_id}{seat_suffix}{teammate_label}"
 
             # 区分消息类型
             if msg.msg_type.value == "wolf_chat":
                 # 只有狼人才能看到狼人私聊
-                if player.role.value == "werewolf":
+                if player.role.value in WOLF_ROLE_VALUES:
                     chat_history.append(f"{wolf_chat_label} {sender}{colon}{msg.content}")
             else:
                 chat_history.append(f"{sender}{colon}{msg.content}")
@@ -161,8 +164,7 @@ def build_context_prompt(player: "Player", game: "Game", action_type: str = "spe
     phase_instruction = ""
     if action_type == "speech":
         # 检查是否是狼人夜间讨论阶段 (包括狼王和白狼王)
-        wolf_roles = {"werewolf", "wolf_king", "white_wolf_king"}
-        if game.phase.value == "night_werewolf_chat" and player.role.value in wolf_roles:
+        if game.phase.value == "night_werewolf_chat" and player.role.value in WOLF_ROLE_VALUES:
             # 狼人夜间讨论专用 prompt
             separator = "、" if language == "zh" else ", "
             seat_suffix = "号" if language == "zh" else ""
@@ -356,7 +358,7 @@ It's your turn to speak. Analyze the situation and share your thoughts based on 
 
         # 身份特定策略 (根据语言选择)
         if language == "zh":
-            if player.role.value == "werewolf":
+            if player.role.value in WOLF_ROLE_VALUES:
                 role_specific_strategy = """
 **狼人投票策略（极其重要）**：
 
@@ -422,7 +424,7 @@ It's your turn to speak. Analyze the situation and share your thoughts based on 
 可选目标：{alive_str}（不能投自己）
 """
         else:  # English
-            if player.role.value == "werewolf":
+            if player.role.value in WOLF_ROLE_VALUES:
                 role_specific_strategy = """
 **Werewolf Voting Strategy**:
 

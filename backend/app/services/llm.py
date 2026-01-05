@@ -419,8 +419,9 @@ class LLMService:
         system_prompt = build_system_prompt(player, game, language=game.language)
         context_prompt = build_context_prompt(player, game, action_type, language=game.language)
 
-        # Add wolf strategy for werewolves
-        if player.role.value == "werewolf":
+        # Add wolf strategy for werewolves (includes wolf_king and white_wolf_king)
+        wolf_role_values = {"werewolf", "wolf_king", "white_wolf_king"}
+        if player.role.value in wolf_role_values:
             strategy = build_wolf_strategy_prompt(player, game, language=game.language)
             if strategy:
                 context_prompt = strategy + "\n" + context_prompt

@@ -417,6 +417,10 @@ class Game:
 
         # Night guard phase
         elif phase == GamePhase.NIGHT_GUARD and role == Role.GUARD:
+            # Check if guard has already made decision this night
+            if self.guard_decided:
+                return None
+
             # Guard can protect any alive player (including self)
             # Filter out last night's target (cannot guard same person consecutively)
             protect_choices = alive_seats.copy()

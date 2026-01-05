@@ -3,7 +3,7 @@ import logging
 import random
 from typing import Optional
 
-from app.models.game import Game, Player, game_store
+from app.models.game import Game, Player, game_store, WOLF_ROLES
 from app.schemas.enums import (
     GamePhase, GameStatus, Role, ActionType, MessageType, Winner
 )
@@ -213,16 +213,16 @@ class GameEngine:
         """Validate and execute a player action."""
         phase = game.phase
 
-        # Night werewolf chat phase
-        if phase == GamePhase.NIGHT_WEREWOLF_CHAT and player.role == Role.WEREWOLF:
+        # Night werewolf chat phase - all wolf-aligned roles participate
+        if phase == GamePhase.NIGHT_WEREWOLF_CHAT and player.role in WOLF_ROLES:
             if action_type == ActionType.SPEAK and content:
                 game.add_message(player.seat_id, content, MessageType.WOLF_CHAT)
                 game.wolf_chat_completed.add(player.seat_id)
                 game.add_action(player.seat_id, ActionType.SPEAK)
                 return {"success": True, "message": t("api_responses.wolf_chat_sent", language=game.language)}
 
-        # Night werewolf phase
-        if phase == GamePhase.NIGHT_WEREWOLF and player.role == Role.WEREWOLF:
+        # Night werewolf phase - Werewolf and Wolf King vote for kill
+        if phase == GamePhase.NIGHT_WEREWOLF and player.role in (Role.WEREWOLF, Role.WOLF_KING):
             if action_type == ActionType.KILL and target_id:
                 # P0-HIGH-003: 统一错误处理 - 捕获validate_target异常
                 try:

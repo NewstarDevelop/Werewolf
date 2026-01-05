@@ -1,6 +1,5 @@
-import { useRef, useEffect, useCallback } from "react";
-import { FixedSizeList, ListOnScrollProps } from "react-window";
-import { AutoSizer } from "react-virtualized-auto-sizer";
+import { useRef, useEffect, useCallback, useState } from "react";
+import { VariableSizeList, ListOnScrollProps } from "react-window";
 import ChatMessage from "./ChatMessage";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -20,22 +19,60 @@ interface ChatLogProps {
   isLoading?: boolean;
 }
 
+// 估算消息高度：系统消息较短，普通消息较高
+const getItemSize = (msg: Message): number => {
+  if (msg.isSystem) return 52; // 系统消息：padding + 单行
+  // 普通消息：发送者行 + 消息气泡 + margin
+  const baseHeight = 72;
+  // 长消息额外增加高度（每50字符约增加一行）
+  const extraLines = Math.floor(msg.message.length / 50);
+  return baseHeight + extraLines * 20;
+};
+
 const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<FixedSizeList>(null);
+  const listRef = useRef<VariableSizeList>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const { t } = useTranslation('common');
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const shouldVirtualize = messages.length > 50;
 
+  // 监听容器尺寸变化
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // 消息变化时重置缓存的高度
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, [messages]);
+
   // Track scroll position for virtualized list
-  const handleVirtualScroll = useCallback(({ scrollOffset, scrollDirection }: ListOnScrollProps) => {
-    if (!listRef.current) return;
-    const listHeight = (listRef.current.props as { height: number }).height;
-    const totalHeight = messages.length * 80;
-    const isNearBottom = totalHeight - scrollOffset - listHeight < 100;
+  const handleVirtualScroll = useCallback(({ scrollOffset }: ListOnScrollProps) => {
+    if (!listRef.current || containerSize.height === 0) return;
+    // 计算总高度
+    let totalHeight = 0;
+    for (let i = 0; i < messages.length; i++) {
+      totalHeight += getItemSize(messages[i]);
+    }
+    const isNearBottom = totalHeight - scrollOffset - containerSize.height < 100;
     isNearBottomRef.current = isNearBottom;
-  }, [messages.length]);
+  }, [messages, containerSize.height]);
 
   // P2-3: Smart scroll - only auto-scroll if user is near bottom
   useEffect(() => {
@@ -77,36 +114,35 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
           {t('player.waiting')}
         </div>
       ) : shouldVirtualize ? (
-        <div className="flex-1">
-          <AutoSizer>
-            {({ height, width }) => (
-              <FixedSizeList
-                ref={listRef}
-                height={height}
-                width={width}
-                itemCount={messages.length}
-                itemSize={80}
-                onScroll={handleVirtualScroll}
-                className="p-4 scrollbar-thin"
-              >
-                {({ index, style }) => {
-                  const msg = messages[index];
-                  return (
-                    <div style={style}>
-                      <ChatMessage
-                        sender={msg.sender}
-                        message={msg.message}
-                        isUser={msg.isUser}
-                        isSystem={msg.isSystem}
-                        timestamp={msg.timestamp}
-                        day={msg.day}
-                      />
-                    </div>
-                  );
-                }}
-              </FixedSizeList>
-            )}
-          </AutoSizer>
+        <div ref={containerRef} className="flex-1 min-h-0">
+          {containerSize.height > 0 && containerSize.width > 0 && (
+            <VariableSizeList
+              ref={listRef}
+              height={containerSize.height}
+              width={containerSize.width}
+              itemCount={messages.length}
+              itemSize={(index) => getItemSize(messages[index])}
+              onScroll={handleVirtualScroll}
+              className="scrollbar-thin"
+              style={{ padding: '16px' }}
+            >
+              {({ index, style }) => {
+                const msg = messages[index];
+                return (
+                  <div style={style}>
+                    <ChatMessage
+                      sender={msg.sender}
+                      message={msg.message}
+                      isUser={msg.isUser}
+                      isSystem={msg.isSystem}
+                      timestamp={msg.timestamp}
+                      day={msg.day}
+                    />
+                  </div>
+                );
+              }}
+            </VariableSizeList>
+          )}
         </div>
       ) : (
         <div

@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 from app.core.config import settings
 from app.core.auth import create_player_token
 from app.core.database import get_db
-from app.models.game import game_store
+from app.models.game import game_store, WOLF_ROLES
 from app.api.dependencies import get_current_player
 from app.schemas.enums import (
     GamePhase, GameStatus, Role, ActionType, MessageType
@@ -263,7 +263,7 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
     other_alive = [s for s in alive_seats if s != human_player.seat_id]
 
     # Night werewolf chat phase - all wolf-aligned roles participate
-    if phase == GamePhase.NIGHT_WEREWOLF_CHAT and role in {Role.WEREWOLF, Role.WOLF_KING, Role.WHITE_WOLF_KING}:
+    if phase == GamePhase.NIGHT_WEREWOLF_CHAT and role in WOLF_ROLES:
         if human_player.seat_id not in game.wolf_chat_completed:
             return PendingAction(
                 type=ActionType.SPEAK,
@@ -272,6 +272,8 @@ def _get_pending_action(game, human_player) -> PendingAction | None:
             )
 
     # Night werewolf phase - regular werewolf and wolf king vote
+    # Note: White wolf king has separate handling in models/game.py with self-destruct option
+    # TODO: Add white wolf king handling here for single-player mode parity
     if phase == GamePhase.NIGHT_WEREWOLF and role in {Role.WEREWOLF, Role.WOLF_KING}:
         if human_player.seat_id not in game.wolf_votes:
             # 狼人可以击杀任何存活玩家（包括自己和队友，实现自刀策略）

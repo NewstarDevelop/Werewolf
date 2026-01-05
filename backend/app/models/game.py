@@ -371,7 +371,7 @@ class Game:
                     "message": "与狼队友讨论今晚击杀目标（发言后自动进入投票）"
                 }
 
-        # Night werewolf phase - regular werewolf and wolf king vote
+        # Night werewolf phase - regular werewolf and wolf king vote (white wolf king handled separately below)
         if phase == GamePhase.NIGHT_WEREWOLF and role in {Role.WEREWOLF, Role.WOLF_KING}:
             if player.seat_id not in self.wolf_votes:
                 kill_targets = [s for s in alive_seats if s != player.seat_id]

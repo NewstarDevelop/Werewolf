@@ -120,7 +120,7 @@ export function useGame(options: UseGameOptions = {}) {
     onError: (err: Error) => {
       // Ignore AbortError - this happens when request is cancelled due to component re-render
       // (e.g., WebSocket update triggers state change while step request is in flight)
-      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+      if (err.name === 'AbortError' || err.message?.toLowerCase().includes('aborted')) {
         return;
       }
       console.error('Step error:', err);
@@ -266,13 +266,11 @@ export function useGame(options: UseGameOptions = {}) {
     if (gameId && gameState && autoStep) {
       const needsAction = needsHumanAction(gameState);
       const isGameOver = gameState.status === 'finished';
-      // H-H3 FIX: Stop auto-stepping after 3 consecutive errors to prevent hammering backend
-      const MAX_STEP_ERRORS = 3;
-      const tooManyErrors = stepErrorCount >= MAX_STEP_ERRORS;
+      // H-H3 FIX: Stop auto-stepping after consecutive errors to prevent hammering backend
 
-      if (!needsAction && !isGameOver && !stepGameMutation.isPending && !tooManyErrors) {
+      if (!needsAction && !isGameOver && !stepGameMutation.isPending && !isAutoStepPaused) {
         scheduleNextStep();
-      } else if (tooManyErrors) {
+      } else if (isAutoStepPaused) {
         console.warn(`Auto-stepping disabled after ${stepErrorCount} consecutive errors. Manual step required.`);
       }
     }
@@ -282,7 +280,7 @@ export function useGame(options: UseGameOptions = {}) {
         clearTimeout(stepTimeoutRef.current);
       }
     };
-  }, [gameId, gameState, autoStep, scheduleNextStep, stepGameMutation.isPending, stepErrorCount]);
+  }, [gameId, gameState, autoStep, scheduleNextStep, stepGameMutation.isPending, stepErrorCount, isAutoStepPaused]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -298,6 +296,9 @@ export function useGame(options: UseGameOptions = {}) {
   const needsAction = gameState ? needsHumanAction(gameState) : false;
   const isGameOver = gameState?.status === 'finished';
   const isLoading = isStarting || isLoadingState || stepGameMutation.isPending;
+  // H-H3 FIX: Expose auto-step paused state for UI feedback
+  const MAX_STEP_ERRORS = 3;
+  const isAutoStepPaused = stepErrorCount >= MAX_STEP_ERRORS;
 
   // Combine local error and query error for unified error handling
   const combinedError = error || (queryError instanceof Error ? queryError.message : null);
@@ -315,6 +316,7 @@ export function useGame(options: UseGameOptions = {}) {
     needsAction,
     isGameOver,
     isWebSocketConnected,  // WebSocket connection status
+    isAutoStepPaused,  // True when auto-stepping is disabled due to errors
 
     // Actions
     startGame: handleStartGame,

@@ -261,6 +261,11 @@ export function useGame(options: UseGameOptions = {}) {
 
   const handleSkip = useCallback(() => handleAction('skip'), [handleAction]);
 
+  // H-H3 FIX: Expose auto-step paused state for UI feedback
+  // IMPORTANT: Must be defined BEFORE useEffect that references it (TDZ fix)
+  const MAX_STEP_ERRORS = 3;
+  const isAutoStepPaused = stepErrorCount >= MAX_STEP_ERRORS;
+
   // Auto-step when game starts or state changes
   useEffect(() => {
     if (gameId && gameState && autoStep) {
@@ -296,9 +301,6 @@ export function useGame(options: UseGameOptions = {}) {
   const needsAction = gameState ? needsHumanAction(gameState) : false;
   const isGameOver = gameState?.status === 'finished';
   const isLoading = isStarting || isLoadingState || stepGameMutation.isPending;
-  // H-H3 FIX: Expose auto-step paused state for UI feedback
-  const MAX_STEP_ERRORS = 3;
-  const isAutoStepPaused = stepErrorCount >= MAX_STEP_ERRORS;
 
   // Combine local error and query error for unified error handling
   const combinedError = error || (queryError instanceof Error ? queryError.message : null);

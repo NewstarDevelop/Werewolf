@@ -77,7 +77,9 @@
     "hunter_shot_player": "Shot Player {target_id}",
     "hunter_abstain_shoot": "Chose not to shoot",
     "last_words_recorded": "Last words recorded",
-    "invalid_phase_action": "Cannot perform this action in current phase"
+    "invalid_phase_action": "Cannot perform this action in current phase",
+    "message_empty": "Message cannot be empty",
+    "invalid_action_for_phase": "This action is not supported in current phase"
   },
   "system_messages": {
     "night_falls": "Night falls on Day {day}. Please close your eyes.",

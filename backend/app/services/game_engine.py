@@ -215,11 +215,15 @@ class GameEngine:
 
         # Night werewolf chat phase - all wolf-aligned roles participate
         if phase == GamePhase.NIGHT_WEREWOLF_CHAT and player.role in WOLF_ROLES:
-            if action_type == ActionType.SPEAK and content:
+            if action_type == ActionType.SPEAK:
+                if not content:
+                    return {"success": False, "message": t("api_responses.message_empty", language=game.language)}
                 game.add_message(player.seat_id, content, MessageType.WOLF_CHAT)
                 game.wolf_chat_completed.add(player.seat_id)
                 game.add_action(player.seat_id, ActionType.SPEAK)
                 return {"success": True, "message": t("api_responses.wolf_chat_sent", language=game.language)}
+            else:
+                return {"success": False, "message": t("api_responses.invalid_action_for_phase", language=game.language)}
 
         # Night werewolf phase - Werewolf and Wolf King vote for kill
         if phase == GamePhase.NIGHT_WEREWOLF and player.role in (Role.WEREWOLF, Role.WOLF_KING):

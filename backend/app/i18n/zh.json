@@ -77,7 +77,9 @@
     "hunter_shot_player": "开枪击中{target_id}号",
     "hunter_abstain_shoot": "放弃开枪",
     "last_words_recorded": "遗言已记录",
-    "invalid_phase_action": "当前阶段无法执行该操作"
+    "invalid_phase_action": "当前阶段无法执行该操作",
+    "message_empty": "消息不能为空",
+    "invalid_action_for_phase": "当前阶段不支持该操作"
   },
   "system_messages": {
     "night_falls": "第{day}天夜晚降临，请闭眼。",

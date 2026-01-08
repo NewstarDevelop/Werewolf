@@ -514,7 +514,12 @@ class GameEngine:
 
         # AI werewolves chat
         for wolf in alive_wolves:
-            if not wolf.is_human and wolf.seat_id not in game.wolf_chat_completed:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_wolf = (
+                (game.human_seats and wolf.seat_id in game.human_seats) or
+                (not game.human_seats and wolf.is_human)
+            )
+            if not is_human_wolf and wolf.seat_id not in game.wolf_chat_completed:
                 speech = await self.llm.generate_speech(wolf, game)  # WL-010: await
                 game.add_message(wolf.seat_id, speech, MessageType.WOLF_CHAT)
                 game.wolf_chat_completed.add(wolf.seat_id)
@@ -540,7 +545,12 @@ class GameEngine:
 
         # AI werewolves vote
         for wolf in alive_wolves:
-            if not wolf.is_human and wolf.seat_id not in game.wolf_votes:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_wolf = (
+                (game.human_seats and wolf.seat_id in game.human_seats) or
+                (not game.human_seats and wolf.is_human)
+            )
+            if not is_human_wolf and wolf.seat_id not in game.wolf_votes:
                 # 狼人可以击杀任何存活玩家（包括队友，实现自刀策略）
                 targets = [p.seat_id for p in game.get_alive_players()
                           if p.seat_id != wolf.seat_id]
@@ -584,7 +594,12 @@ class GameEngine:
         guard = game.get_player_by_role(Role.GUARD)
 
         if guard and guard.is_alive:
-            if guard.is_human:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_guard = (
+                (game.human_seats and guard.seat_id in game.human_seats) or
+                (not game.human_seats and guard.is_human)
+            )
+            if is_human_guard:
                 # Human guard hasn't made decision yet
                 if not game.guard_decided:
                     return {"status": "waiting_for_human", "phase": game.phase}
@@ -613,7 +628,12 @@ class GameEngine:
         seer = game.get_player_by_role(Role.SEER)
 
         if seer and seer.is_alive:
-            if seer.is_human:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_seer = (
+                (game.human_seats and seer.seat_id in game.human_seats) or
+                (not game.human_seats and seer.is_human)
+            )
+            if is_human_seer:
                 # If human has already verified (or cannot verify anyone), move on.
                 if game.seer_verified_this_night:
                     game.phase = GamePhase.NIGHT_WITCH
@@ -654,7 +674,12 @@ class GameEngine:
         witch = game.get_player_by_role(Role.WITCH)
 
         if witch and witch.is_alive:
-            if witch.is_human:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_witch = (
+                (game.human_seats and witch.seat_id in game.human_seats) or
+                (not game.human_seats and witch.is_human)
+            )
+            if is_human_witch:
                 used_save_this_night = any(
                     a.day == game.day
                     and a.player_id == witch.seat_id
@@ -827,7 +852,12 @@ class GameEngine:
             game.current_speech_index += 1
             return await self._handle_day_speech(game)  # WL-010: await recursive call
 
-        if player.is_human:
+        # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+        is_human_player = (
+            (game.human_seats and player.seat_id in game.human_seats) or
+            (not game.human_seats and player.is_human)
+        )
+        if is_human_player:
             return {"status": "waiting_for_human", "phase": game.phase}
 
         # AI speech
@@ -859,7 +889,12 @@ class GameEngine:
 
         # AI players vote
         for player in alive_players:
-            if not player.is_human and player.seat_id not in game.day_votes:
+            # P0-HIGH-002: 统一fallback逻辑 - human_seats (多人) > is_human (单人)
+            is_human_player = (
+                (game.human_seats and player.seat_id in game.human_seats) or
+                (not game.human_seats and player.is_human)
+            )
+            if not is_human_player and player.seat_id not in game.day_votes:
                 targets = [p.seat_id for p in alive_players if p.seat_id != player.seat_id]
                 # 获取完整的 LLM 响应（包含投票思考）
                 response = await self.llm.generate_response(player, game, "vote", targets + [0])  # WL-010: await

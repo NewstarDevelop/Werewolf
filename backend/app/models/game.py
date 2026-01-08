@@ -575,7 +575,7 @@ class Game:
                 continue
             # Hide wolf_chat unless player is a werewolf
             if msg.msg_type == MessageType.WOLF_CHAT:
-                if not player or player.role != Role.WEREWOLF:
+                if not player or player.role not in WOLF_ROLES:
                     continue
             filtered_messages.append({
                 "seat_id": msg.seat_id,
@@ -594,7 +594,7 @@ class Game:
             state["my_role"] = player.role.value
 
             # Werewolf-specific info
-            if player.role == Role.WEREWOLF:
+            if player.role in WOLF_ROLES:
                 state["wolf_teammates"] = player.teammates
                 state["night_kill_target"] = self.night_kill_target
                 # Wolf votes visible (for frontend to show teammate votes)

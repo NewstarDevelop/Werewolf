@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { List, useDynamicRowHeight } from "react-window";
 import ChatMessage from "./ChatMessage";
 import { MessageCircle, Loader2 } from "lucide-react";
@@ -40,7 +40,7 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
   const shouldVirtualize = messages.length > 50;
 
   // 使用 react-window v2 的动态行高 hook
-  const { getRowHeight, setRowHeight, observeRowElements } = useDynamicRowHeight({
+  const { getRowHeight, observeRowElements } = useDynamicRowHeight({
     estimatedRowHeight: 72,
   });
 
@@ -60,17 +60,21 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
     return () => resizeObserver.disconnect();
   }, []);
 
+  // Fix #5: Cache total height calculation to avoid recalculating on every scroll
+  const totalHeight = useMemo(() => {
+    let height = 0;
+    for (let i = 0; i < messages.length; i++) {
+      height += getRowHeight(i) || estimateItemSize(messages[i]);
+    }
+    return height;
+  }, [messages, getRowHeight]);
+
   // Track scroll position for virtualized list
   const handleVirtualScroll = useCallback(({ scrollOffset }: { scrollOffset: number }) => {
     if (!listRef.current || containerSize.height === 0) return;
-    // 计算总高度
-    let totalHeight = 0;
-    for (let i = 0; i < messages.length; i++) {
-      totalHeight += getRowHeight(i) || estimateItemSize(messages[i]);
-    }
     const isNearBottom = totalHeight - scrollOffset - containerSize.height < 100;
     isNearBottomRef.current = isNearBottom;
-  }, [messages, containerSize.height, getRowHeight]);
+  }, [totalHeight, containerSize.height]);
 
   // P2-3: Smart scroll - only auto-scroll if user is near bottom
   useEffect(() => {
@@ -129,7 +133,14 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
           {t('player.waiting')}
         </div>
       ) : shouldVirtualize ? (
-        <div ref={containerRef} className="flex-1 min-h-0">
+        <div
+          ref={containerRef}
+          className="flex-1 min-h-0"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+          aria-label={t('ui.game_log')}
+        >
           {containerSize.height > 0 && containerSize.width > 0 && (
             <List
               ref={listRef}
@@ -148,6 +159,10 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto p-4 scrollbar-thin"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+          aria-label={t('ui.game_log')}
         >
           {messages.map((msg) => (
             <ChatMessage

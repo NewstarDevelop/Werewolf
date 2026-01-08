@@ -309,7 +309,6 @@ class GameEngine:
 
                 target = game.get_player(target_id)
                 if target:
-                    from app.models.game import WOLF_ROLES
                     is_wolf = target.role in WOLF_ROLES  # Includes wolf king and white wolf king
                     player.verified_players[target_id] = is_wolf
                     game.seer_verified_this_night = True  # Mark as verified
@@ -660,7 +659,6 @@ class GameEngine:
                     target = await self.llm.decide_verify_target(seer, game, targets)  # WL-010: await
                     target_player = game.get_player(target)
                     if target_player:
-                        from app.models.game import WOLF_ROLES
                         is_wolf = target_player.role in WOLF_ROLES  # Includes wolf king and white wolf king
                         seer.verified_players[target] = is_wolf
                         game.add_action(seer.seat_id, ActionType.VERIFY, target)

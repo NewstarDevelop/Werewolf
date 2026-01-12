@@ -51,7 +51,7 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-[500px] sm:w-[600px]">
+      <SheetContent side="right" className="w-full max-w-[100vw] sm:w-[500px] sm:max-w-[600px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5 text-purple-400" />

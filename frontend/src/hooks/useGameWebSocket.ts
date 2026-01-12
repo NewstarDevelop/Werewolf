@@ -121,10 +121,17 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
       const host = import.meta.env.VITE_API_URL
         ? new URL(import.meta.env.VITE_API_URL).host
         : window.location.host;
-      const wsUrl = `${protocol}//${host}/api/ws/game/${gameId}?token=${encodeURIComponent(getToken() || '')}`;
+
+      // Security: Use Sec-WebSocket-Protocol to pass token instead of query string
+      // This prevents token leakage in server logs, browser history, and Referer headers
+      const token = getToken() || '';
+      const wsUrl = `${protocol}//${host}/api/ws/game/${gameId}`;
 
       console.log('[WebSocket] Connecting to:', wsUrl);
-      const ws = new WebSocket(wsUrl);
+
+      // Pass token via subprotocol: ["auth", "<token>"]
+      // Server will respond with "auth" subprotocol to confirm
+      const ws = new WebSocket(wsUrl, ['auth', token]);
       wsRef.current = ws;
       shouldReconnectRef.current = true;
 

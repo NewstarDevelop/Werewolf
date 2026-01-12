@@ -30,13 +30,13 @@ export interface RoomPlayer {
   is_ready: boolean;
   is_creator: boolean;
   is_me: boolean;
-  user_id: string | null;  // 用户ID（已登录用户），用于重复检测
   joined_at: string;
 }
 
 export interface RoomDetail {
   room: Room;
   players: RoomPlayer[];
+  has_same_user: boolean;  // P1-SEC-004: 当前登录用户是否已在房间中
 }
 
 export interface CreateRoomRequest {

@@ -117,12 +117,9 @@ export default function RoomLobby() {
         // 获取房间详情
         const roomDetail = await getRoomDetail(roomId);
 
-        // 检查当前用户的user_id是否已在房间中
-        const alreadyInRoom = roomDetail.players.some(
-          (p) => p.user_id === currentUser.id
-        );
-
-        if (alreadyInRoom) {
+        // P1-SEC-004: 使用后端返回的 has_same_user 字段检测重复加入
+        // 不再暴露其他用户的 user_id
+        if (roomDetail.has_same_user) {
           toast.error(t('room.already_in_room'), {
             description: t('room.cannot_join_twice'),
             action: {

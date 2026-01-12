@@ -9,8 +9,7 @@ i18n
   .use(LanguageDetector)  // Detect user language preference
   .use(initReactI18next)  // React binding
   .init({
-    lng: 'zh',  // 强制初始化语言为中文
-    fallbackLng: 'zh',  // Default to Chinese
+    fallbackLng: 'zh',  // Default to Chinese if detection fails
     supportedLngs: ['zh', 'en'],  // Supported languages
     defaultNS: 'common',  // Default namespace
 

@@ -117,6 +117,7 @@ class Player:
     # Werewolf specific
     teammates: list[int] = field(default_factory=list)
     wolf_persona: Optional[str] = None  # P2优化：狼人战术角色 (aggressive/hook/deep)
+    user_id: Optional[str] = None  # Link to authenticated user
 
     def __post_init__(self):
         if self.verified_players is None:
@@ -692,7 +693,8 @@ class GameStore:
         human_role: Optional[Role] = None,
         language: str = "zh",
         game_id: Optional[str] = None,
-        config: Optional[GameConfig] = None
+        config: Optional[GameConfig] = None,
+        user_id: Optional[str] = None
     ) -> Game:
         """Create a new game with random role assignment.
 
@@ -704,6 +706,7 @@ class GameStore:
             language: Game language ("zh" or "en")
             game_id: Custom game ID. If None, auto-generated.
             config: Game configuration. If None, defaults to CLASSIC_9_CONFIG.
+            user_id: Optional user ID for authenticated players.
         """
         # Use default 9-player config if not specified (backward compatibility)
         if config is None:
@@ -719,7 +722,7 @@ class GameStore:
                 )
 
         if game_id is None:
-            game_id = str(uuid.uuid4())[:8]
+            game_id = str(uuid.uuid4())
         game = Game(id=game_id, language=language)
 
         # Get role distribution from config
@@ -755,7 +758,8 @@ class GameStore:
                 seat_id=seat_id,
                 role=role,
                 is_human=is_human,
-                personality=None if is_human else personalities[i % len(personalities)]
+                personality=None if is_human else personalities[i % len(personalities)],
+                user_id=user_id if is_human else None
             )
 
             # Track all wolf-aligned roles for teammate relationship

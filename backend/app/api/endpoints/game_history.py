@@ -2,9 +2,12 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func, and_
 
 from app.core.database import get_db
 from app.api.dependencies import get_current_user
+from app.models.game_history import GameSession, GameParticipant
+from app.models.room import Room
 from app.services.game_history_service import GameHistoryService
 from app.schemas.game_history import (
     GameHistoryListResponse,
@@ -20,7 +23,7 @@ router = APIRouter(prefix="/game-history", tags=["game-history"])
 async def get_game_history_list(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
-    winner: Optional[str] = Query(None, description="Filter by winner: 'werewolf' or 'villager'"),
+    winner: Optional[str] = Query(None, description="Filter by winner: 'werewolf', 'villager', or 'draw'"),
     page: int = Query(1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page")
 ):
@@ -33,46 +36,57 @@ async def get_game_history_list(
     user_id = current_user["user_id"]
 
     # Validate winner filter
-    if winner and winner not in ["werewolf", "villager"]:
+    if winner and winner not in ["werewolf", "villager", "draw"]:
         raise HTTPException(
             status_code=400,
-            detail="Invalid winner filter. Must be 'werewolf' or 'villager'"
+            detail="Invalid winner filter. Must be 'werewolf', 'villager', or 'draw'"
         )
 
-    # Get games from service
-    games, total = GameHistoryService.get_user_games(
-        db=db,
-        user_id=user_id,
-        winner_filter=winner,
-        page=page,
-        page_size=page_size
+    # Optimized query using JOINs to avoid N+1 queries in the loop
+    player_counts = db.query(
+        GameParticipant.game_id,
+        func.count(GameParticipant.id).label("count")
+    ).group_by(GameParticipant.game_id).subquery()
+
+    query = db.query(
+        GameSession,
+        Room.name.label("room_name"),
+        GameParticipant.role.label("my_role"),
+        GameParticipant.is_winner.label("my_is_winner"),
+        player_counts.c.count.label("player_count")
+    ).join(
+        GameParticipant,
+        and_(GameSession.id == GameParticipant.game_id, GameParticipant.user_id == user_id)
+    ).outerjoin(
+        Room, GameSession.room_id == Room.id
+    ).join(
+        player_counts, GameSession.id == player_counts.c.game_id
+    ).filter(
+        GameSession.finished_at.isnot(None)
     )
 
-    # Convert to response format
-    game_items = []
-    for game in games:
-        # Get room name
-        room_name = GameHistoryService.get_room_name(db, game.room_id) if game.room_id else "Unknown Room"
+    if winner:
+        query = query.filter(GameSession.winner == winner)
 
-        # Get user's participant info
-        participant = GameHistoryService.get_user_participant(db, game.id, user_id)
-        my_role = participant.role if participant and participant.role else "Unknown"
-        is_winner = participant.is_winner if participant else False
+    total = query.count()
+    results = query.order_by(GameSession.finished_at.desc()) \
+        .offset((page - 1) * page_size) \
+        .limit(page_size) \
+        .all()
 
-        # Count total players
-        all_participants = GameHistoryService.get_all_participants(db, game.id)
-        player_count = len(all_participants)
-
-        game_items.append(GameHistoryItem(
+    game_items = [
+        GameHistoryItem(
             game_id=game.id,
-            room_name=room_name,
+            room_name=room_name or "Unknown Room",
             started_at=game.started_at,
             finished_at=game.finished_at,
             winner=game.winner or "unknown",
             player_count=player_count,
-            my_role=my_role,
+            my_role=my_role or "Unknown",
             is_winner=is_winner
-        ))
+        )
+        for game, room_name, my_role, is_winner, player_count in results
+    ]
 
     return GameHistoryListResponse(
         games=game_items,

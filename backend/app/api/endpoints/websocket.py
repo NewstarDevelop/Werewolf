@@ -2,7 +2,7 @@
 import logging
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from typing import Optional
+from typing import Optional, List
 
 from app.services.websocket_manager import websocket_manager
 from app.models.game import game_store
@@ -13,16 +13,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _extract_token_from_subprotocols(subprotocols: List[str]) -> Optional[str]:
+    """
+    Extract JWT token from Sec-WebSocket-Protocol header.
+
+    The client sends: Sec-WebSocket-Protocol: auth, <jwt_token>
+    We extract the token (second item) for authentication.
+    """
+    if not subprotocols or len(subprotocols) < 2:
+        return None
+    # First protocol is 'auth', second is the actual token
+    return subprotocols[1] if subprotocols[0] == "auth" else None
+
+
 @router.websocket("/ws/game/{game_id}")
 async def game_websocket(
     websocket: WebSocket,
     game_id: str,
-    token: str = Query(...)
+    token: Optional[str] = Query(None)  # Keep for backward compatibility
 ):
     """
     WebSocket endpoint for real-time game updates with JWT authentication.
 
-    Clients connect with token in query string for player identification.
+    Authentication methods (in order of preference):
+    1. Sec-WebSocket-Protocol header: ["auth", "<jwt_token>"] (recommended, secure)
+    2. Query string: ?token=<jwt_token> (deprecated, for backward compatibility)
 
     Message format:
     {
@@ -37,9 +52,23 @@ async def game_websocket(
             pass
         await websocket.close(code=1008, reason=reason)
 
-    # Step 1: Authenticate and extract player_id from JWT
+    # Step 1: Extract token from Sec-WebSocket-Protocol (preferred) or query string (fallback)
+    subprotocols = websocket.scope.get("subprotocols", [])
+    auth_token = _extract_token_from_subprotocols(subprotocols)
+
+    # Fallback to query string for backward compatibility (deprecated)
+    if not auth_token:
+        auth_token = token
+        if auth_token:
+            logger.warning(f"WebSocket using deprecated query string auth for game {game_id}")
+
+    if not auth_token:
+        await _reject("Authentication required: provide token via Sec-WebSocket-Protocol")
+        return
+
+    # Step 2: Authenticate and extract player_id from JWT
     try:
-        payload = verify_player_token(token)
+        payload = verify_player_token(auth_token)
         player_id = payload.get("player_id") or payload.get("sub")
         room_id = payload.get("room_id")
         if room_id and room_id != game_id:
@@ -66,7 +95,9 @@ async def game_websocket(
         return
 
     # Step 4: Establish connection with player identity
-    await websocket_manager.connect(game_id, player_id, websocket)
+    # If using subprotocol auth, respond with "auth" to confirm
+    accepted_subprotocol = "auth" if subprotocols and subprotocols[0] == "auth" else None
+    await websocket_manager.connect(game_id, player_id, websocket, subprotocol=accepted_subprotocol)
 
     try:
         # Send initial state filtered for this player

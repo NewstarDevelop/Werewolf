@@ -15,9 +15,16 @@ class ConnectionManager:
         # game_id -> set of player_ids (auxiliary index for broadcasts)
         self._game_players: Dict[str, Set[str]] = {}
 
-    async def connect(self, game_id: str, player_id: str, websocket: WebSocket):
-        """Accept a new WebSocket connection for a specific player in a game."""
-        await websocket.accept()
+    async def connect(self, game_id: str, player_id: str, websocket: WebSocket, subprotocol: str = None):
+        """Accept a new WebSocket connection for a specific player in a game.
+
+        Args:
+            game_id: The game identifier
+            player_id: The player identifier
+            websocket: The WebSocket connection
+            subprotocol: Optional subprotocol to accept (for Sec-WebSocket-Protocol)
+        """
+        await websocket.accept(subprotocol=subprotocol)
 
         key = (game_id, player_id)
         existing = self.connections.get(key)

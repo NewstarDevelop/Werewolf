@@ -131,17 +131,20 @@ async def get_current_user(
 
 async def get_optional_user(
     authorization: Optional[str] = Header(None),
-    user_access_token: Optional[str] = Cookie(None)
+    user_access_token: Optional[str] = Cookie(None),
+    db: Session = Depends(get_db)
 ) -> Optional[Dict]:
     """
     Dependency to get current user if authenticated, None otherwise.
     Used for endpoints that work for both logged-in and anonymous users.
 
     Security: Supports both Authorization header and HttpOnly cookie.
+    Validates user exists and is active in database.
 
     Args:
         authorization: Authorization header (format: "Bearer <token>")
         user_access_token: HttpOnly cookie containing JWT token
+        db: Database session
 
     Returns:
         Dict containing user info if authenticated, None otherwise
@@ -151,16 +154,33 @@ async def get_optional_user(
     if user_access_token:
         token = user_access_token
     elif authorization:
-        token = authorization.replace("Bearer ", "").strip()
+        # Strict Bearer token parsing
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1]
+        else:
+            return None
 
     if not token:
         return None
 
     try:
         payload = verify_player_token(token)
-        return payload if payload.get("user_id") else None
     except Exception:
         return None
+
+    user_id = payload.get("user_id")
+    if not user_id:
+        return None
+
+    # Validate user exists and is active
+    from app.models.user import User
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user or not user.is_active:
+        return None
+
+    return payload
 
 
 async def get_admin(

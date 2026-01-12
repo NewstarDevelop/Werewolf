@@ -14,6 +14,9 @@ services:
       replicas: 1
     ports:
       - "8082:8000"
+    volumes:
+      # Persist database and data files
+      - ./data:/app/data
     env_file:
       # 自动加载项目根目录的 .env 文件
       # 包含所有环境变量：AI分析配置、多Provider配置、座位映射等

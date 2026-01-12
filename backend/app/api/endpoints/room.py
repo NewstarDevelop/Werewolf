@@ -76,6 +76,10 @@ class RoomPlayerResponse(BaseModel):
 
     P0-SEC-001 Fix: Removed player_id to prevent identity spoofing.
     Attackers could enumerate player_ids and impersonate other players.
+
+    P1-SEC-004 Fix: Removed user_id to prevent privacy leakage.
+    Use is_me to identify current user, and has_same_user in RoomDetailResponse
+    to detect if the authenticated user is already in the room.
     """
     id: int
     nickname: str
@@ -83,7 +87,6 @@ class RoomPlayerResponse(BaseModel):
     is_ready: bool
     is_creator: bool
     is_me: bool  # 标识是否为当前请求用户
-    user_id: Optional[str] = None  # 用户ID（已登录用户），用于前端重复检测
     joined_at: str
 
 
@@ -91,6 +94,7 @@ class RoomDetailResponse(BaseModel):
     """房间详情响应"""
     room: RoomResponse
     players: List[RoomPlayerResponse]
+    has_same_user: bool = False  # P1-SEC-004: 当前登录用户是否已在房间中（用于重复加入检测）
 
 
 # ==================== API Endpoints ====================
@@ -273,6 +277,12 @@ def get_room_detail(
         # 获取当前用户的 player_id 用于标识 is_me
         current_player_id = current_player.get("player_id")
 
+        # P1-SEC-004: 检查当前登录用户是否已在房间中（用于重复加入检测）
+        current_user_id = current_player.get("user_id")
+        has_same_user = False
+        if current_user_id:
+            has_same_user = any(p.user_id == current_user_id for p in players)
+
         return RoomDetailResponse(
             room=RoomResponse(
                 id=room.id,
@@ -293,11 +303,11 @@ def get_room_detail(
                     is_ready=p.is_ready,
                     is_creator=p.is_creator,
                     is_me=(p.player_id == current_player_id),
-                    user_id=p.user_id,  # 包含user_id用于前端重复检测
                     joined_at=p.joined_at.isoformat()
                 )
                 for p in players
-            ]
+            ],
+            has_same_user=has_same_user
         )
     except HTTPException:
         raise

@@ -96,6 +96,15 @@ class Settings:
         # P1-SEC-002: Control X-Admin-Key availability (default disabled in production)
         self.ADMIN_KEY_ENABLED: bool = os.getenv("ADMIN_KEY_ENABLED", "false").lower() == "true"
 
+        # P1-SEC-003: Trusted proxies for X-Forwarded-For header
+        # Only trust forwarded headers when request comes from these IPs
+        # Example: "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+        # Empty string means don't trust any proxy (use direct client IP only)
+        trusted_proxies_str = os.getenv("TRUSTED_PROXIES", "")
+        self.TRUSTED_PROXIES: list[str] = [
+            p.strip() for p in trusted_proxies_str.split(",") if p.strip()
+        ]
+
         # T-SEC-005: CORS configuration
         # CORS_ORIGINS: comma-separated list of allowed origins, or "*" for all
         # Example: "http://localhost:3000,https://example.com"

@@ -288,6 +288,8 @@ async def oauth_callback(
 
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e) or "Invalid OAuth request")
     except Exception:
         logger.error("OAuth callback failed", exc_info=True)
         raise HTTPException(status_code=500, detail="OAuth callback failed")

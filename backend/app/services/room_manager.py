@@ -29,7 +29,7 @@ class RoomManager:
 
         Phase 8 Fix: Added game_mode and wolf_king_variant parameters.
         """
-        room_id = str(uuid.uuid4())[:8]
+        room_id = str(uuid.uuid4())
 
         # 创建房间记录
         room = Room(
@@ -333,7 +333,8 @@ class RoomManager:
     def finish_game(self, db: Session, room_id: str):
         """游戏结束，更新房间状态并记录游戏历史"""
         from app.models.game_history import GameSession, GameParticipant
-        from app.schemas.enums import Winner, RoomStatus
+        from app.schemas.enums import Winner
+        from app.models.room import RoomStatus
 
         # 幂等性检查：防止重复处理
         existing_session = db.query(GameSession).filter_by(id=room_id).first()
@@ -393,13 +394,34 @@ class RoomManager:
                     # 平局时所有人都标记为未获胜
                     is_winner = False
 
+                # 构造参与者字段：区分真人玩家和AI玩家
+                is_ai = not game_player.is_human
+
+                if is_ai:
+                    participant_user_id = None
+                    participant_player_id = str(uuid.uuid4())
+                    participant_nickname = (
+                        game_player.personality.name
+                        if game_player.personality and game_player.personality.name
+                        else f"AI_{seat_id}"
+                    )
+                else:
+                    if room_player:
+                        participant_user_id = room_player.user_id
+                        participant_player_id = room_player.player_id
+                        participant_nickname = room_player.nickname
+                    else:
+                        participant_user_id = None
+                        participant_player_id = str(uuid.uuid4())
+                        participant_nickname = f"Player_{seat_id}"
+
                 participant = GameParticipant(
-                    game_id=session.id,  # 修正：使用 game_id 字段
-                    user_id=room_player.user_id if room_player else None,  # AI玩家为None
-                    player_id=game_player.player_id,  # 补充：player_id 字段
+                    game_id=session.id,
+                    user_id=participant_user_id,
+                    player_id=participant_player_id,
                     seat_id=seat_id,
-                    nickname=game_player.nickname,  # 补充：nickname 字段（从游戏内获取）
-                    is_ai=game_player.is_ai,  # 补充：is_ai 字段（从游戏内获取）
+                    nickname=participant_nickname,
+                    is_ai=is_ai,
                     role=game_player.role.value,
                     is_winner=is_winner
                 )

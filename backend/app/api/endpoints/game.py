@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.auth import create_player_token
 from app.core.database import get_db
 from app.models.game import game_store, WOLF_ROLES
-from app.api.dependencies import get_current_player
+from app.api.dependencies import get_current_player, get_optional_user
 from app.schemas.enums import (
     GamePhase, GameStatus, Role, ActionType, MessageType
 )
@@ -36,21 +36,54 @@ ADMIN_KEY_MAX_FAILURES = 5
 ADMIN_KEY_LOCKOUT_SECONDS = 600  # 10 minutes
 
 
+def _is_trusted_proxy(ip: str) -> bool:
+    """Check if the given IP is in the trusted proxies list."""
+    import ipaddress
+    if not settings.TRUSTED_PROXIES:
+        return False
+    try:
+        client_ip = ipaddress.ip_address(ip)
+        for proxy in settings.TRUSTED_PROXIES:
+            try:
+                # Support both single IPs and CIDR notation
+                if '/' in proxy:
+                    if client_ip in ipaddress.ip_network(proxy, strict=False):
+                        return True
+                else:
+                    if client_ip == ipaddress.ip_address(proxy):
+                        return True
+            except ValueError:
+                continue
+    except ValueError:
+        return False
+    return False
+
+
 def _get_client_ip(request: Request) -> str:
-    """Extract client IP from request, handling proxies."""
-    # Check X-Forwarded-For header (set by reverse proxies)
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        # Take the first IP (original client)
-        return forwarded_for.split(",")[0].strip()
-    # Check X-Real-IP header (set by some proxies)
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip.strip()
-    # Fall back to direct client IP
-    if request.client:
-        return request.client.host
-    return "unknown"
+    """
+    Extract client IP from request, handling proxies securely.
+
+    P1-SEC-003: Only trust X-Forwarded-For/X-Real-IP headers when the
+    direct client IP is in TRUSTED_PROXIES. This prevents IP spoofing
+    attacks where malicious clients forge these headers.
+    """
+    # Get direct client IP first
+    direct_ip = request.client.host if request.client else "unknown"
+
+    # Only trust forwarded headers if request comes from a trusted proxy
+    if direct_ip != "unknown" and _is_trusted_proxy(direct_ip):
+        # Check X-Forwarded-For header (set by reverse proxies)
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            # Take the first IP (original client)
+            return forwarded_for.split(",")[0].strip()
+        # Check X-Real-IP header (set by some proxies)
+        real_ip = request.headers.get("X-Real-IP")
+        if real_ip:
+            return real_ip.strip()
+
+    # Fall back to direct client IP (don't trust forwarded headers)
+    return direct_ip
 
 
 # T-SEC-004: Unified admin verification
@@ -139,8 +172,9 @@ def verify_game_membership(game_id: str, current_player: Dict):
     """
     T-SEC-003: Verify player is authorized to access the game.
 
-    For room mode (token has room_id): verify room_id matches game_id
-    For single-player mode (no room_id in token): allow access to any game
+    Authorization rules:
+    - If token has room_id: it must match game_id
+    - Always: player_id must exist in game.player_mapping
 
     Args:
         game_id: Game ID from URL path
@@ -159,34 +193,41 @@ def verify_game_membership(game_id: str, current_player: Dict):
     player_id = current_player["player_id"]
     room_id = current_player.get("room_id")
 
-    # Room mode: token has room_id, must match game_id and player in mapping
-    if room_id:
-        if room_id != game_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Game does not match your room"
-            )
-        if player_id not in game.player_mapping:
-            raise HTTPException(
-                status_code=403,
-                detail="You are not a player in this game"
-            )
+    # Room mode: token has room_id, must match game_id
+    if room_id and room_id != game_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Game does not match your room"
+        )
+
+    # Always enforce membership via player_mapping
+    if player_id not in game.player_mapping:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not a player in this game"
+        )
 
     return game
 
 
 @router.post("/start", response_model=GameStartResponse)
-def start_game(request: GameStartRequest) -> GameStartResponse:
+def start_game(
+    request: GameStartRequest,
+    current_user: Optional[Dict] = Depends(get_optional_user)
+) -> GameStartResponse:
     """
     Create a new game and assign roles.
     POST /api/game/start
 
     Returns JWT token for authentication in subsequent API calls.
     """
+    user_id = current_user.get("user_id") if current_user else None
+
     game = game_store.create_game(
         human_seat=request.human_seat,
         human_role=request.human_role,
-        language=request.language
+        language=request.language,
+        user_id=user_id
     )
 
     human_player = game.get_player(game.human_seat)
@@ -455,13 +496,13 @@ async def submit_action(
     # Get seat_id from token mapping (don't trust client-provided seat_id)
     player_id = current_player["player_id"]
 
-    # Use seat_id from token mapping for security (room mode)
-    # For single-player mode, use human_seat as fallback
-    if player_id in game.player_mapping:
-        seat_id = game.player_mapping[player_id]
-    else:
-        # Single-player mode fallback
-        seat_id = game.human_seat
+    # Use seat_id from token mapping for security
+    seat_id = game.player_mapping.get(player_id)
+    if seat_id is None:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not a player in this game"
+        )
 
     # P0-STAB-001: Acquire per-game lock to prevent concurrent state corruption
     async with game_store.get_lock(game_id):

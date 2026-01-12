@@ -67,4 +67,5 @@ class Winner(str, Enum):
     """Winner enum."""
     WEREWOLF = "werewolf"
     VILLAGER = "villager"
+    DRAW = "draw"
     NONE = "none"

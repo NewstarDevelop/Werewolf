@@ -1,7 +1,7 @@
 """Room management service - handles room CRUD operations."""
 from sqlalchemy.orm import Session
 from app.models.room import Room, RoomPlayer, RoomStatus
-from app.models.game import game_store
+from app.models.game import game_store, WOLF_ROLES
 from typing import List, Optional
 from datetime import datetime
 import uuid
@@ -385,11 +385,11 @@ class RoomManager:
                 room_player = room_players_map.get(seat_id)
 
                 # 判断是否获胜（支持平局）
-                is_winner = False
+                is_wolf = game_player.role in WOLF_ROLES
                 if game.winner == Winner.WEREWOLF:
-                    is_winner = game_player.role.is_werewolf()
+                    is_winner = is_wolf
                 elif game.winner == Winner.VILLAGER:
-                    is_winner = not game_player.role.is_werewolf()
+                    is_winner = not is_wolf
                 elif game.winner == Winner.DRAW:
                     # 平局时所有人都标记为未获胜
                     is_winner = False

@@ -16,7 +16,7 @@ import { getPlayerId } from '@/utils/player';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
-import { GameMode, WolfKingVariant } from '@/services/api';
+import { GameMode, WolfKingVariant, ApiError } from '@/services/api';
 
 const roomNameSchema = z.string()
   .max(50, 'Room name too long (max 50 characters)')
@@ -69,7 +69,7 @@ export default function RoomLobby() {
       toast.success(t('room.room_created'));
       navigate(`/room/${data.room.id}/waiting`);
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       // 处理 409 冲突错误（用户已有活跃房间）
       if (error.response?.status === 409) {
         toast.error(t('room.room_limit_reached', { defaultValue: '您已有一个活跃房间' }), {

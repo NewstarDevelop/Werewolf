@@ -3,9 +3,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureError } from '@/lib/sentry';
-import i18n from '@/i18n/config';
+import { withTranslation, WithTranslation } from 'react-i18next';
 
-interface Props {
+interface Props extends WithTranslation {
   children: ReactNode;
 }
 
@@ -14,7 +14,7 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryClass extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
@@ -30,16 +30,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public render() {
+    const { t } = this.props;
+
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{i18n.t('common:error.something_went_wrong')}</AlertTitle>
+            <AlertTitle>{t('error.something_went_wrong')}</AlertTitle>
             <AlertDescription className="mt-2">
-              <p className="mb-4 text-sm">{this.state.error?.message || i18n.t('common:error.unexpected_error')}</p>
+              <p className="mb-4 text-sm">{this.state.error?.message || t('error.unexpected_error')}</p>
               <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                {i18n.t('common:error.reload_page')}
+                {t('error.reload_page')}
               </Button>
             </AlertDescription>
           </Alert>
@@ -50,3 +52,6 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+// 使用 withTranslation HOC 包装，使组件响应语言切换
+export const ErrorBoundary = withTranslation('common')(ErrorBoundaryClass);

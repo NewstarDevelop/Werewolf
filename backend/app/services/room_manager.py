@@ -19,7 +19,7 @@ class RoomManager:
         name: str,
         creator_nickname: str,
         creator_id: str,
-        user_id: Optional[str] = None,
+        user_id: str,
         game_mode: str = "classic_9",
         wolf_king_variant: Optional[str] = None,
         language: str = "zh",
@@ -27,7 +27,8 @@ class RoomManager:
     ) -> Room:
         """创建房间并添加创建者为第一个玩家
 
-        要求 user_id 必须提供（用户必须登录）。
+        Args:
+            user_id: 创建者用户ID（必需，用户必须登录才能创建房间）
         """
         room_id = str(uuid.uuid4())
 

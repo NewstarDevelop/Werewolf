@@ -133,8 +133,14 @@ export interface ActionResponse {
   message?: string | null;
 }
 
-// API Error class
+// API Error class with optional response data for compatibility
 export class ApiError extends Error {
+  // Optional response object for axios-style error handling compatibility
+  response?: {
+    status: number;
+    data?: { detail?: string };
+  };
+
   constructor(
     public status: number,
     public detail: string

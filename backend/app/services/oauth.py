@@ -199,11 +199,23 @@ class LinuxdoOAuthService:
             db.commit()
             return user
 
-        # Create new user
+        # Create new user with unique nickname handling
+        base_nickname = provider_username or f"user_{provider_user_id[:8]}"
+        nickname = base_nickname
+
+        # Check for nickname conflicts and generate unique one
+        suffix = 1
+        while db.query(User).filter(User.nickname == nickname).first():
+            nickname = f"{base_nickname}_{suffix}"
+            suffix += 1
+            if suffix > 100:  # Safety limit
+                nickname = f"{base_nickname}_{provider_user_id[:8]}"
+                break
+
         user = User(
             id=str(uuid.uuid4()),
             email=provider_email.lower() if provider_email else None,
-            nickname=provider_username or f"user_{provider_user_id[:8]}",
+            nickname=nickname,
             avatar_url=avatar_url,
             is_active=True,
             is_email_verified=bool(provider_email),

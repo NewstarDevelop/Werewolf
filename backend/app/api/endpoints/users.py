@@ -39,10 +39,21 @@ async def update_user_profile(
     """
     Update current user's profile.
     """
+    from sqlalchemy.exc import IntegrityError
+
     user = db.query(User).get(current_user["user_id"])
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    # Check nickname uniqueness before update
+    if body.nickname is not None and body.nickname != user.nickname:
+        existing = db.query(User).filter(
+            User.nickname == body.nickname,
+            User.id != user.id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Nickname already taken")
 
     # Update fields if provided
     if body.nickname is not None:
@@ -56,8 +67,12 @@ async def update_user_profile(
 
     user.updated_at = datetime.utcnow()
 
-    db.commit()
-    db.refresh(user)
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Nickname already taken")
 
     return UserResponse.from_orm(user)
 

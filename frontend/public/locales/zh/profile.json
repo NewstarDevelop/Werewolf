@@ -1,0 +1,38 @@
+{
+  "title": "个人中心",
+  "back_to_lobby": "返回大厅",
+  "profile_card": {
+    "title": "个人资料",
+    "description": "管理您的账户信息"
+  },
+  "avatar": {
+    "email": "邮箱",
+    "email_not_bound": "未绑定"
+  },
+  "form": {
+    "nickname": "昵称",
+    "bio": "个人简介",
+    "bio_placeholder": "介绍一下自己...",
+    "avatar_url": "头像URL",
+    "avatar_url_placeholder": "https://example.com/avatar.jpg",
+    "saving": "保存中...",
+    "save": "保存更改"
+  },
+  "stats": {
+    "title": "游戏统计",
+    "games_played": "总场次",
+    "games_won": "胜场",
+    "win_rate": "胜率",
+    "no_data": "暂无数据"
+  },
+  "danger_zone": {
+    "title": "危险区域",
+    "logout": "退出登录"
+  },
+  "toast": {
+    "update_success": "更新成功",
+    "profile_updated": "您的个人资料已更新",
+    "update_failed": "更新失败",
+    "update_error": "更新过程中出现错误"
+  }
+}

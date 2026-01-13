@@ -13,7 +13,7 @@ class User(Base):
     id = Column(String(36), primary_key=True)  # UUID
     email = Column(String(255), unique=True, nullable=True, index=True)  # 邮箱（OAuth用户可为空）
     password_hash = Column(String(128), nullable=True)  # bcrypt hash（OAuth用户为空）
-    nickname = Column(String(50), nullable=False)  # 昵称
+    nickname = Column(String(50), unique=True, nullable=False)  # 昵称（唯一，unique自带索引）
     avatar_url = Column(String(512), nullable=True)  # 头像URL
     bio = Column(String(500), nullable=True)  # 个人简介
     is_active = Column(Boolean, default=True, nullable=False)  # 是否激活

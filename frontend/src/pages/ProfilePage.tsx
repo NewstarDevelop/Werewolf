@@ -3,6 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,6 +31,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('profile');
   const { user, logout, updateUser, refreshUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -74,16 +76,16 @@ export default function ProfilePage() {
         const updatedUser = await authService.updateProfile(updates);
         updateUser(updatedUser);
         toast({
-          title: '更新成功',
-          description: '您的个人资料已更新',
+          title: t('toast.update_success'),
+          description: t('toast.profile_updated'),
         });
       }
     } catch (error) {
       logError('ProfilePage.onSubmit', error);
       toast({
         variant: 'destructive',
-        title: '更新失败',
-        description: getErrorMessage(error, '更新过程中出现错误'),
+        title: t('toast.update_failed'),
+        description: getErrorMessage(error, t('toast.update_error')),
       });
     } finally {
       setIsLoading(false);
@@ -104,17 +106,17 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">个人中心</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <Button variant="outline" onClick={() => navigate('/lobby')}>
-            返回大厅
+            {t('back_to_lobby')}
           </Button>
         </div>
 
         {/* Profile Card */}
         <Card>
           <CardHeader>
-            <CardTitle>个人资料</CardTitle>
-            <CardDescription>管理您的账户信息</CardDescription>
+            <CardTitle>{t('profile_card.title')}</CardTitle>
+            <CardDescription>{t('profile_card.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Avatar Section */}
@@ -126,8 +128,8 @@ export default function ProfilePage() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm text-muted-foreground">邮箱</p>
-                <p className="font-medium">{user.email || '未绑定'}</p>
+                <p className="text-sm text-muted-foreground">{t('avatar.email')}</p>
+                <p className="font-medium">{user.email || t('avatar.email_not_bound')}</p>
               </div>
             </div>
 
@@ -141,7 +143,7 @@ export default function ProfilePage() {
                   name="nickname"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>昵称</FormLabel>
+                      <FormLabel>{t('form.nickname')}</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={isLoading} />
                       </FormControl>
@@ -155,11 +157,11 @@ export default function ProfilePage() {
                   name="bio"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>个人简介</FormLabel>
+                      <FormLabel>{t('form.bio')}</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
-                          placeholder="介绍一下自己..."
+                          placeholder={t('form.bio_placeholder')}
                           className="resize-none"
                           rows={3}
                           disabled={isLoading}
@@ -175,11 +177,11 @@ export default function ProfilePage() {
                   name="avatar_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>头像URL</FormLabel>
+                      <FormLabel>{t('form.avatar_url')}</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="https://example.com/avatar.jpg"
+                          placeholder={t('form.avatar_url_placeholder')}
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -192,10 +194,10 @@ export default function ProfilePage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      保存中...
+                      {t('form.saving')}
                     </>
                   ) : (
-                    '保存更改'
+                    t('form.save')
                   )}
                 </Button>
               </form>
@@ -208,7 +210,7 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              游戏统计
+              {t('stats.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -220,21 +222,21 @@ export default function ProfilePage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-3xl font-bold">{stats.games_played}</p>
-                  <p className="text-sm text-muted-foreground">总场次</p>
+                  <p className="text-sm text-muted-foreground">{t('stats.games_played')}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-500">{stats.games_won}</p>
-                  <p className="text-sm text-muted-foreground">胜场</p>
+                  <p className="text-sm text-muted-foreground">{t('stats.games_won')}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-blue-500">
                     {(stats.win_rate * 100).toFixed(1)}%
                   </p>
-                  <p className="text-sm text-muted-foreground">胜率</p>
+                  <p className="text-sm text-muted-foreground">{t('stats.win_rate')}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">暂无数据</p>
+              <p className="text-center text-muted-foreground py-8">{t('stats.no_data')}</p>
             )}
           </CardContent>
         </Card>
@@ -242,11 +244,11 @@ export default function ProfilePage() {
         {/* Danger Zone */}
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="text-destructive">危险区域</CardTitle>
+            <CardTitle className="text-destructive">{t('danger_zone.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button variant="destructive" onClick={handleLogout}>
-              退出登录
+              {t('danger_zone.logout')}
             </Button>
           </CardContent>
         </Card>

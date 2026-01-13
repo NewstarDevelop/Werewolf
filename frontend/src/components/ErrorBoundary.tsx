@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { captureError } from '@/lib/sentry';
+import i18n from '@/i18n/config';
 
 interface Props {
   children: ReactNode;
@@ -34,11 +35,11 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Something went wrong</AlertTitle>
+            <AlertTitle>{i18n.t('common:error.something_went_wrong')}</AlertTitle>
             <AlertDescription className="mt-2">
-              <p className="mb-4 text-sm">{this.state.error?.message || 'An unexpected error occurred.'}</p>
+              <p className="mb-4 text-sm">{this.state.error?.message || i18n.t('common:error.unexpected_error')}</p>
               <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                Reload Page
+                {i18n.t('common:error.reload_page')}
               </Button>
             </AlertDescription>
           </Alert>

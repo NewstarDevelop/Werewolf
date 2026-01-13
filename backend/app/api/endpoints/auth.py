@@ -75,22 +75,42 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=409, detail="Email already registered")
 
-    # Create new user
-    user = User(
-        id=str(uuid.uuid4()),
-        email=body.email.lower(),
-        password_hash=hash_password(body.password),
-        nickname=body.nickname,
-        is_active=True,
-        is_email_verified=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-        last_login_at=datetime.utcnow(),
-    )
+    # Check if nickname already exists
+    existing_nickname = db.query(User).filter(
+        User.nickname == body.nickname
+    ).first()
 
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    if existing_nickname:
+        raise HTTPException(status_code=409, detail="Nickname already taken")
+
+    # Create new user
+    from sqlalchemy.exc import IntegrityError
+    try:
+        user = User(
+            id=str(uuid.uuid4()),
+            email=body.email.lower(),
+            password_hash=hash_password(body.password),
+            nickname=body.nickname,
+            is_active=True,
+            is_email_verified=False,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            last_login_at=datetime.utcnow(),
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    except IntegrityError as e:
+        db.rollback()
+        # Handle unique constraint violation at DB level
+        error_str = str(e.orig).lower() if e.orig else str(e).lower()
+        if "nickname" in error_str:
+            raise HTTPException(status_code=409, detail="Nickname already taken")
+        elif "email" in error_str:
+            raise HTTPException(status_code=409, detail="Email already registered")
+        else:
+            raise HTTPException(status_code=409, detail="Registration failed due to conflict")
 
     # Generate token
     access_token = create_user_token(user_id=user.id)

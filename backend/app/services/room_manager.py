@@ -27,7 +27,7 @@ class RoomManager:
     ) -> Room:
         """创建房间并添加创建者为第一个玩家
 
-        Phase 8 Fix: Added game_mode and wolf_king_variant parameters.
+        要求 user_id 必须提供（用户必须登录）。
         """
         room_id = str(uuid.uuid4())
 
@@ -35,6 +35,7 @@ class RoomManager:
         room = Room(
             id=room_id,
             name=name,
+            creator_user_id=user_id,  # 记录创建者用户ID
             creator_nickname=creator_nickname,
             status=RoomStatus.WAITING,
             current_players=1,

@@ -61,7 +61,8 @@
     "total_speeches": "总发言数",
     "total_votes": "总投票数",
     "expand": "展开",
-    "collapse": "收起"
+    "collapse": "收起",
+    "open_menu": "打开菜单"
   },
   "message_type": {
     "vote_thought": "投票思考",
@@ -100,7 +101,10 @@
   "error": {
     "404_message": "页面未找到",
     "404_description": "哎呀！您访问的页面不存在",
-    "return_home": "返回首页"
+    "return_home": "返回首页",
+    "something_went_wrong": "出错了",
+    "unexpected_error": "发生了意外错误",
+    "reload_page": "重新加载页面"
   },
   "player_grid": {
     "title": "玩家",
@@ -112,11 +116,23 @@
   "language": {
     "switch_hint": "切换语言"
   },
+  "auth": {
+    "login_required": "请先登录",
+    "login_required_desc": "创建或加入房间需要先登录账号",
+    "logout": "退出登录",
+    "logout_success": "已退出登录",
+    "logout_failed": "退出登录失败"
+  },
   "room": {
     "title": "狼人杀大厅",
     "subtitle": "选择房间加入游戏，或创建新房间",
     "player_info": "玩家信息",
-    "player_info_desc": "设置你的昵称并创建房间",
+    "player_info_desc": "您的账户信息",
+    "current_user": "当前用户",
+    "room_limit_reached": "您已有一个活跃房间",
+    "already_in_room": "已在房间中",
+    "cannot_join_twice": "您已经在这个房间中了",
+    "enter_room": "进入房间",
     "nickname": "昵称",
     "nickname_placeholder": "输入你的昵称",
     "room_name": "房间名称（可选）",
@@ -199,5 +215,27 @@
     "winner": "胜利",
     "game_detail": "对局详情",
     "page_info": "共 {{total}} 条记录"
+  },
+  "settings": {
+    "title": "设置",
+    "description": "管理您的游戏偏好和账户设置",
+    "appearance": "外观",
+    "appearance_desc": "自定义界面外观和感觉",
+    "theme": "主题",
+    "theme_desc": "当前使用深色模式",
+    "dark_theme": "深色",
+    "language": "语言",
+    "language_desc": "选择您的首选语言",
+    "current_language": "当前语言",
+    "language_hint": "在中文和英文之间切换",
+    "sound": "声音",
+    "sound_desc": "配置音频偏好",
+    "sound_effects": "音效",
+    "sound_effects_desc": "游戏音效和通知",
+    "coming_soon": "即将推出",
+    "notifications": "通知",
+    "notifications_desc": "管理通知偏好",
+    "game_notifications": "游戏通知",
+    "game_notifications_desc": "接收游戏事件提醒"
   }
 }

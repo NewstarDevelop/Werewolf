@@ -8,9 +8,10 @@ from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.core.auth import create_player_token
-from app.api.dependencies import get_current_player, get_optional_user
+from app.api.dependencies import get_current_player, get_optional_user, get_current_user
 from app.services.room_manager import room_manager
 from app.models.room import RoomStatus
+from app.models.user import User
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 logger = logging.getLogger(__name__)
@@ -21,13 +22,9 @@ logger = logging.getLogger(__name__)
 class CreateRoomRequest(BaseModel):
     """创建房间请求
 
-    P2-3 Fix: Added length validation for name and nickname fields.
-    CRITICAL FIX: Removed creator_id to prevent identity spoofing.
-    Server now generates UUID to ensure client cannot forge identities.
-    Phase 8 Fix: Added game_mode and wolf_king_variant for 12-player support.
+    要求用户必须登录。直接使用用户的 nickname 作为创建者名称。
     """
     name: str = Field(..., min_length=1, max_length=50, description="房间名称")
-    creator_nickname: str = Field(..., min_length=1, max_length=20, description="创建者昵称")
     game_mode: str = Field(default="classic_9", description="游戏模式: classic_9 或 classic_12")
     wolf_king_variant: Optional[str] = Field(default=None, description="狼王类型: wolf_king 或 white_wolf_king (仅12人局)")
     language: str = Field(default="zh", description="游戏语言: zh 或 en")
@@ -103,20 +100,19 @@ class RoomDetailResponse(BaseModel):
 def create_room(
     request: CreateRoomRequest,
     db: Session = Depends(get_db),
-    auth_user: Optional[Dict] = Depends(get_optional_user)
+    current_user: Dict = Depends(get_current_user)
 ):
     """
     创建房间
     POST /api/rooms
 
-    CRITICAL FIX: Server generates UUID for creator_id to prevent identity spoofing.
-    Client cannot provide their own ID.
-    Phase 8 Fix: Validate game_mode and wolf_king_variant for 12-player support.
+    要求用户必须登录。检查用户是否已有活跃房间（一人一房限制）。
+    直接使用用户的 nickname 作为创建者名称。
 
     Returns: { room: RoomResponse, token: str, player_id: str }
     """
     try:
-        # Phase 8 Fix: Validate game_mode and wolf_king_variant
+        # 验证 game_mode
         if request.game_mode not in ["classic_9", "classic_12"]:
             raise HTTPException(
                 status_code=400,
@@ -140,26 +136,43 @@ def create_room(
                 detail="9-player mode does not support wolf_king_variant"
             )
 
-        # Validate language
+        # 验证 language
         if request.language not in ["zh", "en"]:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid language. Must be 'zh' or 'en'"
             )
 
-        # Determine max_players based on game_mode
+        # 获取用户信息
+        user_id = current_user.get("user_id")
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # 检查用户是否已有活跃房间（一人一房限制）
+        from app.models.room import Room
+        existing_room = db.query(Room).filter(
+            Room.creator_user_id == user_id,
+            Room.status.in_([RoomStatus.WAITING, RoomStatus.PLAYING])
+        ).first()
+
+        if existing_room:
+            raise HTTPException(
+                status_code=409,
+                detail="You already have an active room. Please finish or close it first."
+            )
+
+        # 确定最大玩家数
         max_players = 12 if request.game_mode == "classic_12" else 9
 
-        # CRITICAL FIX: 服务端生成creator_id，防止客户端伪造身份
+        # 服务端生成 creator_id
         creator_id = str(uuid.uuid4())
 
-        # 提取 user_id（如果用户已登录）
-        user_id = auth_user.get("user_id") if auth_user else None
-
+        # 创建房间，使用用户的 nickname
         room = room_manager.create_room(
             db,
             request.name,
-            request.creator_nickname,
+            user.nickname,  # 使用用户的真实昵称
             creator_id,
             user_id=user_id,
             game_mode=request.game_mode,
@@ -192,6 +205,8 @@ def create_room(
     except HTTPException:
         raise
     except Exception as e:
+        # Rollback any pending transaction to prevent session corruption
+        db.rollback()
         # WL-014 Fix: Log detailed error, return generic message
         logger.error(f"Failed to create room: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create room")

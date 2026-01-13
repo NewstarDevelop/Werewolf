@@ -1,0 +1,38 @@
+{
+  "title": "Profile",
+  "back_to_lobby": "Back to Lobby",
+  "profile_card": {
+    "title": "Profile",
+    "description": "Manage your account information"
+  },
+  "avatar": {
+    "email": "Email",
+    "email_not_bound": "Not bound"
+  },
+  "form": {
+    "nickname": "Nickname",
+    "bio": "Bio",
+    "bio_placeholder": "Introduce yourself...",
+    "avatar_url": "Avatar URL",
+    "avatar_url_placeholder": "https://example.com/avatar.jpg",
+    "saving": "Saving...",
+    "save": "Save Changes"
+  },
+  "stats": {
+    "title": "Game Statistics",
+    "games_played": "Games Played",
+    "games_won": "Games Won",
+    "win_rate": "Win Rate",
+    "no_data": "No data"
+  },
+  "danger_zone": {
+    "title": "Danger Zone",
+    "logout": "Logout"
+  },
+  "toast": {
+    "update_success": "Update Successful",
+    "profile_updated": "Your profile has been updated",
+    "update_failed": "Update Failed",
+    "update_error": "An error occurred during update"
+  }
+}

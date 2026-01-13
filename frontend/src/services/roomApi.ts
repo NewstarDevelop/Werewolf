@@ -41,8 +41,6 @@ export interface RoomDetail {
 
 export interface CreateRoomRequest {
   name: string;
-  creator_nickname: string;
-  creator_id: string;
   game_mode: GameMode;
   wolf_king_variant?: WolfKingVariant;
   language?: string;
@@ -57,17 +55,21 @@ export interface JoinRoomRequest {
 
 /**
  * Create a new room
+ * Requires user authentication (uses HttpOnly cookie)
  */
 export async function createRoom(request: CreateRoomRequest): Promise<{ room: Room; token: string }> {
   const response = await fetch(`${API_BASE_URL}/api/rooms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',  // 发送认证 cookie
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new ApiError(response.status, error.detail || 'Failed to create room');
+    const apiError = new ApiError(response.status, error.detail || 'Failed to create room');
+    (apiError as any).response = { status: response.status, data: error };
+    throw apiError;
   }
 
   const data = await response.json();
@@ -112,17 +114,21 @@ export async function getRoomDetail(roomId: string): Promise<RoomDetail> {
 
 /**
  * Join a room
+ * Requires user authentication (uses HttpOnly cookie)
  */
 export async function joinRoom(roomId: string, request: JoinRoomRequest): Promise<{ token: string; player_id: string }> {
   const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',  // 发送认证 cookie
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Failed to join room' }));
-    throw new ApiError(response.status, error.detail || 'Failed to join room');
+    const apiError = new ApiError(response.status, error.detail || 'Failed to join room');
+    (apiError as any).response = { status: response.status, data: error };
+    throw apiError;
   }
 
   const data = await response.json();

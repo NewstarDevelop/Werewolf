@@ -12,17 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { createRoom, getRooms, joinRoom, getRoomDetail } from '@/services/roomApi';
-import { getPlayerId, getNickname, setNickname as saveNickname } from '@/utils/player';
+import { getPlayerId } from '@/utils/player';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { authService } from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
 import { GameMode, WolfKingVariant } from '@/services/api';
-
-const nicknameSchema = z.string()
-  .min(1, 'Nickname is required')
-  .max(20, 'Nickname too long (max 20 characters)')
-  .regex(/^[^<>]*$/, 'Invalid characters in nickname');
 
 const roomNameSchema = z.string()
   .max(50, 'Room name too long (max 50 characters)')
@@ -31,20 +25,34 @@ const roomNameSchema = z.string()
 export default function RoomLobby() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation('common');
-  const { user, isAuthenticated, logout: authLogout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout: authLogout } = useAuth();
   const playerId = getPlayerId();
 
-  const [nickname, setNickname] = useState(getNickname() || '');
   const [roomName, setRoomName] = useState('');
   const [gameMode, setGameMode] = useState<GameMode>('classic_9');
   const [wolfKingVariant, setWolfKingVariant] = useState<WolfKingVariant>('wolf_king');
 
-  // Auto-save nickname when changed
+  // 如果用户未登录，重定向到登录页（等待加载完成后再判断）
   useEffect(() => {
-    if (nickname) {
-      saveNickname(nickname);
+    if (!isLoading && !isAuthenticated) {
+      toast.error(t('auth.login_required'), {
+        description: t('auth.login_required_desc'),
+      });
+      navigate('/login');
     }
-  }, [nickname]);
+  }, [isAuthenticated, isLoading, navigate, t]);
+
+  // 加载中显示 loading 状态
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{t('app.loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Query rooms list (refresh every 3 seconds, stop when window loses focus)
   const { data: rooms, refetch } = useQuery({
@@ -61,8 +69,15 @@ export default function RoomLobby() {
       toast.success(t('room.room_created'));
       navigate(`/room/${data.room.id}/waiting`);
     },
-    onError: (error: Error) => {
-      toast.error(t('room.room_create_failed'), { description: error.message });
+    onError: (error: any) => {
+      // 处理 409 冲突错误（用户已有活跃房间）
+      if (error.response?.status === 409) {
+        toast.error(t('room.room_limit_reached', { defaultValue: '您已有一个活跃房间' }), {
+          description: error.response?.data?.detail || error.message,
+        });
+      } else {
+        toast.error(t('room.room_create_failed'), { description: error.message });
+      }
     },
   });
 
@@ -80,13 +95,12 @@ export default function RoomLobby() {
   });
 
   const handleCreateRoom = () => {
-    const nicknameResult = nicknameSchema.safeParse(nickname.trim());
-    if (!nicknameResult.success) {
-      toast.error(nicknameResult.error.errors[0].message);
+    if (!user) {
+      toast.error(t('auth.login_required', { defaultValue: '请先登录' }));
       return;
     }
 
-    const roomNameValue = roomName.trim() || t('room.default_room_name', { name: nickname });
+    const roomNameValue = roomName.trim() || t('room.default_room_name', { name: user.nickname });
     const roomNameResult = roomNameSchema.safeParse(roomNameValue);
     if (!roomNameResult.success) {
       toast.error(roomNameResult.error.errors[0].message);
@@ -95,8 +109,6 @@ export default function RoomLobby() {
 
     createRoomMutation.mutate({
       name: roomNameResult.data,
-      creator_nickname: nicknameResult.data,
-      creator_id: playerId,
       game_mode: gameMode,
       wolf_king_variant: gameMode === 'classic_12' ? wolfKingVariant : undefined,
       language: i18n.language,
@@ -104,49 +116,32 @@ export default function RoomLobby() {
   };
 
   const handleJoinRoom = async (roomId: string) => {
-    const nicknameResult = nicknameSchema.safeParse(nickname.trim());
-    if (!nicknameResult.success) {
-      toast.error(nicknameResult.error.errors[0].message);
+    if (!user) {
+      toast.error(t('auth.login_required', { defaultValue: '请先登录' }));
       return;
     }
 
     // 检查已登录用户是否已在房间中
     try {
-      const currentUser = await authService.getCurrentUser();
-      if (currentUser) {
-        // 获取房间详情
-        const roomDetail = await getRoomDetail(roomId);
+      // 获取房间详情
+      const roomDetail = await getRoomDetail(roomId);
 
-        // P1-SEC-004: 使用后端返回的 has_same_user 字段检测重复加入
-        // 不再暴露其他用户的 user_id
-        if (roomDetail.has_same_user) {
-          toast.error(t('room.already_in_room'), {
-            description: t('room.cannot_join_twice'),
-            action: {
-              label: t('room.enter_room'),
-              onClick: () => navigate(`/room/${roomId}/waiting`),
-            },
-          });
-          return;
-        }
+      // P1-SEC-004: 使用后端返回的 has_same_user 字段检测重复加入
+      if (roomDetail.has_same_user) {
+        toast.error(t('room.already_in_room'), {
+          description: t('room.cannot_join_twice'),
+          action: {
+            label: t('room.enter_room'),
+            onClick: () => navigate(`/room/${roomId}/waiting`),
+          },
+        });
+        return;
       }
     } catch (error) {
-      // 区分不同类型的错误
-      if (error instanceof Error) {
-        if (error.message.includes('Unauthorized') || error.message.includes('401')) {
-          // 未登录用户，跳过检查（后端会生成新的player_id）
-          console.debug('User not authenticated, skipping duplicate check');
-        } else {
-          // 其他错误（如网络错误、房间不存在等），记录但允许继续尝试加入
-          // 后端会进行最终校验
-          console.warn('Failed to check room membership:', error.message);
-        }
-      } else {
-        console.warn('Failed to check room membership:', error);
-      }
+      console.error('Failed to get room detail:', error);
     }
 
-    joinRoomMutation.mutate({ roomId, nickname: nicknameResult.data });
+    joinRoomMutation.mutate({ roomId, nickname: user.nickname });
   };
 
   const handleLogout = async () => {
@@ -201,7 +196,7 @@ export default function RoomLobby() {
           </p>
         </div>
 
-        {/* Nickname and Create Room Section */}
+        {/* Player Info and Create Room Section */}
         <Card className="mb-8 glass-panel animate-slide-up">
           <CardHeader>
             <CardTitle>{t('room.player_info')}</CardTitle>
@@ -210,17 +205,13 @@ export default function RoomLobby() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Nickname Input */}
-            <div>
-              <Label htmlFor="nickname">{t('room.nickname')}</Label>
-              <Input
-                id="nickname"
-                placeholder={t('room.nickname_placeholder')}
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="mt-2"
-              />
-            </div>
+            {/* Display Current Username */}
+            {isAuthenticated && user && (
+              <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
+                <Label className="text-sm text-muted-foreground">{t('room.current_user', { defaultValue: '当前用户' })}</Label>
+                <p className="mt-1 text-lg font-semibold">{user.nickname}</p>
+              </div>
+            )}
 
             {/* Room Name Input */}
             <div>

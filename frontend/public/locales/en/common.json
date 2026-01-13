@@ -61,7 +61,8 @@
     "total_speeches": "Total Speeches",
     "total_votes": "Total Votes",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "open_menu": "Open Menu"
   },
   "message_type": {
     "vote_thought": "Vote Thought",
@@ -100,7 +101,10 @@
   "error": {
     "404_message": "Page Not Found",
     "404_description": "Oops! The page you're looking for doesn't exist",
-    "return_home": "Return to Home"
+    "return_home": "Return to Home",
+    "something_went_wrong": "Something went wrong",
+    "unexpected_error": "An unexpected error occurred",
+    "reload_page": "Reload Page"
   },
   "player_grid": {
     "title": "Players",
@@ -112,11 +116,23 @@
   "language": {
     "switch_hint": "Switch Language"
   },
+  "auth": {
+    "login_required": "Login Required",
+    "login_required_desc": "Please login to create or join a room",
+    "logout": "Logout",
+    "logout_success": "Logged out successfully",
+    "logout_failed": "Logout failed"
+  },
   "room": {
     "title": "Werewolf Lobby",
     "subtitle": "Join an existing room or create a new one",
     "player_info": "Player Info",
-    "player_info_desc": "Set your nickname and create a room",
+    "player_info_desc": "Your account information",
+    "current_user": "Current User",
+    "room_limit_reached": "Room Limit Reached",
+    "already_in_room": "Already in Room",
+    "cannot_join_twice": "You are already in this room",
+    "enter_room": "Enter Room",
     "nickname": "Nickname",
     "nickname_placeholder": "Enter your nickname",
     "room_name": "Room Name (Optional)",
@@ -199,5 +215,27 @@
     "winner": "Winner",
     "game_detail": "Game Details",
     "page_info": "Total {{total}} records"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage your game preferences and account settings",
+    "appearance": "Appearance",
+    "appearance_desc": "Customize the look and feel of the interface",
+    "theme": "Theme",
+    "theme_desc": "Currently using dark mode",
+    "dark_theme": "Dark",
+    "language": "Language",
+    "language_desc": "Choose your preferred language",
+    "current_language": "Current Language",
+    "language_hint": "Switch between Chinese and English",
+    "sound": "Sound",
+    "sound_desc": "Configure audio preferences",
+    "sound_effects": "Sound Effects",
+    "sound_effects_desc": "Game sound effects and notifications",
+    "coming_soon": "Coming Soon",
+    "notifications": "Notifications",
+    "notifications_desc": "Manage notification preferences",
+    "game_notifications": "Game Notifications",
+    "game_notifications_desc": "Receive game event alerts"
   }
 }

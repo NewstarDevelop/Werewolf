@@ -39,6 +39,8 @@ engine = create_engine(
 def set_sqlite_pragma(dbapi_connection, connection_record):
     """Configure SQLite connection for better concurrency handling."""
     cursor = dbapi_connection.cursor()
+    # Enable foreign key constraints (SQLite has them disabled by default)
+    cursor.execute("PRAGMA foreign_keys=ON")
     # Enable WAL mode for better concurrent read/write performance
     cursor.execute("PRAGMA journal_mode=WAL")
     # Set busy timeout to wait for locks instead of failing immediately

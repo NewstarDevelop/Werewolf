@@ -20,7 +20,8 @@ class Room(Base):
 
     id = Column(String(36), primary_key=True)  # 使用game_id作为房间ID (UUID标准长度)
     name = Column(String(100), nullable=False)  # 房间名称
-    creator_nickname = Column(String(50), nullable=False)  # 创建者昵称
+    creator_user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=True, index=True)  # 创建者用户ID
+    creator_nickname = Column(String(50), nullable=False)  # 创建者昵称（用户名快照）
     status = Column(SQLEnum(RoomStatus), default=RoomStatus.WAITING, nullable=False, index=True)
     max_players = Column(Integer, default=9, nullable=False)  # 最大玩家数
     current_players = Column(Integer, default=0, nullable=False)  # 当前玩家数

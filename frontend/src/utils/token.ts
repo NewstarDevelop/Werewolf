@@ -63,7 +63,7 @@ export function getAuthHeader(): HeadersInit {
   }
 
   return {
-    'Authorization': \`Bearer \${token}\`
+    'Authorization': `Bearer ${token}`
   };
 }
 
@@ -134,6 +134,6 @@ export function getUserAuthHeader(): HeadersInit {
     return {};
   }
   return {
-    'Authorization': \`Bearer \${token}\`
+    'Authorization': `Bearer ${token}`
   };
 }

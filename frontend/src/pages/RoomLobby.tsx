@@ -268,7 +268,7 @@ export default function RoomLobby() {
             {/* Create Button */}
             <Button
               onClick={handleCreateRoom}
-              disabled={!nickname.trim() || createRoomMutation.isPending}
+              disabled={!user || createRoomMutation.isPending}
               className="w-full"
             >
               {createRoomMutation.isPending ? t('room.creating') : t('room.create_room')}
@@ -332,7 +332,7 @@ export default function RoomLobby() {
                     variant={room.current_players >= room.max_players ? "secondary" : "default"}
                     onClick={() => handleJoinRoom(room.id)}
                     disabled={
-                      !nickname.trim() ||
+                      !user ||
                       room.current_players >= room.max_players ||
                       joinRoomMutation.isPending
                     }

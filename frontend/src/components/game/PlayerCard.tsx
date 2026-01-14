@@ -111,17 +111,17 @@ const PlayerCard = ({
       case "seer":
         return <Search className="w-3 h-3 text-moonlight" />;
       case "witch":
-        return <FlaskConical className="w-3 h-3 text-purple-400" />;
+        return <FlaskConical className="w-3 h-3 text-purple-700 dark:text-purple-400" />;
       case "hunter":
-        return <Crosshair className="w-3 h-3 text-orange-400" />;
+        return <Crosshair className="w-3 h-3 text-orange-700 dark:text-orange-400" />;
       case "villager":
         return <User className="w-3 h-3 text-villager" />;
       case "guard":
-        return <Shield className="w-3 h-3 text-emerald-400" />;
+        return <Shield className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />;
       case "wolf_king":
-        return <Crown className="w-3 h-3 text-red-500" />;
+        return <Crown className="w-3 h-3 text-red-700 dark:text-red-500" />;
       case "white_wolf_king":
-        return <Ghost className="w-3 h-3 text-slate-300" />;
+        return <Ghost className="w-3 h-3 text-slate-600 dark:text-slate-300" />;
       default:
         return null;
     }
@@ -147,19 +147,19 @@ const PlayerCard = ({
       case "werewolf":
         return "bg-werewolf/20 border-werewolf text-werewolf";
       case "seer":
-        return "bg-blue-500/20 border-blue-500 text-blue-400";
+        return "bg-blue-500/20 border-blue-500 text-blue-700 dark:text-blue-400";
       case "witch":
-        return "bg-purple-500/20 border-purple-500 text-purple-400";
+        return "bg-purple-500/20 border-purple-500 text-purple-700 dark:text-purple-400";
       case "hunter":
-        return "bg-orange-500/20 border-orange-500 text-orange-400";
+        return "bg-orange-500/20 border-orange-500 text-orange-700 dark:text-orange-400";
       case "villager":
         return "bg-villager/20 border-villager text-villager";
       case "guard":
-        return "bg-emerald-500/20 border-emerald-500 text-emerald-400";
+        return "bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-400";
       case "wolf_king":
-        return "bg-red-500/20 border-red-500 text-red-400";
+        return "bg-red-500/20 border-red-500 text-red-700 dark:text-red-400";
       case "white_wolf_king":
-        return "bg-slate-500/20 border-slate-500 text-slate-300";
+        return "bg-slate-500/20 border-slate-500 text-slate-700 dark:text-slate-300";
       default:
         return "bg-muted border-muted text-muted-foreground";
     }

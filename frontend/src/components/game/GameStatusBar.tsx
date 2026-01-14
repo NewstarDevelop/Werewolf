@@ -144,11 +144,11 @@ const GameStatusBar = ({
               {isNight ? (
                 <Moon className="w-5 h-5 text-moonlight animate-glow-pulse" />
               ) : (
-                <Sun className="w-5 h-5 text-amber-600 dark:text-day animate-glow-pulse" />
+                <Sun className="w-5 h-5 text-amber-700 dark:text-day animate-glow-pulse" />
               )}
               <span
                 className={`font-display text-lg font-bold ${
-                  isNight ? "text-moonlight text-glow-blue" : "text-amber-700 dark:text-day"
+                  isNight ? "text-moonlight text-glow-blue" : "text-amber-800 dark:text-day"
                 }`}
               >
                 {isNight ? t('game:status.night') : t('game:status.day')}
@@ -215,7 +215,7 @@ const GameStatusBar = ({
             title={t('common:ui.ai_debug')}
             aria-label={t('common:ui.ai_debug')}
           >
-            <Brain className="w-4 h-4 text-purple-400" />
+            <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </button>
         )}
 

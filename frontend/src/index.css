@@ -23,10 +23,10 @@
     --secondary-foreground: 222 47% 11%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 25% 28%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 215 70% 38%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
@@ -40,12 +40,12 @@
     /* Custom game colors */
     --werewolf: 0 72% 45%;
     --werewolf-glow: 0 80% 50%;
-    --moonlight: 215 80% 45%;
+    --moonlight: 215 70% 38%;
     --moonlight-dim: 215 50% 35%;
     --night: 222 30% 8%;
     --day: 45 90% 55%;
     --day-dim: 40 70% 35%;
-    --villager: 140 50% 45%;
+    --villager: 142 76% 32%;
     --chat-user: 215 80% 45%;
     --chat-other: 210 40% 96%;
 
@@ -80,33 +80,33 @@
   }
 
   .dark {
-    /* Dark theme */
-    --background: 222 25% 6%;
-    --foreground: 210 20% 92%;
+    /* Dark theme - Pure Black */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 22% 10%;
-    --card-foreground: 210 20% 92%;
+    --card: 222 10% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 22% 10%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 222 10% 6%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 0 72% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 50% 23%;
-    --secondary-foreground: 210 20% 92%;
+    --secondary: 222 15% 12%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 220 18% 16%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 222 10% 10%;
+    --muted-foreground: 215 10% 60%;
 
     --accent: 215 60% 45%;
-    --accent-foreground: 210 20% 95%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 15%;
+    --border: 222 10% 15%;
+    --input: 222 10% 15%;
     --ring: 0 72% 51%;
 
     --radius: 0.75rem;
@@ -116,40 +116,40 @@
     --werewolf-glow: 0 80% 50%;
     --moonlight: 215 60% 70%;
     --moonlight-dim: 215 40% 40%;
-    --night: 222 30% 8%;
+    --night: 0 0% 0%;
     --day: 45 90% 55%;
     --day-dim: 40 70% 35%;
     --villager: 140 50% 45%;
     --chat-user: 215 60% 35%;
-    --chat-other: 220 18% 18%;
+    --chat-other: 222 10% 10%;
 
     /* Gradients */
-    --gradient-night: linear-gradient(to bottom, hsl(222 30% 5%), hsl(222 35% 8%));
-    --gradient-deep-space: radial-gradient(circle at center, hsl(222 30% 10%) 0%, hsl(222 30% 4%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 22% 12%) 0%, hsl(222 25% 8%) 100%);
+    --gradient-night: linear-gradient(to bottom, hsl(0 0% 0%), hsl(222 20% 8%));
+    --gradient-deep-space: radial-gradient(circle at center, hsl(222 20% 8%) 0%, hsl(0 0% 0%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 10% 8%) 0%, hsl(222 10% 4%) 100%);
     --gradient-glow: radial-gradient(circle, hsl(0 72% 50% / 0.3) 0%, transparent 70%);
     --gradient-glass: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
     --gradient-moonlight: radial-gradient(ellipse at top, hsl(215 60% 70% / 0.15) 0%, transparent 60%);
     --gradient-blood: radial-gradient(circle at center, hsl(0 72% 45% / 0.2) 0%, transparent 70%);
 
     /* Shadows */
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.5);
     --shadow-glow-red: 0 0 20px hsl(0 72% 50% / 0.4);
     --shadow-glow-blue: 0 0 20px hsl(215 60% 50% / 0.3);
-    --shadow-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-    --shadow-elevation-1: 0 2px 8px hsl(0 0% 0% / 0.3);
-    --shadow-elevation-2: 0 4px 16px hsl(0 0% 0% / 0.4);
-    --shadow-elevation-3: 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    --shadow-elevation-1: 0 2px 8px hsl(0 0% 0% / 0.4);
+    --shadow-elevation-2: 0 4px 16px hsl(0 0% 0% / 0.5);
+    --shadow-elevation-3: 0 8px 32px hsl(0 0% 0% / 0.6);
     --shadow-message-user: 0 2px 8px rgba(59, 130, 246, 0.15);
 
     /* Sidebar */
-    --sidebar-background: 222 25% 6%;
-    --sidebar-foreground: 210 20% 92%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 0 72% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 18% 16%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 20% 18%;
+    --sidebar-accent: 222 10% 10%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 222 10% 15%;
     --sidebar-ring: 0 72% 51%;
   }
 
@@ -204,10 +204,20 @@
   }
 
   .text-glow-red {
+    color: hsl(var(--werewolf));
+    font-weight: 600;
+  }
+
+  .dark .text-glow-red {
     text-shadow: 0 0 10px hsl(var(--werewolf-glow) / 0.6);
   }
 
   .text-glow-blue {
+    color: hsl(var(--moonlight));
+    font-weight: 600;
+  }
+
+  .dark .text-glow-blue {
     text-shadow: 0 0 10px hsl(var(--moonlight) / 0.5);
   }
 

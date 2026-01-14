@@ -24,20 +24,20 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
   const getMessageTypeIcon = (type: string) => {
     switch (type) {
       case 'vote_thought':
-        return <Brain className="w-3 h-3 text-purple-400" />;
+        return <Brain className="w-3 h-3 text-purple-700 dark:text-purple-400" />;
       case 'wolf_chat':
-        return <Users className="w-3 h-3 text-red-400" />;
+        return <Users className="w-3 h-3 text-red-700 dark:text-red-400" />;
       default:
-        return <MessageSquare className="w-3 h-3 text-blue-400" />;
+        return <MessageSquare className="w-3 h-3 text-blue-700 dark:text-blue-400" />;
     }
   };
 
   const getMessageTypeColor = (type: string) => {
     switch (type) {
       case 'vote_thought':
-        return 'text-purple-400';
+        return 'text-purple-700 dark:text-purple-400';
       case 'wolf_chat':
-        return 'text-red-400';
+        return 'text-red-700 dark:text-red-400';
       case 'system':
         return 'text-muted-foreground';
       default:
@@ -54,7 +54,7 @@ const DebugPanel = ({ gameId, isOpen, onClose }: DebugPanelProps) => {
       <SheetContent side="right" className="w-full max-w-[100vw] sm:w-[500px] sm:max-w-[600px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-purple-400" />
+            <Brain className="w-5 h-5 text-purple-700 dark:text-purple-400" />
             {t('ui.ai_debug')}
           </SheetTitle>
         </SheetHeader>

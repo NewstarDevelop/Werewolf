@@ -14,9 +14,9 @@ export default function LogWindow({ messages }: { messages: Message[] }) {
   return (
     <div className="h-96 overflow-y-auto bg-card p-4 rounded-lg border border-border">
       {messages.map((msg, idx) => (
-        <div key={idx} className={`mb-3 ${msg.seat_id === 0 ? 'text-center text-yellow-500 text-sm' : ''}`}>
+        <div key={idx} className={`mb-3 ${msg.seat_id === 0 ? 'text-center text-amber-700 dark:text-yellow-500 text-sm' : ''}`}>
           {msg.seat_id !== 0 && (
-            <span className="font-bold text-blue-500 mr-2">
+            <span className="font-bold text-blue-700 dark:text-blue-500 mr-2">
               {t('player.seat_with_id', { id: msg.seat_id })}:
             </span>
           )}

@@ -31,20 +31,20 @@ const LogPanel = ({ gameId, isOpen, onClose }: LogPanelProps) => {
   const getLevelIcon = (level: string) => {
     switch (level) {
       case 'ERROR':
-        return <AlertCircle className="w-3 h-3 text-red-400" />;
+        return <AlertCircle className="w-3 h-3 text-red-700 dark:text-red-400" />;
       case 'WARNING':
-        return <AlertTriangle className="w-3 h-3 text-yellow-400" />;
+        return <AlertTriangle className="w-3 h-3 text-amber-700 dark:text-yellow-400" />;
       default:
-        return <Info className="w-3 h-3 text-blue-400" />;
+        return <Info className="w-3 h-3 text-blue-700 dark:text-blue-400" />;
     }
   };
 
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'ERROR':
-        return 'text-red-400';
+        return 'text-red-700 dark:text-red-400';
       case 'WARNING':
-        return 'text-yellow-400';
+        return 'text-amber-700 dark:text-yellow-400';
       default:
         return 'text-foreground';
     }

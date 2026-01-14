@@ -112,17 +112,17 @@ export default function RoomWaiting() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-white text-xl">{t('room.loading')}</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-foreground text-xl">{t('room.loading')}</p>
       </div>
     );
   }
 
   if (!roomDetail) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-xl mb-4">{t('room.room_not_found')}</p>
+          <p className="text-foreground text-xl mb-4">{t('room.room_not_found')}</p>
           <Button onClick={() => navigate('/')}>{t('room.back_to_lobby')}</Button>
         </div>
       </div>
@@ -130,17 +130,17 @@ export default function RoomWaiting() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-6 relative">
           <div className="absolute right-0 top-0">
             <LanguageSwitcher />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             {roomDetail.room.name}
           </h1>
-          <p className="text-slate-300">
+          <p className="text-muted-foreground">
             {t('room.creator')}: {roomDetail.room.creator_nickname}
           </p>
           <div className="mt-4 flex gap-2 justify-center">
@@ -148,7 +148,7 @@ export default function RoomWaiting() {
               variant="outline"
               size="sm"
               onClick={() => navigate('/')}
-              className="border-slate-600 text-white hover:bg-slate-700"
+              className="border-border text-foreground hover:bg-accent"
             >
               {t('room.back_to_lobby')}
             </Button>
@@ -167,23 +167,23 @@ export default function RoomWaiting() {
         </div>
 
         {/* Room Status Card */}
-        <Card className="mb-8 bg-slate-800/50 border-slate-700">
+        <Card className="mb-8 bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white flex items-center justify-between">
+            <CardTitle className="text-card-foreground flex items-center justify-between">
               <span>{t('room.status')}</span>
-              <Badge variant="outline" className="text-green-400 border-green-400">
+              <Badge variant="outline" className="text-green-500 border-green-500">
                 {t('room.waiting')}
               </Badge>
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-muted-foreground">
               {t('room.current_players', { current: roomDetail.players.length, max: roomDetail.room.max_players })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-400">{t('room.ready_count')}</span>
-                <span className="text-white font-semibold">
+                <span className="text-muted-foreground">{t('room.ready_count')}</span>
+                <span className="text-foreground font-semibold">
                   {roomDetail.players.filter(p => p.is_ready).length}/{roomDetail.players.length}
                 </span>
               </div>
@@ -198,15 +198,15 @@ export default function RoomWaiting() {
 
         {/* Players Grid */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">{t('room.player_list')}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">{t('room.player_list')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {roomDetail.players.map((player, index) => (
               <Card
                 key={player.id}
-                className={`bg-slate-800/50 border-2 transition-colors ${
+                className={`bg-card border-2 transition-colors ${
                   player.is_ready
                     ? 'border-green-500'
-                    : 'border-slate-700'
+                    : 'border-border'
                 } ${
                   player.player_id === playerId
                     ? 'ring-2 ring-purple-500'
@@ -214,20 +214,20 @@ export default function RoomWaiting() {
                 }`}
               >
                 <CardHeader>
-                  <CardTitle className="text-white text-base flex items-center gap-2">
+                  <CardTitle className="text-card-foreground text-base flex items-center gap-2">
                     <span>{t('room.seat', { index: index + 1 })}</span>
                     {player.is_creator && (
-                      <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                      <Badge variant="outline" className="text-yellow-500 border-yellow-500">
                         {t('room.host')}
                       </Badge>
                     )}
                     {player.player_id === playerId && (
-                      <Badge variant="outline" className="text-purple-400 border-purple-400">
+                      <Badge variant="outline" className="text-purple-500 border-purple-500">
                         {t('room.you')}
                       </Badge>
                     )}
                   </CardTitle>
-                  <CardDescription className="text-slate-300">
+                  <CardDescription className="text-muted-foreground">
                     {player.nickname}
                   </CardDescription>
                 </CardHeader>
@@ -238,7 +238,7 @@ export default function RoomWaiting() {
                         {t('room.ready')}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-slate-400 border-slate-600">
+                      <Badge variant="outline" className="text-muted-foreground border-border">
                         {t('room.not_ready')}
                       </Badge>
                     )}
@@ -249,12 +249,12 @@ export default function RoomWaiting() {
 
             {/* Empty slots */}
             {Array.from({ length: Math.max(0, roomDetail.room.max_players - roomDetail.players.length) }).map((_, index) => (
-              <Card key={`empty-${index}`} className="bg-slate-800/30 border-dashed border-slate-700">
+              <Card key={`empty-${index}`} className="bg-card/50 border-dashed border-border">
                 <CardHeader>
-                  <CardTitle className="text-slate-600 text-base">
+                  <CardTitle className="text-muted-foreground text-base">
                     {t('room.seat', { index: roomDetail.players.length + index + 1 })}
                   </CardTitle>
-                  <CardDescription className="text-slate-600">
+                  <CardDescription className="text-muted-foreground">
                     {t('room.wait_join')}
                   </CardDescription>
                 </CardHeader>
@@ -271,8 +271,8 @@ export default function RoomWaiting() {
             variant={myPlayer?.is_ready ? 'outline' : 'default'}
             className={
               myPlayer?.is_ready
-                ? 'border-slate-600 text-white hover:bg-slate-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                ? 'border-border text-foreground hover:bg-accent'
+                : 'bg-primary hover:bg-primary/90'
             }
           >
             {readyMutation.isPending
@@ -313,7 +313,7 @@ export default function RoomWaiting() {
         </div>
 
         {/* Tips */}
-        <div className="mt-8 text-center text-slate-400 text-sm space-y-1">
+        <div className="mt-8 text-center text-muted-foreground text-sm space-y-1">
           <p>{t('room.tip_host')}</p>
           <p>{t('room.tip_fill_ai')}</p>
           <p>{t('room.tip_player_count')}</p>

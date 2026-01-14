@@ -91,7 +91,7 @@ const GameActions = ({
   };
 
   return (
-    <div className="glass-panel-dark border-t border-white/5 p-3">
+    <div className="glass-panel border-t border-border/10 p-3">
       <div className="flex flex-col gap-3">
         {/* Action hint - P1-1: Use translated message for consistency */}
         {(translatedMessage || pendingAction?.message) && (
@@ -101,7 +101,7 @@ const GameActions = ({
         )}
 
         {/* Chat Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-black/20 p-1.5 rounded-2xl border border-white/5 focus-within:border-accent/50 focus-within:bg-black/40 focus-within:shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all duration-300">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center bg-muted/30 p-1.5 rounded-2xl border border-border/10 focus-within:border-accent/50 focus-within:bg-muted/50 focus-within:shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all duration-300">
           <div className="flex-1 relative">
             <input
               type="text"

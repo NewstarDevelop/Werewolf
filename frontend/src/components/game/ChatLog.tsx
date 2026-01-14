@@ -112,9 +112,9 @@ const ChatLog = ({ messages, isLoading }: ChatLogProps) => {
   }, [messages, observeRowElements]);
 
   return (
-    <div className="flex flex-col h-full glass-panel-dark rounded-xl overflow-hidden">
+    <div className="flex flex-col h-full glass-panel rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-black/30 backdrop-blur-sm">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/10 bg-card/40 backdrop-blur-sm">
         <MessageCircle className="w-4 h-4 text-accent" />
         <h2 className="font-display text-sm uppercase tracking-wider text-foreground">
           {t('ui.game_log')}

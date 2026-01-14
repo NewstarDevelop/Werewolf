@@ -12,7 +12,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   // Map custom themes to sonner-compatible themes with validation
   const getSonnerTheme = (t: string): SonnerTheme => {
-    if (t === "gray") return "light";
     if (SONNER_THEMES.includes(t as SonnerTheme)) return t as SonnerTheme;
     return "system"; // fallback for unknown themes
   };

@@ -20,8 +20,6 @@ export function ThemeSwitcher() {
         return <Sun className="h-4 w-4" aria-hidden="true" />
       case "dark":
         return <Moon className="h-4 w-4" aria-hidden="true" />
-      case "gray":
-        return <Palette className="h-4 w-4" aria-hidden="true" />
       default:
         return <Monitor className="h-4 w-4" aria-hidden="true" />
     }
@@ -46,12 +44,6 @@ export function ThemeSwitcher() {
           <div className="flex items-center gap-2">
             <Moon className="h-4 w-4" aria-hidden="true" />
             <span>{t("settings.theme_dark", "Dark")}</span>
-          </div>
-        </SelectItem>
-        <SelectItem value="gray">
-          <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4" aria-hidden="true" />
-            <span>{t("settings.theme_gray", "Gray")}</span>
           </div>
         </SelectItem>
         <SelectItem value="system">

@@ -8,7 +8,7 @@ import { initSentry } from "./lib/sentry";
 initSentry();
 
 createRoot(document.getElementById("root")!).render(
-  <Suspense fallback={<div className="flex items-center justify-center h-screen bg-black text-white">Loading...</div>}>
+  <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background text-foreground">Loading...</div>}>
     <App />
   </Suspense>
 );

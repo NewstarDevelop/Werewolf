@@ -36,7 +36,7 @@ const queryClient = new QueryClient({
 // Loading fallback component
 // Note: Do NOT use useTranslation here - it may trigger Suspense before i18n is ready
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen bg-black">
+  <div className="flex items-center justify-center h-screen bg-background">
     <div className="text-center" role="status" aria-live="polite">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4" aria-hidden="true"></div>
       <p className="text-muted-foreground">Loading...</p>
@@ -51,7 +51,7 @@ const App = () => (
       defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
-      themes={["light", "dark", "gray"]}
+      themes={["light", "dark"]}
     >
       <ErrorBoundary>
         <TooltipProvider>

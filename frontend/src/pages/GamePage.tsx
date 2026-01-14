@@ -260,7 +260,7 @@ const GamePage = () => {
   // Show loading state while game is loading
   if (isLoading && !gameState) {
     return (
-      <div className="flex items-center justify-center h-screen bg-black">
+      <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
           <p className="text-xl text-foreground">{t('common:loading')}</p>
         </div>
@@ -271,7 +271,7 @@ const GamePage = () => {
   // Show error if game failed to load
   if (error && !gameState) {
     return (
-      <div className="flex items-center justify-center h-screen bg-black">
+      <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
           <p className="text-xl text-destructive mb-4">{error}</p>
           <Button onClick={() => window.location.href = '/'}>
@@ -304,7 +304,7 @@ const GamePage = () => {
     : "";
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-black overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden relative">
       {/* Atmospheric background */}
       <div className="absolute inset-0 atmosphere-night pointer-events-none" />
       <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${isNight ? 'opacity-100' : 'opacity-0'}`}>

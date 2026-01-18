@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.game_history import GameParticipant
 from app.schemas.auth import UserResponse
 from app.schemas.user import UpdateProfileRequest, UserStatsResponse
+from app.schemas.preferences import UserPreferences, UserPreferencesResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -123,3 +124,61 @@ async def get_user_stats(
         win_rate=round(win_rate, 3),
         recent_games=recent_games
     )
+
+
+@router.get("/me/preferences", response_model=UserPreferencesResponse)
+async def get_user_preferences(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current user's preferences.
+    Returns merged defaults for missing fields.
+    """
+    user = db.query(User).get(current_user["user_id"])
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get preferences from DB, default to empty dict
+    prefs_data = user.preferences or {}
+
+    # Merge with defaults
+    try:
+        user_prefs = UserPreferences(**prefs_data)
+    except Exception:
+        # If parsing fails, return defaults
+        user_prefs = UserPreferences()
+
+    return UserPreferencesResponse(preferences=user_prefs)
+
+
+@router.put("/me/preferences", response_model=UserPreferencesResponse)
+async def update_user_preferences(
+    body: UserPreferences,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user's preferences (idempotent PUT).
+    Returns the updated preferences with merged defaults.
+    """
+    user = db.query(User).get(current_user["user_id"])
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Normalize volume to 2 decimal places to reduce write churn
+    prefs_dict = body.dict()
+    if 'sound_effects' in prefs_dict and 'volume' in prefs_dict['sound_effects']:
+        prefs_dict['sound_effects']['volume'] = round(prefs_dict['sound_effects']['volume'], 2)
+
+    # Update preferences (MutableDict will track changes)
+    user.preferences = prefs_dict
+    user.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(user)
+
+    # Return updated preferences
+    return UserPreferencesResponse(preferences=UserPreferences(**user.preferences))

@@ -1,6 +1,7 @@
 """User authentication and profile models."""
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, UniqueConstraint, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, UniqueConstraint, ForeignKey, JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.mutable import MutableDict
 from datetime import datetime
 
 from .base import Base
@@ -21,6 +22,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     last_login_at = Column(DateTime, nullable=True)  # 最后登录时间
+    preferences = Column(MutableDict.as_mutable(JSON), nullable=False, default=dict, server_default='{}')  # 用户偏好设置
 
     # Relationships
     oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan")

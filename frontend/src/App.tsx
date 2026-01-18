@@ -54,13 +54,13 @@ const App = () => (
       disableTransitionOnChange
       themes={["light", "dark"]}
     >
-      <SoundProvider>
-        <ErrorBoundary>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AuthProvider>
+      <ErrorBoundary>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AuthProvider>
+            <SoundProvider>
+              <BrowserRouter>
                 <Suspense fallback={<LoadingFallback />}>
                   <Routes>
                   {/* Public Auth routes - no sidebar */}
@@ -86,12 +86,12 @@ const App = () => (
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </Suspense>
-            </AuthProvider>
-          </BrowserRouter>
+                </Suspense>
+              </BrowserRouter>
+            </SoundProvider>
+          </AuthProvider>
         </TooltipProvider>
       </ErrorBoundary>
-      </SoundProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

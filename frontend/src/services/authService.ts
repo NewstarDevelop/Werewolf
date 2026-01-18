@@ -5,6 +5,7 @@
  * Token storage in localStorage has been removed to prevent XSS attacks.
  */
 import { clearUserToken } from '@/utils/token';
+import { parseApiError } from '@/utils/errorHandler';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -42,8 +43,8 @@ export const authService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Registration failed');
+      const errorMessage = await parseApiError(response);
+      throw new AuthError(errorMessage, response.status);
     }
 
     return response.json();
@@ -58,8 +59,8 @@ export const authService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
+      const errorMessage = await parseApiError(response);
+      throw new AuthError(errorMessage, response.status);
     }
 
     return response.json();
@@ -96,10 +97,8 @@ export const authService = {
     });
 
     if (!response.ok) {
-      throw new AuthError(
-        response.status === 401 || response.status === 403 ? 'Unauthorized' : 'Failed to fetch user',
-        response.status
-      );
+      const errorMessage = await parseApiError(response);
+      throw new AuthError(errorMessage, response.status);
     }
 
     return response.json();

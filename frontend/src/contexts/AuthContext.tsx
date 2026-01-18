@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { authService, User, AuthError } from '@/services/authService';
 import { clearUserToken } from '@/utils/token';
 import { clearPlayerData } from '@/utils/player';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -30,12 +32,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser);
       } catch (error: unknown) {
         const status = error instanceof AuthError ? error.status : 0;
+
+        // 分类处理错误
         if (status === 401 || status === 403) {
-          console.error('Authentication failed:', error);
+          // Token 过期/无效:静默失败,清理状态,用户需重新登录
           clearUserToken();
           setUser(null);
+        } else if (status >= 500) {
+          // 服务器错误:提示用户
+          console.error('Server error during auth:', error);
+          toast({
+            variant: "destructive",
+            title: "服务连接失败",
+            description: "无法连接到服务器,请稍后重试。",
+          });
+          setUser(null);
         } else {
-          console.warn('Network error during auth init, keeping current state:', error);
+          // 网络断开等其他错误
+          console.warn('Network/Auth init error:', error);
         }
       } finally {
         setIsLoading(false);
@@ -43,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     initAuth();
-  }, []);
+  }, [toast]);
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login(email, password);

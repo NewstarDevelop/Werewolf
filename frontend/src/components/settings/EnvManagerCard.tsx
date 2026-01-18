@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,7 +17,6 @@ import { EnvDeleteDialog } from './EnvDeleteDialog';
 import { getErrorMessage } from '@/utils/errorHandler';
 
 export function EnvManagerCard() {
-  const { t } = useTranslation('settings');
   const [variables, setVariables] = useState<EnvVariable[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingVar, setEditingVar] = useState<EnvVariable | null>(null);

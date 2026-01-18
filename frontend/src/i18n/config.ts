@@ -11,7 +11,9 @@ i18n
   .init({
     fallbackLng: 'zh',  // Default to Chinese if detection fails
     supportedLngs: ['zh', 'en'],  // Supported languages
+    ns: ['common', 'game', 'profile', 'roles'],  // Explicitly list all translation files
     defaultNS: 'common',  // Default namespace
+    fallbackNS: 'common',  // Fallback namespace if requested NS fails to load
 
     backend: {
       // Path to translation files

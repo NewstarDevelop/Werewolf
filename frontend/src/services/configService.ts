@@ -29,6 +29,26 @@ export const configService = {
   },
 
   /**
+   * Get merged environment variables (from .env and .env.example)
+   * GET /api/config/env/merged
+   */
+  async getMergedEnvVars(): Promise<EnvVariable[]> {
+    const response = await fetch(`${API_BASE}/api/config/env/merged`, {
+      credentials: 'include',
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to fetch merged environment variables' }));
+      throw new Error(error.detail || 'Failed to fetch merged environment variables');
+    }
+
+    return response.json();
+  },
+
+  /**
    * Update environment variables
    * PUT /api/config/env
    */

@@ -8,6 +8,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 ENV_KEY_PATTERN = r"^[A-Za-z_][A-Za-z0-9_]*$"
 
+RequiredReason = Literal["required", "docker_required"]
+EnvVarSource = Literal["env_file", "env_example"]
+
 
 class EnvVarResponse(BaseModel):
     """Single env var view for UI consumption.
@@ -23,6 +26,30 @@ class EnvVarResponse(BaseModel):
     is_sensitive: bool = Field(..., description="Whether this key is treated as sensitive")
     is_set: bool = Field(..., description="Whether the value exists and is non-empty in .env")
     source: Literal["env_file"] = Field("env_file", description="Configuration source")
+
+
+class EnvVarMergedResponse(BaseModel):
+    """Merged env var view from both .env and .env.example (required-only).
+
+    - Sensitive keys never return plaintext value (value=null).
+    - Required keys may come from .env.example even if absent in .env.
+    """
+
+    name: str = Field(..., pattern=ENV_KEY_PATTERN, description="Environment variable name")
+    value: Optional[str] = Field(
+        None,
+        description="Plaintext value for non-sensitive keys; null for sensitive keys",
+    )
+    is_sensitive: bool = Field(..., description="Whether this key is treated as sensitive")
+    is_set: bool = Field(..., description="Whether the value exists and is non-empty in .env")
+    source: EnvVarSource = Field(..., description="Configuration source for this item")
+
+    is_required: bool = Field(..., description="Whether this variable is required by template (.env.example)")
+    required_reason: Optional[RequiredReason] = Field(
+        None,
+        description="Required reason when is_required=true; otherwise null",
+    )
+    is_editable: bool = Field(..., description="Whether this key is allowed to be edited via admin API")
 
 
 class EnvUpdateItem(BaseModel):

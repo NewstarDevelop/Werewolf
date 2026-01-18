@@ -28,7 +28,7 @@ export function EnvManagerCard() {
   const loadVariables = async () => {
     try {
       setLoading(true);
-      const data = await configService.getEnvVars();
+      const data = await configService.getMergedEnvVars();
       setVariables(data);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load environment variables'));
@@ -101,6 +101,8 @@ export function EnvManagerCard() {
     setIsCreating(false);
   };
 
+  const missingCount = variables.filter((v) => !v.is_set && v.is_required).length;
+
   return (
     <Card>
       <CardHeader>
@@ -118,6 +120,15 @@ export function EnvManagerCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {missingCount > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Action Required:</strong> {missingCount} required variable{missingCount > 1 ? 's' : ''} {missingCount > 1 ? 'are' : 'is'} missing configuration.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>

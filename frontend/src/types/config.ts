@@ -7,7 +7,10 @@ export interface EnvVariable {
   value: string | null;
   is_sensitive: boolean;
   is_set: boolean;
-  source: 'env_file';
+  source: 'env_file' | 'env_example';
+  is_required: boolean;
+  is_editable: boolean;
+  required_reason?: 'required' | 'docker_required';
 }
 
 export interface EnvUpdateItem {

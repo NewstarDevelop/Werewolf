@@ -36,6 +36,7 @@ export function EnvEditDialog({ open, variable, onClose, onSave }: EnvEditDialog
   const [saving, setSaving] = useState(false);
   const [confirmSensitive, setConfirmSensitive] = useState(false);
   const isEditMode = variable !== null;
+  const isConfigureMode = variable !== null && !variable.is_set;
 
   const {
     register,
@@ -83,17 +84,27 @@ export function EnvEditDialog({ open, variable, onClose, onSave }: EnvEditDialog
     }
   };
 
+  const getDialogTitle = () => {
+    if (isConfigureMode) return 'Configure Required Variable';
+    if (isEditMode) return 'Edit Environment Variable';
+    return 'Add Environment Variable';
+  };
+
+  const getDialogDescription = () => {
+    if (isConfigureMode) return 'Set the value for this required environment variable.';
+    if (isEditMode) return 'Update the value of this environment variable.';
+    return 'Create a new environment variable.';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? 'Edit Environment Variable' : 'Add Environment Variable'}
+            {getDialogTitle()}
           </DialogTitle>
           <DialogDescription>
-            {isEditMode
-              ? 'Update the value of this environment variable.'
-              : 'Create a new environment variable.'}
+            {getDialogDescription()}
           </DialogDescription>
         </DialogHeader>
 

@@ -10,7 +10,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.api.endpoints.game import verify_admin
-from app.schemas.config_env import EnvVarResponse, EnvUpdateRequest, EnvUpdateResult
+from app.schemas.config_env import EnvVarResponse, EnvVarMergedResponse, EnvUpdateRequest, EnvUpdateResult
 from app.services.env_file_manager import (
     EnvFileManager,
     EnvFileNotFoundError,
@@ -19,11 +19,16 @@ from app.services.env_file_manager import (
     EnvFileValidationError,
     EnvFileError,
 )
+from app.services.env_example_manager import (
+    EnvExampleManager,
+    EnvExampleError,
+)
 
 router = APIRouter(prefix="/config", tags=["config"])
 logger = logging.getLogger(__name__)
 
 _env_manager = EnvFileManager()
+_env_example_manager = EnvExampleManager()
 
 
 def _require_env_management_enabled() -> None:
@@ -72,6 +77,78 @@ async def get_env_vars(
                 source="env_file",
             )
         )
+    return items
+
+
+@router.get("/env/merged", response_model=List[EnvVarMergedResponse])
+async def get_env_vars_merged(
+    _: Dict = Depends(verify_admin),
+):
+    """
+    Get merged environment variable view:
+    - Required keys from .env.example ([必需], [Docker 部署必需])
+    - Configured keys from .env
+
+    GET /api/config/env/merged
+
+    Security: Admin only (JWT admin or X-Admin-Key)
+    Sensitive variables return value=null
+    """
+    _require_env_management_enabled()
+
+    try:
+        _, env = await run_in_threadpool(_env_manager.read_env)
+    except EnvFileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except EnvFilePermissionError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    except EnvFileError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    required_by_key: dict[str, str] = {}
+    try:
+        _, required_by_key = await run_in_threadpool(_env_example_manager.read_required_keys)
+    except EnvExampleError as e:
+        # Degrade gracefully: return configured env vars only.
+        logger.warning("Failed to read required keys from .env.example, falling back to .env only: %s", e)
+        required_by_key = {}
+
+    merged_names = sorted(set(env.keys()) | set(required_by_key.keys()))
+
+    items: list[EnvVarMergedResponse] = []
+    for name in merged_names:
+        in_env = name in env
+        raw_value = env.get(name, "") if in_env else ""
+        is_sensitive = _env_manager.is_sensitive_key(name)
+        is_set = bool(raw_value)
+        is_required = name in required_by_key
+        required_reason = required_by_key.get(name)
+
+        items.append(
+            EnvVarMergedResponse(
+                name=name,
+                value=None if is_sensitive else raw_value,
+                is_sensitive=is_sensitive,
+                is_set=is_set,
+                source="env_file" if in_env else "env_example",
+                is_required=is_required,
+                required_reason=required_reason,
+                is_editable=_env_manager.is_editable_key(name),
+            )
+        )
+
+    # Sorting strategy:
+    # 1) Required but not configured (is_set=false) first
+    # 2) Then configured items (is_set=true)
+    # 3) Then remaining (non-required & is_set=false)
+    def _sort_key(v: EnvVarMergedResponse) -> tuple[int, str]:
+        if v.is_required and not v.is_set:
+            return (0, v.name)
+        if v.is_set:
+            return (1, v.name)
+        return (2, v.name)
+
+    items.sort(key=_sort_key)
     return items
 
 

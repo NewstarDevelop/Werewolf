@@ -105,6 +105,10 @@ async def startup_event():
     from app.init_db import init_database
     init_database()
 
+    # Apply Alembic migrations (schema upgrades)
+    from app.core.migrations import upgrade_head
+    upgrade_head()
+
     # WL-011 Fix: Reset orphaned rooms after restart
     # Since game state is stored in-memory, rooms in PLAYING state
     # after restart have lost their game objects and must be reset

@@ -62,4 +62,6 @@ docs/
 !README.md
 
 # Alembic
-alembic/
+# NOTE: 必须将 Alembic 迁移脚本打进镜像,否则容器内无法执行迁移。
+# 生产环境已选择方案 B (Alembic 迁移体系),因此不要忽略 alembic/ 目录。
+# alembic/

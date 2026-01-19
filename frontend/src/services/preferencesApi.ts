@@ -3,6 +3,7 @@
  * Handles user preferences API calls
  */
 import { fetchApi } from './api';
+import type { NotificationPreferences } from '@/types/notification';
 
 export interface SoundEffectsPreferences {
   enabled: boolean;
@@ -12,6 +13,7 @@ export interface SoundEffectsPreferences {
 
 export interface UserPreferences {
   sound_effects: SoundEffectsPreferences;
+  notifications: NotificationPreferences;
 }
 
 export interface UserPreferencesResponse {

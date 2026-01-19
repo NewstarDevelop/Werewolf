@@ -74,6 +74,19 @@ class ReadAllResponse(BaseModel):
     read_at: datetime
 
 
+class ReadBatchRequest(BaseModel):
+    """Batch mark-as-read request."""
+
+    notification_ids: list[str] = Field(..., min_length=1, max_length=100)
+
+
+class ReadBatchResponse(BaseModel):
+    """Batch mark-as-read response."""
+
+    updated: int
+    read_at: datetime
+
+
 class NotificationMessageData(BaseModel):
     """
     Data field inside WebSocket envelope for notification messages.

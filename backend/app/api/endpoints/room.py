@@ -12,6 +12,8 @@ from app.api.dependencies import get_current_player, get_optional_user, get_curr
 from app.services.room_manager import room_manager
 from app.models.room import RoomStatus
 from app.models.user import User
+from app.services.notification_emitter import emit_notification, emit_to_users
+from app.schemas.notification import NotificationCategory, NotificationPersistPolicy
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 logger = logging.getLogger(__name__)
@@ -98,7 +100,7 @@ class RoomDetailResponse(BaseModel):
 # ==================== API Endpoints ====================
 
 @router.post("")
-def create_room(
+async def create_room(
     request: CreateRoomRequest,
     db: Session = Depends(get_db),
     current_user: Dict = Depends(get_current_user)
@@ -187,6 +189,21 @@ def create_room(
             player_id=creator_id,
             room_id=room.id
         )
+
+        # 发送房间创建成功通知
+        try:
+            await emit_notification(
+                db,
+                user_id=user_id,
+                category=NotificationCategory.ROOM,
+                title="房间创建成功",
+                body=f"房间「{room.name}」已创建，等待玩家加入",
+                data={"room_id": room.id, "room_name": room.name},
+                persist_policy=NotificationPersistPolicy.DURABLE,
+                idempotency_key=f"room_created:{room.id}",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send room creation notification: {e}")
 
         return {
             "room": RoomResponse(
@@ -337,7 +354,7 @@ def get_room_detail(
 
 
 @router.post("/{room_id}/join")
-def join_room(
+async def join_room(
     room_id: str,
     request: JoinRoomRequest,
     db: Session = Depends(get_db),
@@ -359,6 +376,11 @@ def join_room(
         # 提取 user_id（如果用户已登录）
         user_id = auth_user.get("user_id") if auth_user else None
 
+        # 获取房间信息（用于通知房主）
+        room = room_manager.get_room(db, room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="房间不存在")
+
         player = room_manager.join_room(
             db,
             room_id,
@@ -373,6 +395,26 @@ def join_room(
             room_id=room_id
         )
 
+        # 通知房主有新玩家加入
+        if room.creator_user_id:
+            try:
+                await emit_notification(
+                    db,
+                    user_id=room.creator_user_id,
+                    category=NotificationCategory.ROOM,
+                    title="新玩家加入",
+                    body=f"玩家「{request.nickname}」加入了房间「{room.name}」",
+                    data={
+                        "room_id": room_id,
+                        "room_name": room.name,
+                        "player_nickname": request.nickname,
+                    },
+                    persist_policy=NotificationPersistPolicy.DURABLE,
+                    idempotency_key=f"player_joined:{room_id}:{player_id}",
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send player join notification: {e}")
+
         return {
             "success": True,
             "message": "加入成功",
@@ -383,6 +425,8 @@ def join_room(
         # ValueError is expected for user errors (room full, etc.)
         # WL-014 Fix: Return safe user-facing message
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         # WL-014 Fix: Log detailed error, return generic message
         logger.error(f"Failed to join room {room_id}: {e}", exc_info=True)
@@ -456,6 +500,15 @@ async def start_game(
         if current_player.get("room_id") != room_id:
             raise HTTPException(status_code=403, detail="You are not in this room")
 
+        # 获取房间信息用于通知
+        room = room_manager.get_room(db, room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="房间不存在")
+
+        # 获取房间内所有玩家的 user_id（用于发送通知）
+        players = room_manager.get_room_players(db, room_id)
+        player_user_ids = [p.user_id for p in players if p.user_id]
+
         # start_game 内部会验证是否为房主
         game_id = room_manager.start_game(
             db,
@@ -477,6 +530,22 @@ async def start_game(
         except Exception as e:
             # WebSocket 广播失败不应阻止游戏开始
             logger.warning(f"Failed to broadcast game_started to room {room_id}: {e}")
+
+        # 发送游戏开始通知给所有玩家
+        if player_user_ids:
+            try:
+                await emit_to_users(
+                    db,
+                    user_ids=player_user_ids,
+                    category=NotificationCategory.GAME,
+                    title="游戏开始",
+                    body=f"房间「{room.name}」的游戏已开始",
+                    data={"room_id": room_id, "game_id": game_id, "room_name": room.name},
+                    persist_policy=NotificationPersistPolicy.DURABLE,
+                    idempotency_key_prefix=f"game_started:{game_id}",
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send game start notifications: {e}")
 
         mode = "AI填充" if request.fill_ai else "多人对战"
         return {

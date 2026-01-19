@@ -18,6 +18,8 @@ from app.schemas.notification import (
     UnreadCountResponse,
     MarkReadResponse,
     ReadAllResponse,
+    ReadBatchRequest,
+    ReadBatchResponse,
 )
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -143,3 +145,36 @@ async def mark_all_read(
     db.commit()
 
     return ReadAllResponse(updated=int(updated or 0), read_at=now)
+
+
+@router.post("/read-batch", response_model=ReadBatchResponse)
+async def mark_batch_read(
+    body: ReadBatchRequest,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Mark multiple notifications as read by ID list.
+
+    Security:
+    - Only updates notifications owned by current user.
+    - Non-existent or other users' notifications are silently ignored.
+
+    Idempotent:
+    - Already-read notifications are not modified.
+    """
+    user_id = current_user["user_id"]
+    now = datetime.utcnow()
+
+    updated = (
+        db.query(Notification)
+        .filter(
+            Notification.id.in_(body.notification_ids),
+            Notification.user_id == user_id,
+            Notification.read_at.is_(None),
+        )
+        .update({Notification.read_at: now}, synchronize_session=False)
+    )
+    db.commit()
+
+    return ReadBatchResponse(updated=int(updated or 0), read_at=now)

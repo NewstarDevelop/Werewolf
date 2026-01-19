@@ -3,11 +3,22 @@
  * Main component for managing .env variables
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, AlertTriangle, Loader2, Key, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { configService } from '@/services/configService';
 import { EnvVariable } from '@/types/config';
@@ -16,6 +27,8 @@ import { EnvEditDialog } from './EnvEditDialog';
 import { EnvDeleteDialog } from './EnvDeleteDialog';
 import { getErrorMessage } from '@/utils/errorHandler';
 
+const ADMIN_TOKEN_KEY = 'env_admin_token';
+
 export function EnvManagerCard() {
   const [variables, setVariables] = useState<EnvVariable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,34 +36,78 @@ export function EnvManagerCard() {
   const [deletingVar, setDeletingVar] = useState<EnvVariable | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const loadVariables = async () => {
+  // Admin token state
+  const [adminToken, setAdminToken] = useState<string>(() =>
+    sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''
+  );
+  const [authError, setAuthError] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
+  const getAdminToken = useCallback(() => {
+    return adminToken || sessionStorage.getItem(ADMIN_TOKEN_KEY) || undefined;
+  }, [adminToken]);
+
+  const loadVariables = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await configService.getMergedEnvVars();
+      setAuthError(false);
+      const token = getAdminToken();
+      const data = await configService.getMergedEnvVars(token);
       setVariables(data);
     } catch (error) {
+      const message = getErrorMessage(error, '');
+      if (message.includes('Admin access required') || message.includes('403') || message.includes('401')) {
+        setAuthError(true);
+      }
       toast.error(getErrorMessage(error, 'Failed to load environment variables'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAdminToken]);
 
   useEffect(() => {
     loadVariables();
-  }, []);
+  }, [loadVariables]);
+
+  const handleTokenSubmit = async () => {
+    if (adminToken) {
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, adminToken);
+    } else {
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+    await loadVariables();
+  };
+
+  const handleRestart = async () => {
+    try {
+      setIsRestarting(true);
+      setShowRestartConfirm(false);
+      await configService.restartService(getAdminToken());
+      toast.success('Service restarting... Page will reload shortly.');
+      setTimeout(() => window.location.reload(), 3000);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to restart service'));
+      setIsRestarting(false);
+    }
+  };
 
   const handleSave = async (name: string, value: string, confirmSensitive: boolean) => {
     try {
-      const result = await configService.updateEnvVars({
-        updates: [
-          {
-            name,
-            action: 'set',
-            value,
-            confirm_sensitive: confirmSensitive,
-          },
-        ],
-      });
+      const token = getAdminToken();
+      const result = await configService.updateEnvVars(
+        {
+          updates: [
+            {
+              name,
+              action: 'set',
+              value,
+              confirm_sensitive: confirmSensitive,
+            },
+          ],
+        },
+        token
+      );
 
       if (result.success) {
         toast.success(
@@ -70,14 +127,18 @@ export function EnvManagerCard() {
 
   const handleDelete = async (name: string) => {
     try {
-      const result = await configService.updateEnvVars({
-        updates: [
-          {
-            name,
-            action: 'unset',
-          },
-        ],
-      });
+      const token = getAdminToken();
+      const result = await configService.updateEnvVars(
+        {
+          updates: [
+            {
+              name,
+              action: 'unset',
+            },
+          ],
+        },
+        token
+      );
 
       if (result.success) {
         toast.success('Variable deleted successfully');
@@ -104,20 +165,64 @@ export function EnvManagerCard() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Environment Variables</CardTitle>
             <CardDescription>
               Manage environment variables from your .env file
             </CardDescription>
           </div>
-          <Button onClick={handleCreate} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Variable
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Admin Token Input */}
+            <div className="relative">
+              <Key className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Admin Token / Key"
+                aria-label="Admin Token"
+                value={adminToken}
+                onChange={(e) => {
+                  setAdminToken(e.target.value);
+                  setAuthError(false);
+                }}
+                onBlur={handleTokenSubmit}
+                onKeyDown={(e) => e.key === 'Enter' && handleTokenSubmit()}
+                className={`pl-8 w-[180px] ${authError ? 'border-destructive' : ''}`}
+              />
+            </div>
+            {/* Restart Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRestartConfirm(true)}
+              disabled={isRestarting}
+              aria-label="Restart Service"
+            >
+              {isRestarting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4" />
+              )}
+              <span className="ml-1 hidden sm:inline">Restart</span>
+            </Button>
+            {/* Add Variable Button */}
+            <Button onClick={handleCreate} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Variable
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {authError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Authentication failed.</strong> Please enter a valid Admin Token (JWT admin token or X-Admin-Key).
+            </AlertDescription>
+          </Alert>
+        )}
+
         {missingCount > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -163,6 +268,24 @@ export function EnvManagerCard() {
         onClose={() => setDeletingVar(null)}
         onConfirm={() => deletingVar && handleDelete(deletingVar.name)}
       />
+
+      {/* Restart Confirmation Dialog */}
+      <AlertDialog open={showRestartConfirm} onOpenChange={setShowRestartConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restart Service?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will restart the backend service. All active connections will be interrupted
+              and in-progress games may be affected. The service should be back online within
+              a few seconds.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestart}>Restart Now</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

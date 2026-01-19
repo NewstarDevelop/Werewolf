@@ -7,17 +7,35 @@ import { getAuthHeader } from '@/utils/token';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
+/**
+ * Build headers with optional admin token.
+ * JWT tokens (starting with 'ey') use Authorization header.
+ * Other tokens use X-Admin-Key header.
+ */
+function buildHeaders(adminToken?: string): HeadersInit {
+  const headers: HeadersInit = { ...getAuthHeader() };
+
+  if (adminToken) {
+    // JWT tokens start with 'ey', otherwise treat as X-Admin-Key
+    if (adminToken.startsWith('ey')) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    } else {
+      headers['X-Admin-Key'] = adminToken;
+    }
+  }
+
+  return headers;
+}
+
 export const configService = {
   /**
    * Get all environment variables
    * GET /api/config/env
    */
-  async getEnvVars(): Promise<EnvVariable[]> {
+  async getEnvVars(adminToken?: string): Promise<EnvVariable[]> {
     const response = await fetch(`${API_BASE}/api/config/env`, {
       credentials: 'include',
-      headers: {
-        ...getAuthHeader(),
-      },
+      headers: buildHeaders(adminToken),
     });
 
     if (!response.ok) {
@@ -32,12 +50,10 @@ export const configService = {
    * Get merged environment variables (from .env and .env.example)
    * GET /api/config/env/merged
    */
-  async getMergedEnvVars(): Promise<EnvVariable[]> {
+  async getMergedEnvVars(adminToken?: string): Promise<EnvVariable[]> {
     const response = await fetch(`${API_BASE}/api/config/env/merged`, {
       credentials: 'include',
-      headers: {
-        ...getAuthHeader(),
-      },
+      headers: buildHeaders(adminToken),
     });
 
     if (!response.ok) {
@@ -52,13 +68,13 @@ export const configService = {
    * Update environment variables
    * PUT /api/config/env
    */
-  async updateEnvVars(request: EnvUpdateRequest): Promise<EnvUpdateResult> {
+  async updateEnvVars(request: EnvUpdateRequest, adminToken?: string): Promise<EnvUpdateResult> {
     const response = await fetch(`${API_BASE}/api/config/env`, {
       method: 'PUT',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
+        ...buildHeaders(adminToken),
       },
       body: JSON.stringify(request),
     });
@@ -66,6 +82,25 @@ export const configService = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Failed to update environment variables' }));
       throw new Error(error.detail || 'Failed to update environment variables');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Restart the backend service
+   * POST /api/admin/restart
+   */
+  async restartService(adminToken?: string): Promise<{ status: string; message: string; delay_seconds: number }> {
+    const response = await fetch(`${API_BASE}/api/admin/restart`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: buildHeaders(adminToken),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to restart service' }));
+      throw new Error(error.detail || 'Failed to restart service');
     }
 
     return response.json();

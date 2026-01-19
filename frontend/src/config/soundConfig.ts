@@ -25,30 +25,30 @@ export type SoundKey = keyof typeof SOUND_ASSETS;
 export const SOUND_ASSETS = {
   // UI Interaction Sounds
   CLICK: {
-    src: ['/sounds/ui_click.mp3'],
+    src: ['/sounds/ui_click.mp3', '/sounds/ui_click.wav'],
     category: 'sfx',
     volume: 0.6,
   },
   HOVER: {
-    src: ['/sounds/ui_hover.mp3'],
+    src: ['/sounds/ui_hover.mp3', '/sounds/ui_hover.wav'],
     category: 'sfx',
     volume: 0.3,
   },
   NOTIFICATION: {
-    src: ['/sounds/notification.mp3'],
+    src: ['/sounds/notification.mp3', '/sounds/notification.wav'],
     category: 'sfx',
     volume: 0.7,
   },
 
   // Game Phase Transitions
   PHASE_DAY: {
-    src: ['/sounds/day_start.mp3'],
+    src: ['/sounds/day_start.mp3', '/sounds/day_start.wav'],
     category: 'bgm',
     loop: true,
     volume: 0.5,
   },
   PHASE_NIGHT: {
-    src: ['/sounds/night_start.mp3'],
+    src: ['/sounds/night_start.mp3', '/sounds/night_start.wav'],
     category: 'bgm',
     loop: true,
     volume: 0.5,
@@ -56,22 +56,22 @@ export const SOUND_ASSETS = {
 
   // Game Events
   VOTE: {
-    src: ['/sounds/vote_cast.mp3'],
+    src: ['/sounds/vote_cast.mp3', '/sounds/vote_cast.wav'],
     category: 'sfx',
     volume: 0.7,
   },
   DEATH: {
-    src: ['/sounds/player_death.mp3'],
+    src: ['/sounds/player_death.mp3', '/sounds/player_death.wav'],
     category: 'sfx',
     volume: 0.8,
   },
   VICTORY: {
-    src: ['/sounds/victory.mp3'],
+    src: ['/sounds/victory.mp3', '/sounds/victory.wav'],
     category: 'bgm',
     volume: 0.7,
   },
   DEFEAT: {
-    src: ['/sounds/defeat.mp3'],
+    src: ['/sounds/defeat.mp3', '/sounds/defeat.wav'],
     category: 'bgm',
     volume: 0.7,
   },

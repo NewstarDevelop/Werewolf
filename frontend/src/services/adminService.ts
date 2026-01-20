@@ -81,16 +81,21 @@ export const adminService = {
   },
 
   /**
-   * Validate admin access by attempting to fetch env vars
-   * Returns true if the token is valid, false otherwise
+   * Validate admin access by verifying JWT token has admin privileges
+   * Uses dedicated admin-verify endpoint instead of env management endpoint
+   * Returns true if the token is valid and has admin privileges, false otherwise
    */
   async validateAccess(adminToken?: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE}/api/config/env/merged`, {
+      const response = await fetch(`${API_BASE}/api/auth/admin-verify`, {
         credentials: 'include',
         headers: buildHeaders(adminToken),
       });
-      return response.ok;
+      if (!response.ok) {
+        return false;
+      }
+      const data = await response.json();
+      return data.valid === true;
     } catch {
       return false;
     }

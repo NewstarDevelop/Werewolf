@@ -3,8 +3,9 @@ import logging
 import secrets
 import uuid
 from datetime import datetime
+from typing import Optional
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -372,3 +373,49 @@ async def admin_login(body: AdminLoginRequest):
     logger.info("Admin login successful via password authentication")
 
     return AdminLoginResponse(access_token=admin_token)
+
+
+class AdminVerifyResponse(BaseModel):
+    """Response for admin token verification."""
+    valid: bool
+    is_admin: bool = True
+
+
+@router.get("/admin-verify", response_model=AdminVerifyResponse)
+async def verify_admin_token(
+    authorization: Optional[str] = Header(None),
+    user_access_token: Optional[str] = Cookie(None)
+):
+    """
+    Verify admin token validity.
+
+    GET /api/auth/admin-verify
+
+    This endpoint validates whether the provided JWT token has admin privileges.
+    Used by frontend to verify admin access without depending on env management endpoints.
+
+    Security:
+    - Supports both Authorization header (Bearer token) and HttpOnly cookie
+    - Returns valid=true only if token is valid AND has is_admin=True
+    """
+    from app.core.auth import verify_player_token
+    import jwt as pyjwt
+
+    # Extract token from header or cookie
+    token = None
+    if authorization:
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1]
+    elif user_access_token:
+        token = user_access_token
+
+    if not token:
+        return AdminVerifyResponse(valid=False, is_admin=False)
+
+    try:
+        payload = verify_player_token(token)
+        is_admin = payload.get("is_admin", False)
+        return AdminVerifyResponse(valid=is_admin, is_admin=is_admin)
+    except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError, Exception):
+        return AdminVerifyResponse(valid=False, is_admin=False)

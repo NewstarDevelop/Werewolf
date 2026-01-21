@@ -1,6 +1,7 @@
 """OAuth2 service for linux.do authentication."""
 import httpx
 import uuid
+import logging
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 from typing import Dict, Optional, Tuple
@@ -9,6 +10,9 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import generate_random_token, hash_token
 from app.models.user import OAuthState, OAuthAccount, User
+from app.services.http_client import get_oauth_client, OAUTH_TIMEOUT
+
+logger = logging.getLogger(__name__)
 
 
 class LinuxdoOAuthService:
@@ -70,24 +74,35 @@ class LinuxdoOAuthService:
 
         Returns:
             Token response dict with access_token, token_type, etc.
+
+        Raises:
+            httpx.TimeoutException: If request times out
+            httpx.HTTPStatusError: If response status is 4xx/5xx
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                settings.LINUXDO_TOKEN_URL,
-                data={
-                    "grant_type": "authorization_code",
-                    "code": code,
-                    "redirect_uri": settings.LINUXDO_REDIRECT_URI,
-                    "client_id": settings.LINUXDO_CLIENT_ID,
-                    "client_secret": settings.LINUXDO_CLIENT_SECRET,
-                },
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json"
-                },
-            )
-            response.raise_for_status()
-            return response.json()
+        async with get_oauth_client() as client:
+            try:
+                response = await client.post(
+                    settings.LINUXDO_TOKEN_URL,
+                    data={
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        "redirect_uri": settings.LINUXDO_REDIRECT_URI,
+                        "client_id": settings.LINUXDO_CLIENT_ID,
+                        "client_secret": settings.LINUXDO_CLIENT_SECRET,
+                    },
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Accept": "application/json"
+                    },
+                )
+                response.raise_for_status()
+                return response.json()
+            except httpx.TimeoutException:
+                logger.error("OAuth token exchange timed out")
+                raise
+            except httpx.HTTPStatusError as e:
+                logger.error(f"OAuth token exchange failed: {e.response.status_code}")
+                raise
 
     @staticmethod
     async def fetch_userinfo(access_token: str) -> Dict:
@@ -99,17 +114,28 @@ class LinuxdoOAuthService:
 
         Returns:
             User info dict
+
+        Raises:
+            httpx.TimeoutException: If request times out
+            httpx.HTTPStatusError: If response status is 4xx/5xx
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                settings.LINUXDO_USERINFO_URL,
-                headers={
-                    "Authorization": f"Bearer {access_token}",
-                    "Accept": "application/json",
-                },
-            )
-            response.raise_for_status()
-            return response.json()
+        async with get_oauth_client() as client:
+            try:
+                response = await client.get(
+                    settings.LINUXDO_USERINFO_URL,
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/json",
+                    },
+                )
+                response.raise_for_status()
+                return response.json()
+            except httpx.TimeoutException:
+                logger.error("OAuth userinfo fetch timed out")
+                raise
+            except httpx.HTTPStatusError as e:
+                logger.error(f"OAuth userinfo fetch failed: {e.response.status_code}")
+                raise
 
     @staticmethod
     def verify_state(db: Session, state: str) -> OAuthState:

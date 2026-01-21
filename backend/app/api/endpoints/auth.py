@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, HTTPException, Query, Header, Cookie
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, Cookie, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -24,6 +24,7 @@ from app.schemas.auth import (
     PasswordResetRequest
 )
 from app.services.oauth import LinuxdoOAuthService
+from app.services.login_rate_limiter import admin_login_limiter, user_login_limiter
 from app.api.dependencies import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -341,7 +342,7 @@ class AdminLoginResponse(BaseModel):
 
 
 @router.post("/admin-login", response_model=AdminLoginResponse)
-async def admin_login(body: AdminLoginRequest):
+async def admin_login(body: AdminLoginRequest, request: Request):
     """
     Login to admin panel with password.
 
@@ -351,7 +352,21 @@ async def admin_login(body: AdminLoginRequest):
     Security:
     - Uses constant-time comparison to prevent timing attacks
     - Returns generic error message to prevent password enumeration
+    - Rate limited to prevent brute-force attacks
     """
+    # Get client IP for rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Check rate limit
+    is_allowed, retry_after = admin_login_limiter.check_rate_limit(client_ip)
+    if not is_allowed:
+        logger.warning(f"Admin login rate limited for IP {client_ip}")
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many login attempts. Please try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)}
+        )
+
     # Check if ADMIN_PASSWORD is configured
     if not settings.ADMIN_PASSWORD:
         logger.warning("Admin login attempted but ADMIN_PASSWORD is not configured")
@@ -362,15 +377,20 @@ async def admin_login(body: AdminLoginRequest):
 
     # Use constant-time comparison to prevent timing attacks
     if not secrets.compare_digest(body.password, settings.ADMIN_PASSWORD):
-        logger.warning("Admin login failed: invalid password")
+        # Record failed attempt
+        admin_login_limiter.record_attempt(client_ip, success=False)
+        logger.warning(f"Admin login failed: invalid password from IP {client_ip}")
         raise HTTPException(
             status_code=401,
             detail="Invalid admin password"
         )
 
+    # Record successful attempt
+    admin_login_limiter.record_attempt(client_ip, success=True)
+
     # Generate admin JWT token
     admin_token = create_admin_token()
-    logger.info("Admin login successful via password authentication")
+    logger.info(f"Admin login successful via password authentication from IP {client_ip}")
 
     return AdminLoginResponse(access_token=admin_token)
 

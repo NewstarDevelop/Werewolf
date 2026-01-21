@@ -5,12 +5,23 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from typing import Optional, List
 
 from app.services.websocket_manager import websocket_manager
+from app.services.websocket_auth import (
+    authenticate_websocket,
+    validate_origin,
+    WebSocketAuthError,
+    close_with_error,
+)
 from app.models.game import game_store
 from app.core.auth import verify_player_token
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Configuration: whether to allow deprecated query token authentication
+# Set to False in production after migration period
+ALLOW_QUERY_TOKEN = settings.DEBUG
 
 
 def _extract_token_from_subprotocols(subprotocols: List[str]) -> Optional[str]:
@@ -136,16 +147,43 @@ async def room_websocket(
 
     Clients connect to this endpoint while in the room lobby to receive
     instant updates when players join/leave/ready up.
+
+    Security:
+    - Origin validation to prevent CSWSH (Cross-Site WebSocket Hijacking)
+    - Optional authentication (if token provided, validates it)
     """
+    # Validate origin to prevent CSWSH attacks
+    is_valid_origin, origin = validate_origin(websocket)
+    if not is_valid_origin:
+        logger.warning(f"Room WS rejected invalid origin: {origin} for room {room_id}")
+        await websocket.close(code=4003, reason="Invalid origin")
+        return
+
+    # Optional authentication - if token provided, validate it
+    # This allows anonymous viewing but tracks authenticated users
+    user_id = None
+    try:
+        payload = await authenticate_websocket(
+            websocket,
+            require_auth=False,  # Authentication optional for room lobby
+            allow_query_token=ALLOW_QUERY_TOKEN,
+            validate_origin_header=False,  # Already validated above
+        )
+        if payload:
+            user_id = payload.get("sub") or payload.get("user_id")
+    except WebSocketAuthError as e:
+        logger.warning(f"Room WS auth failed: {e.message}")
+        # Continue without authentication for public room viewing
+
     room_key = f"room_{room_id}"
-    connection_id = str(uuid.uuid4())
+    connection_id = user_id or str(uuid.uuid4())
     await websocket_manager.connect(room_key, connection_id, websocket)
 
     try:
         # Send initial confirmation
         await websocket.send_json({
             "type": "connected",
-            "data": {"room_id": room_id}
+            "data": {"room_id": room_id, "authenticated": user_id is not None}
         })
 
         # Keep connection alive

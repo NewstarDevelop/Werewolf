@@ -136,3 +136,26 @@ def verify_player_token(token: str) -> Dict:
     )
 
     return payload
+
+
+def verify_admin_token(token: str) -> Dict:
+    """
+    Verify and decode JWT token, ensuring it has admin privileges.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Decoded token payload
+
+    Raises:
+        jwt.ExpiredSignatureError: Token has expired
+        jwt.InvalidTokenError: Token is invalid
+        ValueError: Token does not have admin privileges
+    """
+    payload = verify_player_token(token)
+
+    if not payload.get("is_admin", False):
+        raise ValueError("Token does not have admin privileges")
+
+    return payload

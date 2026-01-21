@@ -66,7 +66,7 @@ export function EnvManager({ token }: EnvManagerProps) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     loadVariables();

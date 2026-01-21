@@ -32,7 +32,7 @@ export default function RoomLobby() {
   const [gameMode, setGameMode] = useState<GameMode>('classic_9');
   const [wolfKingVariant, setWolfKingVariant] = useState<WolfKingVariant>('wolf_king');
 
-  // 如果用户未登录，重定向到登录页（等待加载完成后再判断）
+  // 濡傛灉鐢ㄦ埛鏈櫥褰曪紝閲嶅畾鍚戝埌鐧诲綍椤碉紙绛夊緟鍔犺浇瀹屾垚鍚庡啀鍒ゆ柇锛?
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast.error(t('auth.login_required'), {
@@ -42,24 +42,14 @@ export default function RoomLobby() {
     }
   }, [isAuthenticated, isLoading, navigate, t]);
 
-  // 加载中显示 loading 状态
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('app.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
   // Query rooms list (refresh every 3 seconds, stop when window loses focus)
+  // Query rooms list (poll every 3s only when authenticated)
   const { data: rooms, refetch } = useQuery({
     queryKey: ['rooms'],
     queryFn: () => getRooms('waiting'),
-    refetchInterval: 3000,
-    refetchIntervalInBackground: false,  // P2-2: Stop polling when window loses focus
+    enabled: !isLoading && isAuthenticated,
+    refetchInterval: !isLoading && isAuthenticated ? 3000 : false,
+    refetchIntervalInBackground: false,
   });
 
   // Create room mutation
@@ -70,9 +60,9 @@ export default function RoomLobby() {
       navigate(`/room/${data.room.id}/waiting`);
     },
     onError: (error: ApiError) => {
-      // 处理 409 冲突错误（用户已有活跃房间）
+      // 澶勭悊 409 鍐茬獊閿欒锛堢敤鎴峰凡鏈夋椿璺冩埧闂达級
       if (error.response?.status === 409) {
-        toast.error(t('room.room_limit_reached', { defaultValue: '您已有一个活跃房间' }), {
+        toast.error(t('room.room_limit_reached', { defaultValue: 'You already have an active room' }), {
           description: error.response?.data?.detail || error.message,
         });
       } else {
@@ -94,9 +84,22 @@ export default function RoomLobby() {
     },
   });
 
+  // Loading state (hooks must run before any return)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{t("app.loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+
   const handleCreateRoom = () => {
     if (!user) {
-      toast.error(t('auth.login_required', { defaultValue: '请先登录' }));
+      toast.error(t('auth.login_required', { defaultValue: '璇峰厛鐧诲綍' }));
       return;
     }
 
@@ -117,23 +120,23 @@ export default function RoomLobby() {
 
   const handleJoinRoom = async (roomId: string) => {
     if (!user) {
-      toast.error(t('auth.login_required', { defaultValue: '请先登录' }));
+      toast.error(t('auth.login_required', { defaultValue: '璇峰厛鐧诲綍' }));
       return;
     }
 
-    // FIX: 移除 has_same_user 检查，直接调用 joinRoom
-    // 后端已修改为：如果用户已在房间中，返回现有记录并签发新 token
-    // 这样用户可以重新获取 room token（解决返回大厅后丢失权限的问题）
+    // FIX: 绉婚櫎 has_same_user 妫€鏌ワ紝鐩存帴璋冪敤 joinRoom
+    // 鍚庣宸蹭慨鏀逛负锛氬鏋滅敤鎴峰凡鍦ㄦ埧闂翠腑锛岃繑鍥炵幇鏈夎褰曞苟绛惧彂鏂?token
+    // 杩欐牱鐢ㄦ埛鍙互閲嶆柊鑾峰彇 room token锛堣В鍐宠繑鍥炲ぇ鍘呭悗涓㈠け鏉冮檺鐨勯棶棰橈級
     joinRoomMutation.mutate({ roomId, nickname: user.nickname });
   };
 
   const handleLogout = async () => {
     try {
       await authLogout();
-      toast.success(t('auth.logout_success', { defaultValue: '已退出登录' }));
+      toast.success(t('auth.logout_success', { defaultValue: 'Logged out' }));
       navigate('/');
     } catch (error) {
-      toast.error(t('auth.logout_failed', { defaultValue: '退出登录失败' }));
+      toast.error(t('auth.logout_failed', { defaultValue: 'Logout failed' }));
     }
   };
 
@@ -165,7 +168,7 @@ export default function RoomLobby() {
                   onClick={handleLogout}
                   className="h-8"
                 >
-                  {t('auth.logout', { defaultValue: '退出登录' })}
+                  {t('auth.logout', { defaultValue: 'Logout' })}
                 </Button>
               </div>
             )}
@@ -191,7 +194,7 @@ export default function RoomLobby() {
             {/* Display Current Username */}
             {isAuthenticated && user && (
               <div className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                <Label className="text-sm text-muted-foreground">{t('room.current_user', { defaultValue: '当前用户' })}</Label>
+                <Label className="text-sm text-muted-foreground">{t('room.current_user', { defaultValue: '褰撳墠鐢ㄦ埛' })}</Label>
                 <p className="mt-1 text-lg font-semibold">{user.nickname}</p>
               </div>
             )}

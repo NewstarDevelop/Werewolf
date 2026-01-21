@@ -39,7 +39,7 @@ export function useGameTransformers(gameState: GameState | null | undefined) {
   const playerMap = useMemo(() => {
     if (!gameState) return new Map<number, Player>();
     return new Map(gameState.players.map(p => [p.seat_id, p]));
-  }, [gameState?.players]);
+  }, [gameState]);
 
   const messages = useMemo(() => {
     if (!gameState) return [];

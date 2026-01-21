@@ -1,18 +1,22 @@
 /**
- * JWT Token 管理工具
+ * Token Management Utilities
  *
- * SECURITY NOTE (2026-01-21):
- * This module is being deprecated. The application now uses HttpOnly cookies
- * for user authentication. Token storage in sessionStorage is only used for
- * legacy game room tokens during the migration period.
+ * TOKEN ARCHITECTURE (2026-01-21):
  *
- * Migration plan:
- * 1. User auth: Now uses HttpOnly cookies (handled by backend)
- * 2. Game room tokens: Still uses sessionStorage (will migrate to one-time tickets)
- * 3. All deprecated functions will be removed after migration complete
+ * 1. USER AUTHENTICATION
+ *    - Uses HttpOnly cookies set by backend (/auth/login)
+ *    - All API calls include credentials: 'include'
+ *    - No client-side token storage for user auth
  *
- * DO NOT use getAuthHeader() for user authentication.
- * Use credentials: 'include' in fetch requests instead.
+ * 2. GAME ROOM AUTHENTICATION
+ *    - Uses JWT stored in sessionStorage
+ *    - Token issued when joining/creating room
+ *    - Passed via Authorization header for game-related APIs
+ *    - Also used for WebSocket Sec-WebSocket-Protocol authentication
+ *
+ * This dual-auth approach allows:
+ * - Secure user sessions via HttpOnly cookies
+ * - Game-specific authorization without modifying user session
  */
 
 const TOKEN_KEY = 'werewolf_token';
@@ -20,14 +24,13 @@ const EXPIRY_KEY = 'werewolf_token_expiry';
 const DEFAULT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
- * 保存 JWT token (用于游戏房间认证)
- * @deprecated Will be replaced by one-time tickets
- * @param token - JWT token 字符串
- * @param expiresIn - 过期时间（毫秒），默认 24 小时
+ * Save game room JWT token to sessionStorage.
+ * @param token - JWT token string
+ * @param expiresIn - Expiry time in milliseconds (default 24 hours)
  */
 export function saveToken(token: string, expiresIn: number = DEFAULT_EXPIRY_MS): void {
   if (!token) {
-    console.warn('Attempted to save empty token');
+    console.warn('[Token] Attempted to save empty token');
     return;
   }
   const expiryTime = Date.now() + expiresIn;
@@ -36,9 +39,8 @@ export function saveToken(token: string, expiresIn: number = DEFAULT_EXPIRY_MS):
 }
 
 /**
- * 获取 JWT token (用于游戏房间认证)
- * @deprecated Will be replaced by one-time tickets
- * @returns JWT token 或 null（如果不存在或已过期）
+ * Get game room JWT token from sessionStorage.
+ * Returns null if token doesn't exist or has expired.
  */
 export function getToken(): string | null {
   const token = sessionStorage.getItem(TOKEN_KEY);
@@ -55,7 +57,7 @@ export function getToken(): string | null {
 }
 
 /**
- * 清除存储的 JWT token
+ * Clear stored game room token.
  */
 export function clearToken(): void {
   sessionStorage.removeItem(TOKEN_KEY);
@@ -63,82 +65,31 @@ export function clearToken(): void {
 }
 
 /**
- * 获取认证请求头 (仅用于游戏房间认证)
- *
- * @deprecated For user auth, use credentials: 'include' instead.
- * This is only for legacy game room tokens during migration.
- *
- * @returns 包含 Authorization header 的对象，如果没有 token 则返回空对象
+ * Get Authorization header for game room authentication.
+ * Used by API calls that require game room context.
+ * @returns Headers object with Authorization or empty object if no token
  */
 export function getAuthHeader(): HeadersInit {
   const token = getToken();
-
   if (!token) {
     return {};
   }
-
   return {
     'Authorization': `Bearer ${token}`
   };
 }
 
 // =============================================================================
-// DEPRECATED FUNCTIONS - DO NOT USE IN NEW CODE
-// These are kept only for cleanup during logout
+// LEGACY CLEANUP FUNCTIONS
+// These exist only for backward compatibility cleanup during logout
 // =============================================================================
 
 const USER_TOKEN_KEY = 'user_auth_token';
 
 /**
- * @deprecated Application uses HttpOnly cookies. This is kept for cleanup only.
- */
-export function saveUserToken(_token: string): void {
-  console.warn('saveUserToken is deprecated. Application uses HttpOnly cookies.');
-  // No-op: Do not store tokens in localStorage
-}
-
-/**
- * @deprecated Application uses HttpOnly cookies. This is kept for cleanup only.
- */
-export function getUserToken(): string | null {
-  console.warn('getUserToken is deprecated. Application uses HttpOnly cookies.');
-  // Return null - auth is now cookie-based
-  return null;
-}
-
-/**
- * Clear user authentication token from localStorage.
- * This is still needed for cleanup during logout to remove any legacy tokens.
+ * Clear any legacy user token from localStorage.
+ * Called during logout to ensure clean state.
  */
 export function clearUserToken(): void {
   localStorage.removeItem(USER_TOKEN_KEY);
-}
-
-/**
- * @deprecated Token validation should be done server-side.
- */
-export function decodeToken(token: string): Record<string, unknown> | null {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
-
-/**
- * @deprecated Token validation should be done server-side.
- */
-export function isTokenExpired(token: string): boolean {
-  const payload = decodeToken(token);
-  if (!payload || typeof payload.exp !== 'number') return true;
-  return Date.now() >= payload.exp * 1000;
-}
-
-/**
- * @deprecated Use credentials: 'include' for cookie-based auth instead.
- */
-export function getUserAuthHeader(): HeadersInit {
-  console.warn('getUserAuthHeader is deprecated. Use credentials: "include" instead.');
-  return {};
 }

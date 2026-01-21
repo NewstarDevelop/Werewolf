@@ -5,7 +5,7 @@
 import { saveToken, getAuthHeader } from '@/utils/token';
 import { ApiError, GameMode, WolfKingVariant } from '@/services/api';
 
-// 默认空字符串（相对路径），生产环境走 nginx 反代；开发环境需在 .env.development 配置
+// 榛樿绌哄瓧绗︿覆锛堢浉瀵硅矾寰勶級锛岀敓浜х幆澧冭蛋 nginx 鍙嶄唬锛涘紑鍙戠幆澧冮渶鍦?.env.development 閰嶇疆
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 // ==================== Types ====================
@@ -20,7 +20,7 @@ export interface Room {
   created_at: string;
   game_mode: GameMode;
   wolf_king_variant?: WolfKingVariant;
-  game_id?: string;  // FIX: 当房间状态为 PLAYING 时返回 game_id，用于非房主玩家导航
+  game_id?: string;  // FIX: 褰撴埧闂寸姸鎬佷负 PLAYING 鏃惰繑鍥?game_id锛岀敤浜庨潪鎴夸富鐜╁瀵艰埅
 }
 
 export interface RoomPlayer {
@@ -37,7 +37,7 @@ export interface RoomPlayer {
 export interface RoomDetail {
   room: Room;
   players: RoomPlayer[];
-  has_same_user: boolean;  // P1-SEC-004: 当前登录用户是否已在房间中
+  has_same_user: boolean;  // P1-SEC-004: 褰撳墠鐧诲綍鐢ㄦ埛鏄惁宸插湪鎴块棿涓?
 }
 
 export interface CreateRoomRequest {
@@ -62,14 +62,14 @@ export async function createRoom(request: CreateRoomRequest): Promise<{ room: Ro
   const response = await fetch(`${API_BASE_URL}/api/rooms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',  // 发送认证 cookie
+    credentials: 'include',  // 鍙戦€佽璇?cookie
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json();
     const apiError = new ApiError(response.status, error.detail || 'Failed to create room');
-    (apiError as any).response = { status: response.status, data: error };
+    apiError.response = { status: response.status, data: error };
     throw apiError;
   }
 
@@ -121,14 +121,14 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
   const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',  // 发送认证 cookie
+    credentials: 'include',  // 鍙戦€佽璇?cookie
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Failed to join room' }));
     const apiError = new ApiError(response.status, error.detail || 'Failed to join room');
-    (apiError as any).response = { status: response.status, data: error };
+    apiError.response = { status: response.status, data: error };
     throw apiError;
   }
 

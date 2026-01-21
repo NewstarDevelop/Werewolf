@@ -3,7 +3,8 @@
  *
  * Features:
  * - Global WebSocket connection to /ws/notifications
- * - Authentication via HttpOnly cookie (automatic)
+ * - Authentication via Sec-WebSocket-Protocol (consistent with useGameWebSocket)
+ * - Fallback to HttpOnly cookie (handled by server)
  * - Automatic reconnection with exponential backoff
  * - Integration with TanStack Query cache
  * - Toast notifications via Sonner
@@ -11,6 +12,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { buildWebSocketUrl, getAuthSubprotocols } from '@/utils/websocket';
 import type {
   Notification,
   NotificationWSMessage,
@@ -35,10 +37,10 @@ const CATEGORY_INFO: Record<
   NotificationCategory,
   { icon: string; color: string }
 > = {
-  GAME: { icon: '🎮', color: 'blue' },
-  ROOM: { icon: '🚪', color: 'green' },
-  SOCIAL: { icon: '👥', color: 'purple' },
-  SYSTEM: { icon: '🔔', color: 'orange' },
+  GAME: { icon: '馃幃', color: 'blue' },
+  ROOM: { icon: '馃毆', color: 'green' },
+  SOCIAL: { icon: '馃懃', color: 'purple' },
+  SYSTEM: { icon: '馃敂', color: 'orange' },
 };
 
 export function useNotificationWebSocket(
@@ -84,7 +86,7 @@ export function useNotificationWebSocket(
 
       // Show toast notification
       const categoryInfo = CATEGORY_INFO[notification.category] || {
-        icon: '🔔',
+        icon: '馃敂',
         color: 'gray',
       };
       toast(notification.title, {
@@ -135,19 +137,14 @@ export function useNotificationWebSocket(
     cleanup();
 
     try {
-      // Determine WebSocket URL based on environment
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = import.meta.env.VITE_API_URL
-        ? new URL(import.meta.env.VITE_API_URL).host
-        : window.location.host;
-
-      const wsUrl = `${protocol}//${host}/api/ws/notifications`;
+      // Use shared WebSocket utilities for URL and auth
+      const wsUrl = buildWebSocketUrl('/ws/notifications');
 
       console.log('[NotificationWS] Connecting to:', wsUrl);
 
-      // Authentication is handled via HttpOnly cookie (user_access_token)
-      // No need to pass token via Sec-WebSocket-Protocol
-      const ws = new WebSocket(wsUrl);
+      // Security: Use Sec-WebSocket-Protocol to pass token (consistent with useGameWebSocket)
+      // This is the primary auth method; cookie is fallback handled by server
+      const ws = new WebSocket(wsUrl, getAuthSubprotocols());
       wsRef.current = ws;
       shouldReconnectRef.current = true;
 
@@ -243,7 +240,7 @@ export function useNotificationWebSocket(
     }
 
     return cleanup;
-  }, [enabled]); // Intentionally minimal deps to avoid infinite reconnects
+  }, [enabled, connect, cleanup]); // Intentionally minimal deps to avoid infinite reconnects
 
   // Method to manually update unread count (e.g., after marking as read)
   const updateUnreadCount = useCallback((count: number) => {

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Sound Context - Global audio management
  */
@@ -222,9 +223,10 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
 
   // Cleanup on unmount
   useEffect(() => {
+    const sounds = soundsRef.current;
     return () => {
-      soundsRef.current.forEach((sound) => sound.unload());
-      soundsRef.current.clear();
+      sounds.forEach((sound) => sound.unload());
+      sounds.clear();
       if (syncTimerRef.current) {
         clearTimeout(syncTimerRef.current);
       }

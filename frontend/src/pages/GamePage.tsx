@@ -114,17 +114,17 @@ const GamePage = () => {
       });
   }, [gameState, isGameOver, t]);
 
-  // 预构建 seat_id -> player Map，避免 O(n) 线性查找
+  // 棰勬瀯寤?seat_id -> player Map锛岄伩鍏?O(n) 绾挎€ф煡鎵?
   const playerMap = useMemo(() => {
     if (!gameState) return new Map<number, Player>();
     return new Map(gameState.players.map(p => [p.seat_id, p]));
-  }, [gameState?.players]);
+  }, [gameState]);
 
   // Transform messages to UI format
   const messages = useMemo(() => {
     if (!gameState) return [];
     return gameState.message_log.map((m, idx) => {
-      const player = playerMap.get(m.seat_id); // O(1) 查找替代 find()
+      const player = playerMap.get(m.seat_id); // O(1) 鏌ユ壘鏇夸唬 find()
       const isSystem = m.type === "system" || m.seat_id === 0;
       const isUser = m.seat_id === gameState.my_seat;
 

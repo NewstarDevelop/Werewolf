@@ -8,7 +8,7 @@ interface UseGameActionsOptions {
   gameState?: GameState | null;
   setGameId: (id: string) => void;
   setStepErrorCount: (updater: (prev: number) => number) => void;
-  refetchState: () => Promise<any>;
+  refetchState: () => Promise<unknown>;
 }
 
 export function useGameActions({ gameId, gameState, setGameId, setStepErrorCount, refetchState }: UseGameActionsOptions) {

@@ -26,6 +26,19 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface UserStats {
+  games_played: number;
+  games_won: number;
+  win_rate: number;
+  recent_games: Array<{
+    game_id: string;
+    seat_id: number;
+    role: string;
+    is_winner: boolean;
+    created_at: string | null;
+  }>;
+}
+
 export class AuthError extends Error {
   constructor(message: string, public status: number) {
     super(message);
@@ -119,7 +132,7 @@ export const authService = {
     return response.json();
   },
 
-  async getStats(): Promise<any> {
+  async getStats(): Promise<UserStats> {
     const response = await fetch(`${API_BASE}/api/users/me/stats`, {
       credentials: 'include',
     });

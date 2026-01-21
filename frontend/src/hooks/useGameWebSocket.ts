@@ -2,9 +2,9 @@
  * useGameWebSocket Hook - Real-time game state updates via WebSocket
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { GameState } from '@/services/api';
+import { GameState, MessageInGame } from '@/services/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { getToken } from '@/utils/token';
+import { buildWebSocketUrl, getAuthSubprotocols } from '@/utils/websocket';
 
 interface UseGameWebSocketOptions {
   gameId: string | null;
@@ -13,13 +13,13 @@ interface UseGameWebSocketOptions {
   onFirstUpdate?: () => void;
 }
 
-interface WebSocketMessage {
-  type: 'game_update' | 'connected' | 'error' | 'pong';
-  data: any;
-}
+type WebSocketMessage =
+  | { type: 'game_update' | 'connected'; data: GameState }
+  | { type: 'error'; data: { message?: string } & Record<string, unknown> }
+  | { type: 'pong'; data?: never };
 
 // Message deduplication helper
-function mergeMessages(oldMessages: any[], newMessages: any[]): any[] {
+function mergeMessages(oldMessages: MessageInGame[], newMessages: MessageInGame[]): MessageInGame[] {
   // Server message_log is authoritative; do not dedupe to avoid dropping valid duplicates.
   return Array.isArray(newMessages) ? newMessages : oldMessages;
 }
@@ -116,22 +116,14 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
     cleanup();
 
     try {
-      // Determine WebSocket URL based on environment
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = import.meta.env.VITE_API_URL
-        ? new URL(import.meta.env.VITE_API_URL).host
-        : window.location.host;
-
-      // Security: Use Sec-WebSocket-Protocol to pass token instead of query string
-      // This prevents token leakage in server logs, browser history, and Referer headers
-      const token = getToken() || '';
-      const wsUrl = `${protocol}//${host}/api/ws/game/${gameId}`;
+      // Use shared WebSocket utilities for URL and auth
+      const wsUrl = buildWebSocketUrl(`/ws/game/${gameId}`);
 
       console.log('[WebSocket] Connecting to:', wsUrl);
 
-      // Pass token via subprotocol: ["auth", "<token>"]
-      // Server will respond with "auth" subprotocol to confirm
-      const ws = new WebSocket(wsUrl, ['auth', token]);
+      // Security: Use Sec-WebSocket-Protocol to pass token instead of query string
+      // This prevents token leakage in server logs, browser history, and Referer headers
+      const ws = new WebSocket(wsUrl, getAuthSubprotocols());
       wsRef.current = ws;
       shouldReconnectRef.current = true;
 
@@ -195,7 +187,7 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
         reconnectTimeoutRef.current = setTimeout(connect, 5000);
       }
     }
-  }, [gameId, enabled, cleanup, sendPing, applyIncomingState]); // 移除 onError, onFirstUpdate 依赖
+  }, [gameId, enabled, cleanup, sendPing, applyIncomingState]); // 绉婚櫎 onError, onFirstUpdate 渚濊禆
 
   // Connect on mount and when gameId changes
   useEffect(() => {
@@ -204,7 +196,7 @@ export function useGameWebSocket({ gameId, enabled = true, onError, onFirstUpdat
     }
 
     return cleanup;
-  }, [gameId, enabled]); // 移除 connect 和 cleanup 依赖避免无限重连
+  }, [gameId, enabled, connect, cleanup]); // 绉婚櫎 connect 鍜?cleanup 渚濊禆閬垮厤鏃犻檺閲嶈繛
 
   return {
     isConnected,

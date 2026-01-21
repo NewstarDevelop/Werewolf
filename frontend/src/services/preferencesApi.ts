@@ -24,7 +24,7 @@ export interface UserPreferencesResponse {
  * Get current user's preferences
  */
 export async function getUserPreferences(): Promise<UserPreferences> {
-  const response = await fetchApi<UserPreferencesResponse>('/users/me/preferences');
+  const response = await fetchApi<UserPreferencesResponse>('/api/users/me/preferences');
   return response.preferences;
 }
 
@@ -34,7 +34,7 @@ export async function getUserPreferences(): Promise<UserPreferences> {
 export async function updateUserPreferences(
   preferences: UserPreferences
 ): Promise<UserPreferences> {
-  const response = await fetchApi<UserPreferencesResponse>('/users/me/preferences', {
+  const response = await fetchApi<UserPreferencesResponse>('/api/users/me/preferences', {
     method: 'PUT',
     body: JSON.stringify(preferences),
   });

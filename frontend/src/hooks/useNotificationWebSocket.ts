@@ -3,6 +3,7 @@
  *
  * Features:
  * - Global WebSocket connection to /ws/notifications
+ * - Authentication via HttpOnly cookie (automatic)
  * - Automatic reconnection with exponential backoff
  * - Integration with TanStack Query cache
  * - Toast notifications via Sonner
@@ -10,7 +11,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getToken } from '@/utils/token';
 import type {
   Notification,
   NotificationWSMessage,
@@ -130,8 +130,7 @@ export function useNotificationWebSocket(
 
   // Connect to WebSocket
   const connect = useCallback(() => {
-    const token = getToken();
-    if (!token || !enabled) return;
+    if (!enabled) return;
 
     cleanup();
 
@@ -146,8 +145,9 @@ export function useNotificationWebSocket(
 
       console.log('[NotificationWS] Connecting to:', wsUrl);
 
-      // Security: Use Sec-WebSocket-Protocol to pass token
-      const ws = new WebSocket(wsUrl, ['auth', token]);
+      // Authentication is handled via HttpOnly cookie (user_access_token)
+      // No need to pass token via Sec-WebSocket-Protocol
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       shouldReconnectRef.current = true;
 

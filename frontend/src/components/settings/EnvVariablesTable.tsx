@@ -32,8 +32,6 @@ const ENV_VAR_LABELS: Record<string, string> = {
 
   // 安全配置
   ADMIN_PASSWORD: '管理员密码',
-  ADMIN_KEY: '管理员密钥',
-  ADMIN_KEY_ENABLED: '管理密钥开关',
   DEBUG_MODE: '调试接口开关',
   TRUSTED_PROXIES: '可信代理列表',
   CORS_ORIGINS: 'CORS 允许来源',

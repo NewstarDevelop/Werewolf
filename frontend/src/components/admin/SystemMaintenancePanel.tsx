@@ -79,7 +79,19 @@ export function SystemMaintenancePanel({ token }: SystemMaintenancePanelProps) {
         setIsUpdating(true);
       }
     } catch (err) {
-      const message = (err as Error).message || 'Failed to check for updates';
+      const error = err as Error & { status?: number };
+      let message: string;
+
+      if (error.status === 503) {
+        // Feature disabled - show configuration guidance
+        message = t('admin.update_feature_disabled', 'Update feature is disabled. Enable UPDATE_AGENT_ENABLED in .env to use this feature.');
+      } else if (error.status === 502) {
+        // Agent unreachable - show connection guidance
+        message = t('admin.update_agent_unreachable', 'Update Agent is unreachable. Ensure the agent is running and UPDATE_AGENT_URL is correctly configured.');
+      } else {
+        message = error.message || t('admin.update_check_failed', 'Failed to check for updates');
+      }
+
       setError(message);
       toast.error(message);
     } finally {

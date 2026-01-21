@@ -104,6 +104,30 @@ class Settings:
         self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
         self.DATA_DIR: str = os.getenv("DATA_DIR", "data")  # 数据存储目录（用于SQLite等）
 
+        # Database configuration
+        # DATABASE_URL: Single source of truth for database connection
+        # Examples:
+        #   SQLite (dev):      sqlite:///data/werewolf.db
+        #   SQLite async:      sqlite+aiosqlite:///data/werewolf.db
+        #   PostgreSQL (prod): postgresql+asyncpg://user:pass@host/db
+        default_db_url = f"sqlite:///{self.DATA_DIR}/werewolf.db"
+        self.DATABASE_URL: str = os.getenv("DATABASE_URL", default_db_url)
+
+        # Derive async URL from sync URL if needed
+        self.DATABASE_URL_ASYNC: str = self._derive_async_database_url(self.DATABASE_URL)
+
+        # Frontend URL for CORS and WebSocket origin validation
+        self.FRONTEND_URL: Optional[str] = os.getenv("FRONTEND_URL") or None
+
+        # Allowed WebSocket origins (comma-separated, or derived from FRONTEND_URL)
+        ws_origins_str = os.getenv("ALLOWED_WS_ORIGINS", "")
+        if ws_origins_str:
+            self.ALLOWED_WS_ORIGINS: list[str] = [o.strip() for o in ws_origins_str.split(",") if o.strip()]
+        elif self.FRONTEND_URL:
+            self.ALLOWED_WS_ORIGINS = [self.FRONTEND_URL]
+        else:
+            self.ALLOWED_WS_ORIGINS = []
+
         # Admin-only runtime config management (disabled by default; enable explicitly in .env)
         self.ENV_MANAGEMENT_ENABLED: bool = os.getenv("ENV_MANAGEMENT_ENABLED", "false").lower() == "true"
 
@@ -174,6 +198,65 @@ class Settings:
         self._load_providers()
         self._load_player_mappings()
         self._log_configuration_summary()
+        self._validate_security_config()
+
+    def _derive_async_database_url(self, url: str) -> str:
+        """Derive async database URL from sync URL.
+
+        Transforms:
+        - sqlite:/// -> sqlite+aiosqlite:///
+        - postgresql:// -> postgresql+asyncpg://
+        - Already async URLs are returned as-is
+        """
+        if "+aiosqlite" in url or "+asyncpg" in url:
+            return url
+        if url.startswith("sqlite:///"):
+            return url.replace("sqlite:///", "sqlite+aiosqlite:///")
+        if url.startswith("postgresql://"):
+            return url.replace("postgresql://", "postgresql+asyncpg://")
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql+asyncpg://")
+        return url
+
+    def _validate_security_config(self):
+        """Validate security-critical configuration at startup.
+
+        In production (DEBUG=false), dangerous defaults will log errors.
+        """
+        if self.DEBUG:
+            return  # Skip strict validation in debug mode
+
+        warnings = []
+        errors = []
+
+        # Check CORS_ORIGINS
+        if self.CORS_ORIGINS == ["*"]:
+            errors.append(
+                "CORS_ORIGINS='*' is not allowed in production. "
+                "Set specific origins (e.g., CORS_ORIGINS='https://example.com')"
+            )
+
+        # Check JWT_SECRET_KEY
+        if not self.JWT_SECRET_KEY or len(self.JWT_SECRET_KEY) < 32:
+            errors.append(
+                "JWT_SECRET_KEY must be at least 32 characters in production. "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            )
+
+        # Check FRONTEND_URL for WebSocket origin validation
+        if not self.FRONTEND_URL and not self.ALLOWED_WS_ORIGINS:
+            warnings.append(
+                "FRONTEND_URL or ALLOWED_WS_ORIGINS not set. "
+                "WebSocket origin validation may not work correctly."
+            )
+
+        # Log warnings
+        for warning in warnings:
+            logger.warning(f"SECURITY CONFIG: {warning}")
+
+        # Log errors (but don't crash - allow graceful degradation)
+        for error in errors:
+            logger.error(f"SECURITY CONFIG ERROR: {error}")
 
     def _load_providers(self):
         """Load AI provider configurations from environment.

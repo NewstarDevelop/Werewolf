@@ -1,14 +1,15 @@
 """Alembic migration environment configuration."""
+import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, create_engine
 from sqlalchemy import pool
 
 from alembic import context
 
 # Import Base and all models to ensure they are registered
 from app.models.base import Base
-from app.models import user, room, game_history  # Import all model modules
+from app.models import user, room, game_history, notification, notification_broadcast  # Import all model modules
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -22,6 +23,34 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata
+
+
+def get_database_url() -> str:
+    """Get database URL from environment or config.
+
+    Priority:
+    1. DATABASE_URL environment variable
+    2. alembic.ini sqlalchemy.url
+    3. Default SQLite path
+    """
+    # Check environment variable first (production/docker)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        # Ensure we use sync driver for Alembic
+        if "+aiosqlite" in db_url:
+            db_url = db_url.replace("+aiosqlite", "")
+        if "+asyncpg" in db_url:
+            db_url = db_url.replace("+asyncpg", "")
+        return db_url
+
+    # Fall back to alembic.ini
+    ini_url = config.get_main_option("sqlalchemy.url")
+    if ini_url:
+        return ini_url
+
+    # Default for local development
+    data_dir = os.getenv("DATA_DIR", "data")
+    return f"sqlite:///{data_dir}/werewolf.db"
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -41,7 +70,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,18 +88,22 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
+    Uses DATABASE_URL from environment for consistency with application.
     """
-    # Option 1: Use database URL from alembic.ini
-    # connectable = engine_from_config(
-    #     config.get_section(config.config_ini_section),
-    #     prefix="sqlalchemy.",
-    #     poolclass=pool.NullPool,
-    # )
+    url = get_database_url()
 
-    # Option 2: Use the same engine from the application
-    # This ensures consistency with app configuration
-    from app.core.database import engine
-    connectable = engine
+    # Create engine with appropriate settings
+    if url.startswith("sqlite"):
+        connectable = create_engine(
+            url,
+            connect_args={"check_same_thread": False},
+            poolclass=pool.StaticPool,
+        )
+    else:
+        connectable = create_engine(
+            url,
+            poolclass=pool.NullPool,
+        )
 
     with connectable.connect() as connection:
         context.configure(

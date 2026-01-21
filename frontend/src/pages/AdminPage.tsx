@@ -18,6 +18,7 @@ import { AdminAuthGuard } from '@/components/admin/AdminAuthGuard';
 import { BroadcastCard } from '@/components/admin/BroadcastCard';
 import { BroadcastHistoryPanel } from '@/components/admin/BroadcastHistoryPanel';
 import { EnvManager } from '@/components/admin/EnvManager';
+import { SystemMaintenancePanel } from '@/components/admin/SystemMaintenancePanel';
 import { UserManagementPanel } from '@/components/admin/users';
 import type { BroadcastTemplate } from '@/components/admin/BroadcastHistoryPanel';
 
@@ -86,6 +87,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="config" className="space-y-6">
+              <SystemMaintenancePanel token={adminToken} />
               <EnvManager token={adminToken} />
             </TabsContent>
           </Tabs>

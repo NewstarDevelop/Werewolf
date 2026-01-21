@@ -121,6 +121,16 @@ class ConnectionManager:
         """Get the number of active connections for a game."""
         return len(self._game_players.get(game_id, set()))
 
+    def get_total_connection_count(self) -> int:
+        """Get the total number of active game WebSocket connections."""
+        # Use list() snapshot to avoid "dictionary changed size during iteration"
+        return sum(len(players) for players in list(self._game_players.values()))
+
+    def get_active_game_ids(self) -> list[str]:
+        """List game_ids that currently have active WebSocket connections."""
+        # Use list() snapshot to avoid "dictionary changed size during iteration"
+        return [gid for gid, players in list(self._game_players.items()) if players]
+
 
 # Global WebSocket manager instance
 websocket_manager = ConnectionManager()

@@ -182,6 +182,15 @@ class Settings:
         self.LINUXDO_REDIRECT_URI: str = os.getenv("LINUXDO_REDIRECT_URI", "")
         self.LINUXDO_SCOPES: str = os.getenv("LINUXDO_SCOPES", "user")
 
+        # Update Agent configuration (方案 B: 更新代理)
+        self.UPDATE_AGENT_ENABLED: bool = os.getenv("UPDATE_AGENT_ENABLED", "false").lower() == "true"
+        self.UPDATE_AGENT_URL: str = os.getenv("UPDATE_AGENT_URL", "")
+        self.UPDATE_AGENT_TOKEN: str = os.getenv("UPDATE_AGENT_TOKEN", "")
+        self.UPDATE_AGENT_TIMEOUT_SECONDS: float = float(os.getenv("UPDATE_AGENT_TIMEOUT_SECONDS", "3.0"))
+        self.UPDATE_BLOCK_IF_PLAYING_ROOMS: bool = os.getenv("UPDATE_BLOCK_IF_PLAYING_ROOMS", "true").lower() == "true"
+        self.UPDATE_BLOCK_IF_ACTIVE_GAME_WS: bool = os.getenv("UPDATE_BLOCK_IF_ACTIVE_GAME_WS", "true").lower() == "true"
+        self.UPDATE_FORCE_CONFIRM_PHRASE: str = os.getenv("UPDATE_FORCE_CONFIRM_PHRASE", "UPDATE")
+
         # AI Analysis configuration (independent from game AI)
         self.ANALYSIS_PROVIDER: Optional[str] = os.getenv("ANALYSIS_PROVIDER") or None
         self.ANALYSIS_MODEL: str = os.getenv("ANALYSIS_MODEL", self.LLM_MODEL)

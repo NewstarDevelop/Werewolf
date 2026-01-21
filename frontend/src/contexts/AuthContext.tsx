@@ -34,22 +34,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error: unknown) {
         const status = error instanceof AuthError ? error.status : 0;
 
-        // 鍒嗙被澶勭悊閿欒
+        // 分类处理错误
         if (status === 401 || status === 403) {
-          // Token 杩囨湡/鏃犳晥:闈欓粯澶辫触,娓呯悊鐘舵€?鐢ㄦ埛闇€閲嶆柊鐧诲綍
+          // Token 过期/无效: 静默失败，清理状态，用户需重新登录
           clearUserToken();
           setUser(null);
         } else if (status >= 500) {
-          // 鏈嶅姟鍣ㄩ敊璇?鎻愮ず鐢ㄦ埛
+          // 服务器错误：提示用户
           console.error('Server error during auth:', error);
           toast({
             variant: "destructive",
-            title: "鏈嶅姟杩炴帴澶辫触",
-            description: "Unable to connect to the server. Please try again later.",
+            title: "服务连接失败",
+            description: "无法连接到服务器，请稍后再试。",
           });
           setUser(null);
         } else {
-          // 缃戠粶鏂紑绛夊叾浠栭敊璇?
+          // 网络断开等其他错误
           console.warn('Network/Auth init error:', error);
         }
       } finally {
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Continue with local cleanup even if server request fails
     } finally {
       // Always clear local state regardless of server response
-      clearPlayerData(); // 娓呴櫎鎵€鏈夋湰鍦版暟鎹紙player_id, nickname, tokens锛?
+      clearPlayerData(); // 清除所有本地数据（player_id, nickname, tokens）
       clearUserToken();
       setUser(null);
     }

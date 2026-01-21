@@ -14,6 +14,16 @@ import type {
   BroadcastResendRequest,
   BroadcastUpdateRequest,
 } from '@/types/broadcast';
+import type {
+  AdminSetUserActiveRequest,
+  AdminSetUserAdminRequest,
+  AdminUpdateUserProfileRequest,
+  AdminUserBatchRequest,
+  AdminUserBatchResponse,
+  AdminUserDetail,
+  AdminUserListParams,
+  AdminUserListResponse,
+} from '@/types/adminUser';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -353,5 +363,203 @@ export const adminService = {
     }
 
     return response.json();
+  },
+
+  // =========================================================================
+  // User Management
+  // =========================================================================
+
+  /**
+   * List users with filtering and pagination
+   * GET /api/admin/users
+   */
+  async getUsers(
+    params: AdminUserListParams = {},
+    adminToken?: string
+  ): Promise<AdminUserListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.status) searchParams.set('status', params.status);
+    if (params.admin) searchParams.set('admin', params.admin);
+    if (params.sort) searchParams.set('sort', params.sort);
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.page_size) searchParams.set('page_size', String(params.page_size));
+
+    const url = `${API_BASE}/api/admin/users?${searchParams.toString()}`;
+    const response = await fetch(url, {
+      credentials: 'include',
+      headers: buildHeaders(adminToken),
+    });
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to fetch users');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get user detail
+   * GET /api/admin/users/{id}
+   */
+  async getUserDetail(
+    userId: string,
+    adminToken?: string
+  ): Promise<AdminUserDetail> {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${userId}`,
+      {
+        credentials: 'include',
+        headers: buildHeaders(adminToken),
+      }
+    );
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to fetch user detail');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update user profile
+   * PATCH /api/admin/users/{id}/profile
+   */
+  async updateUserProfile(
+    userId: string,
+    data: AdminUpdateUserProfileRequest,
+    adminToken?: string
+  ): Promise<AdminUserDetail> {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${userId}/profile`,
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...buildHeaders(adminToken),
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to update user profile');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Set user active status (ban/unban)
+   * PATCH /api/admin/users/{id}/status
+   */
+  async setUserStatus(
+    userId: string,
+    data: AdminSetUserActiveRequest,
+    adminToken?: string
+  ): Promise<AdminUserDetail> {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${userId}/status`,
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...buildHeaders(adminToken),
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to update user status');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Set user admin flag
+   * PATCH /api/admin/users/{id}/admin
+   */
+  async setUserAdmin(
+    userId: string,
+    data: AdminSetUserAdminRequest,
+    adminToken?: string
+  ): Promise<AdminUserDetail> {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/${userId}/admin`,
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...buildHeaders(adminToken),
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to update user admin status');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Batch operations on users
+   * POST /api/admin/users/batch
+   */
+  async batchUsers(
+    request: AdminUserBatchRequest,
+    adminToken?: string
+  ): Promise<AdminUserBatchResponse> {
+    const response = await fetch(
+      `${API_BASE}/api/admin/users/batch`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...buildHeaders(adminToken),
+        },
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to perform batch operation');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Export users to CSV
+   * GET /api/admin/users/export.csv
+   */
+  async exportUsers(
+    params: AdminUserListParams = {},
+    adminToken?: string
+  ): Promise<Blob> {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.status) searchParams.set('status', params.status);
+    if (params.admin) searchParams.set('admin', params.admin);
+    if (params.sort) searchParams.set('sort', params.sort);
+
+    const url = `${API_BASE}/api/admin/users/export.csv?${searchParams.toString()}`;
+    const response = await fetch(url, {
+      credentials: 'include',
+      headers: buildHeaders(adminToken),
+    });
+
+    if (!response.ok) {
+      throw await buildApiError(response, 'Failed to export users');
+    }
+
+    return response.blob();
   },
 };

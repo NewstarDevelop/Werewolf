@@ -13,11 +13,12 @@ import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShieldAlert, Megaphone, Settings } from 'lucide-react';
+import { ShieldAlert, Megaphone, Settings, Users } from 'lucide-react';
 import { AdminAuthGuard } from '@/components/admin/AdminAuthGuard';
 import { BroadcastCard } from '@/components/admin/BroadcastCard';
 import { BroadcastHistoryPanel } from '@/components/admin/BroadcastHistoryPanel';
 import { EnvManager } from '@/components/admin/EnvManager';
+import { UserManagementPanel } from '@/components/admin/users';
 import type { BroadcastTemplate } from '@/components/admin/BroadcastHistoryPanel';
 
 export default function AdminPage() {
@@ -50,8 +51,12 @@ export default function AdminPage() {
 
       <AdminAuthGuard>
         {(adminToken) => (
-          <Tabs defaultValue="notifications" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <Tabs defaultValue="users" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 max-w-lg">
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {t('admin.tab_users', 'Users')}
+              </TabsTrigger>
               <TabsTrigger value="notifications" className="flex items-center gap-2">
                 <Megaphone className="h-4 w-4" />
                 {t('admin.tab_notifications', 'Notifications')}
@@ -61,6 +66,10 @@ export default function AdminPage() {
                 {t('admin.tab_config', 'Configuration')}
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="users" className="space-y-6">
+              <UserManagementPanel token={adminToken} />
+            </TabsContent>
 
             <TabsContent value="notifications" className="space-y-6">
               <div ref={broadcastCardRef}>

@@ -381,6 +381,9 @@ async def resend_broadcast(
         )
 
     actor_id = actor.get("player_id", "unknown")
+    # For created_by FK: use user_id if available, otherwise None
+    # admin password login doesn't have a real user_id
+    user_id = actor.get("user_id") if actor.get("user_id") else None
 
     # Check idempotency key collision
     existing = db.query(NotificationBroadcast).filter(
@@ -405,7 +408,7 @@ async def resend_broadcast(
         data=original.data,
         persist_policy=original.persist_policy,
         status=BroadcastStatus.SENDING.value,
-        created_by=actor_id if actor_id != "unknown" else None,
+        created_by=user_id,  # None for admin password login, real user_id for OAuth users
         resend_of_id=original.id,
     )
     db.add(new_broadcast)

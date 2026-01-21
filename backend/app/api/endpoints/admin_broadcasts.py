@@ -214,6 +214,9 @@ async def create_broadcast(
         client_ip = "unknown"
 
     actor_id = actor.get("player_id", "unknown")
+    # For created_by FK: use user_id if available, otherwise None
+    # admin password login doesn't have a real user_id
+    user_id = actor.get("user_id") if actor.get("user_id") else None
     logger.warning(
         "BROADCAST_CREATE actor=%s ip=%s idem=%s category=%s send_now=%s",
         actor_id,
@@ -245,7 +248,7 @@ async def create_broadcast(
         data=body.data,
         persist_policy=body.persist_policy.value,
         status=BroadcastStatus.DRAFT.value if not body.send_now else BroadcastStatus.SENDING.value,
-        created_by=actor_id if actor_id != "unknown" else None,
+        created_by=user_id,  # None for admin password login, real user_id for OAuth users
     )
     db.add(broadcast)
     db.commit()

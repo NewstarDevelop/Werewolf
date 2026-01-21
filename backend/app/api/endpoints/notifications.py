@@ -1,4 +1,9 @@
-"""Notification REST API endpoints."""
+"""Notification REST API endpoints.
+
+A3-FIX: All endpoints are sync (def) to avoid event loop blocking.
+These are pure DB operations with no async I/O, so FastAPI will
+run them in a thread pool automatically.
+"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -26,7 +31,7 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
 @router.get("", response_model=NotificationListResponse)
-async def list_notifications(
+def list_notifications(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
     category: Optional[NotificationCategory] = Query(None),
@@ -81,7 +86,7 @@ async def list_notifications(
 
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
-async def unread_count(
+def unread_count(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -97,7 +102,7 @@ async def unread_count(
 
 
 @router.post("/{notification_id}/read", response_model=MarkReadResponse)
-async def mark_read(
+def mark_read(
     notification_id: str,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -125,7 +130,7 @@ async def mark_read(
 
 
 @router.post("/read-all", response_model=ReadAllResponse)
-async def mark_all_read(
+def mark_all_read(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -148,7 +153,7 @@ async def mark_all_read(
 
 
 @router.post("/read-batch", response_model=ReadBatchResponse)
-async def mark_batch_read(
+def mark_batch_read(
     body: ReadBatchRequest,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),

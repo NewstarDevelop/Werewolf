@@ -227,16 +227,19 @@ class Settings:
             return url.replace("postgres://", "postgresql+asyncpg://")
         return url
 
-    def _validate_security_config(self):
+    def _validate_security_config(self) -> tuple[list[str], list[str]]:
         """Validate security-critical configuration at startup.
 
-        In production (DEBUG=false), dangerous defaults will log errors.
-        """
-        if self.DEBUG:
-            return  # Skip strict validation in debug mode
+        In production (DEBUG=false), dangerous defaults will be treated as errors.
 
+        Returns:
+            Tuple of (warnings, errors) lists
+        """
         warnings = []
         errors = []
+
+        if self.DEBUG:
+            return warnings, errors  # Skip strict validation in debug mode
 
         # Check CORS_ORIGINS
         if self.CORS_ORIGINS == ["*"]:
@@ -263,9 +266,11 @@ class Settings:
         for warning in warnings:
             logger.warning(f"SECURITY CONFIG: {warning}")
 
-        # Log errors (but don't crash - allow graceful degradation)
+        # Log errors
         for error in errors:
             logger.error(f"SECURITY CONFIG ERROR: {error}")
+
+        return warnings, errors
 
     def _load_providers(self):
         """Load AI provider configurations from environment.

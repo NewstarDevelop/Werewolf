@@ -1,4 +1,8 @@
-"""User profile and statistics API endpoints."""
+"""User profile and statistics API endpoints.
+
+A3-FIX: All endpoints are sync (def) to avoid event loop blocking.
+These are pure DB operations with no async I/O.
+"""
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -16,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_profile(
+def get_current_user_profile(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -32,7 +36,7 @@ async def get_current_user_profile(
 
 
 @router.put("/me", response_model=UserResponse)
-async def update_user_profile(
+def update_user_profile(
     body: UpdateProfileRequest,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -79,7 +83,7 @@ async def update_user_profile(
 
 
 @router.get("/me/stats", response_model=UserStatsResponse)
-async def get_user_stats(
+def get_user_stats(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -127,7 +131,7 @@ async def get_user_stats(
 
 
 @router.get("/me/preferences", response_model=UserPreferencesResponse)
-async def get_user_preferences(
+def get_user_preferences(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -154,7 +158,7 @@ async def get_user_preferences(
 
 
 @router.put("/me/preferences", response_model=UserPreferencesResponse)
-async def update_user_preferences(
+def update_user_preferences(
     body: UserPreferences,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)

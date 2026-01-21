@@ -37,8 +37,10 @@ class TestAuthSmoke:
             "/api/auth/admin-login",
             json={"password": "wrong-password"}
         )
-        # Should be 401 for wrong password, not 404
-        assert response.status_code in [401, 403]
+        # Endpoint contract:
+        # - 401/403 when configured but password invalid
+        # - 503 when admin password auth is not configured (ADMIN_PASSWORD missing)
+        assert response.status_code in [401, 403, 503]
 
 
 class TestAuthRegistration:

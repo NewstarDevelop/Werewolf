@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.core.auth import create_user_token, create_admin_token
 from app.core.security import hash_password, verify_password
 from app.core.config import settings
+from app.core.client_ip import get_client_ip, get_client_ip_for_logging  # A5-FIX
 from app.models.user import User
 from app.schemas.auth import (
     RegisterRequest,
@@ -64,7 +65,7 @@ def sanitize_next_url(next_url: str) -> str:
 
 
 @router.post("/register", response_model=AuthResponse)
-async def register(body: RegisterRequest, db: Session = Depends(get_db)):
+def register(body: RegisterRequest, db: Session = Depends(get_db)):
     """
     Register a new user with email and password.
 
@@ -142,7 +143,7 @@ async def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginRequest, db: Session = Depends(get_db)):
+def login(body: LoginRequest, db: Session = Depends(get_db)):
     """
     Login with email and password.
 
@@ -192,7 +193,7 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-async def logout(current_user: dict = Depends(get_current_user)):
+def logout(current_user: dict = Depends(get_current_user)):
     """
     Logout current user and clear HttpOnly cookie.
 
@@ -320,7 +321,7 @@ async def oauth_callback(
 
 
 @router.post("/reset-password")
-async def reset_password(body: PasswordResetRequest, db: Session = Depends(get_db)):
+def reset_password(body: PasswordResetRequest, db: Session = Depends(get_db)):
     """
     Request password reset (always returns 202 to prevent email enumeration).
     """
@@ -342,7 +343,7 @@ class AdminLoginResponse(BaseModel):
 
 
 @router.post("/admin-login", response_model=AdminLoginResponse)
-async def admin_login(body: AdminLoginRequest, request: Request):
+def admin_login(body: AdminLoginRequest, request: Request):
     """
     Login to admin panel with password.
 
@@ -354,13 +355,13 @@ async def admin_login(body: AdminLoginRequest, request: Request):
     - Returns generic error message to prevent password enumeration
     - Rate limited to prevent brute-force attacks
     """
-    # Get client IP for rate limiting
-    client_ip = request.client.host if request.client else "unknown"
+    # A5-FIX: 使用 get_client_ip 获取真实客户端 IP
+    client_ip = get_client_ip(request)
 
     # Check rate limit
     is_allowed, retry_after = admin_login_limiter.check_rate_limit(client_ip)
     if not is_allowed:
-        logger.warning(f"Admin login rate limited for IP {client_ip}")
+        logger.warning(f"Admin login rate limited for IP {get_client_ip_for_logging(request)}")
         raise HTTPException(
             status_code=429,
             detail=f"Too many login attempts. Please try again in {retry_after} seconds.",
@@ -379,7 +380,7 @@ async def admin_login(body: AdminLoginRequest, request: Request):
     if not secrets.compare_digest(body.password, settings.ADMIN_PASSWORD):
         # Record failed attempt
         admin_login_limiter.record_attempt(client_ip, success=False)
-        logger.warning(f"Admin login failed: invalid password from IP {client_ip}")
+        logger.warning(f"Admin login failed: invalid password from IP {get_client_ip_for_logging(request)}")
         raise HTTPException(
             status_code=401,
             detail="Invalid admin password"
@@ -390,7 +391,7 @@ async def admin_login(body: AdminLoginRequest, request: Request):
 
     # Generate admin JWT token
     admin_token = create_admin_token()
-    logger.info(f"Admin login successful via password authentication from IP {client_ip}")
+    logger.info(f"Admin login successful via password authentication from IP {get_client_ip_for_logging(request)}")
 
     return AdminLoginResponse(access_token=admin_token)
 
@@ -402,7 +403,7 @@ class AdminVerifyResponse(BaseModel):
 
 
 @router.get("/admin-verify", response_model=AdminVerifyResponse)
-async def verify_admin_token(
+def verify_admin_token(
     authorization: Optional[str] = Header(None),
     user_access_token: Optional[str] = Cookie(None)
 ):

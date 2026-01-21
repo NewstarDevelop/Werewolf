@@ -149,6 +149,8 @@ async def emit_to_users(
     """
     Emit the same notification to multiple users.
 
+    A6-FIX: Now uses batch emit for better performance (1 commit vs N commits).
+
     Args:
         db: Database session
         user_ids: List of target user IDs
@@ -163,23 +165,23 @@ async def emit_to_users(
     if not user_ids:
         return
 
-    publisher = await _get_publisher()
-    service = NotificationService(publisher=publisher)
+    try:
+        publisher = await _get_publisher()
+        service = NotificationService(publisher=publisher)
 
-    for user_id in user_ids:
-        try:
-            idem_key = f"{idempotency_key_prefix}:{user_id}" if idempotency_key_prefix else None
-            await service.emit(
-                db,
-                user_id=user_id,
-                category=category,
-                title=title,
-                body=body,
-                data=data,
-                persist_policy=persist_policy,
-                idempotency_key=idem_key,
-                broadcast_id=broadcast_id,
-            )
-        except Exception as e:
-            db.rollback()
-            logger.warning(f"[notifications] failed to emit to user={user_id}: {e}")
+        # A6-FIX: Use batch emit for single commit instead of per-user commits
+        await service.emit_batch(
+            db,
+            user_ids=user_ids,
+            category=category,
+            title=title,
+            body=body,
+            data=data,
+            persist_policy=persist_policy,
+            idempotency_key_prefix=idempotency_key_prefix,
+            broadcast_id=broadcast_id,
+        )
+        logger.debug(f"[notifications] batch emitted {category.value} to {len(user_ids)} users")
+    except Exception as e:
+        db.rollback()
+        logger.warning(f"[notifications] batch emit failed: {e}")

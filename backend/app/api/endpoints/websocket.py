@@ -2,7 +2,7 @@
 import logging
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from typing import Optional, List
+from typing import Optional
 
 from app.services.websocket_manager import websocket_manager
 from app.services.websocket_auth import (
@@ -12,43 +12,34 @@ from app.services.websocket_auth import (
     close_with_error,
 )
 from app.models.game import game_store
-from app.core.auth import verify_player_token
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Configuration: whether to allow deprecated query token authentication
-# Set to False in production after migration period
+# A2-FIX: 生产环境禁用 query token，防止 URL token 泄露
+# 仅在 DEBUG 模式下允许，用于开发和测试
 ALLOW_QUERY_TOKEN = settings.DEBUG
-
-
-def _extract_token_from_subprotocols(subprotocols: List[str]) -> Optional[str]:
-    """
-    Extract JWT token from Sec-WebSocket-Protocol header.
-
-    The client sends: Sec-WebSocket-Protocol: auth, <jwt_token>
-    We extract the token (second item) for authentication.
-    """
-    if not subprotocols or len(subprotocols) < 2:
-        return None
-    # First protocol is 'auth', second is the actual token
-    return subprotocols[1] if subprotocols[0] == "auth" else None
 
 
 @router.websocket("/ws/game/{game_id}")
 async def game_websocket(
     websocket: WebSocket,
     game_id: str,
-    token: Optional[str] = Query(None)  # Keep for backward compatibility
+    token: Optional[str] = Query(None)  # Keep for backward compatibility, but disabled in production
 ):
     """
     WebSocket endpoint for real-time game updates with JWT authentication.
 
     Authentication methods (in order of preference):
     1. Sec-WebSocket-Protocol header: ["auth", "<jwt_token>"] (recommended, secure)
-    2. Query string: ?token=<jwt_token> (deprecated, for backward compatibility)
+    2. Cookie: user_access_token (secure, automatic)
+    3. Query string: ?token=<jwt_token> (DISABLED in production, deprecated)
+
+    Security:
+    - Origin validation is enforced (CSWSH protection)
+    - Query token is disabled in production to prevent URL token leakage
 
     Message format:
     {
@@ -56,57 +47,47 @@ async def game_websocket(
         "data": { ... game state or error details ... }
     }
     """
-    async def _reject(reason: str) -> None:
-        try:
-            await websocket.accept()
-        except Exception:
-            pass
-        await websocket.close(code=1008, reason=reason)
-
-    # Step 1: Extract token from Sec-WebSocket-Protocol (preferred) or query string (fallback)
-    subprotocols = websocket.scope.get("subprotocols", [])
-    auth_token = _extract_token_from_subprotocols(subprotocols)
-
-    # Fallback to query string for backward compatibility (deprecated)
-    if not auth_token:
-        auth_token = token
-        if auth_token:
-            logger.warning(f"WebSocket using deprecated query string auth for game {game_id}")
-
-    if not auth_token:
-        await _reject("Authentication required: provide token via Sec-WebSocket-Protocol")
+    # A2-FIX: 使用统一的 authenticate_websocket 进行鉴权和 Origin 校验
+    try:
+        payload = await authenticate_websocket(
+            websocket,
+            require_auth=True,
+            allow_query_token=ALLOW_QUERY_TOKEN,  # 生产环境下为 False
+            validate_origin_header=True,  # 始终校验 Origin
+        )
+    except WebSocketAuthError as e:
+        logger.warning(f"WebSocket auth failed for game {game_id}: {e.message}")
+        await close_with_error(websocket, e.code, e.message)
         return
 
-    # Step 2: Authenticate and extract player_id from JWT
-    try:
-        payload = verify_player_token(auth_token)
-        player_id = payload.get("player_id") or payload.get("sub")
-        room_id = payload.get("room_id")
-        if room_id and room_id != game_id:
-            await _reject("Token room_id does not match game_id")
-            return
-        if not player_id:
-            await _reject("Invalid token: missing player_id")
-            return
-    except Exception as e:
-        logger.error(f"WebSocket auth failed for game {game_id}: {e}")
-        await _reject("Authentication failed")
+    # 从 payload 提取 player_id
+    player_id = payload.get("player_id") or payload.get("sub")
+    room_id = payload.get("room_id")
+
+    # A2-FIX: 校验 room_id 与 game_id 匹配（如果 token 包含 room_id）
+    if room_id and room_id != game_id:
+        await close_with_error(websocket, 4002, "Token room_id does not match game_id")
+        return
+
+    if not player_id:
+        await close_with_error(websocket, 4002, "Invalid token: missing player_id")
         return
 
     # Step 2: Verify game exists
     game = game_store.get_game(game_id)
     if not game:
-        await _reject(f"Game {game_id} not found")
+        await close_with_error(websocket, 4004, f"Game {game_id} not found")
         return
 
     # Step 3: Verify player is in this game
     player = game.get_player_by_id(player_id)
     if not player:
-        await _reject("Player not in game")
+        await close_with_error(websocket, 4004, "Player not in game")
         return
 
     # Step 4: Establish connection with player identity
     # If using subprotocol auth, respond with "auth" to confirm
+    subprotocols = websocket.scope.get("subprotocols", [])
     accepted_subprotocol = "auth" if subprotocols and subprotocols[0] == "auth" else None
     await websocket_manager.connect(game_id, player_id, websocket, subprotocol=accepted_subprotocol)
 

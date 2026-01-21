@@ -220,3 +220,112 @@ class NotificationService:
             .scalar()
             or 0
         )
+
+    async def emit_batch(
+        self,
+        db: Session,
+        *,
+        user_ids: list[str],
+        category: NotificationCategory,
+        title: str,
+        body: str,
+        data: Optional[dict[str, Any]] = None,
+        persist_policy: NotificationPersistPolicy = NotificationPersistPolicy.DURABLE,
+        topic: str = DEFAULT_TOPIC,
+        idempotency_key_prefix: Optional[str] = None,
+        broadcast_id: Optional[str] = None,
+    ) -> list[NotificationPublic]:
+        """
+        A6-FIX: Emit notifications to multiple users with batch DB operations.
+
+        Instead of committing per-user, this method:
+        1. Creates all Notification + NotificationOutbox records in memory
+        2. Bulk inserts with a single flush
+        3. Commits once for the entire batch
+
+        This dramatically reduces DB round-trips for broadcasts (N commits -> 1 commit).
+
+        Returns:
+            List of NotificationPublic for DURABLE notifications (empty for VOLATILE)
+        """
+        if not user_ids:
+            return []
+
+        payload_data = data or {}
+
+        # VOLATILE path: publish all without DB writes
+        if persist_policy == NotificationPersistPolicy.VOLATILE:
+            for user_id in user_ids:
+                await self._publish_volatile(
+                    user_id=user_id,
+                    category=category,
+                    title=title,
+                    body=body,
+                    data=payload_data,
+                    topic=topic,
+                )
+            return []
+
+        # DURABLE path: batch create all records, single commit
+        notifications: list[Notification] = []
+        outbox_records: list[NotificationOutbox] = []
+        now = datetime.utcnow()
+
+        for user_id in user_ids:
+            notification = Notification(
+                user_id=user_id,
+                category=category.value,
+                title=title,
+                body=body,
+                data=payload_data,
+                broadcast_id=broadcast_id,
+            )
+            notifications.append(notification)
+            db.add(notification)
+
+        # Single flush to get all IDs
+        db.flush()
+
+        # Now create outbox records with notification IDs available
+        public_notifications: list[NotificationPublic] = []
+        for notification in notifications:
+            public = self._to_public(notification)
+            public_notifications.append(public)
+
+            idem_key = notification.id
+            if idempotency_key_prefix:
+                idem_key = f"{idempotency_key_prefix}:{notification.user_id}"
+
+            outbox_payload = {
+                "version": 1,
+                "user_id": notification.user_id,
+                "message_type": "notification",
+                "data": self._build_ws_message(persisted=True, notification=public),
+            }
+
+            outbox = NotificationOutbox(
+                idempotency_key=idem_key,
+                user_id=notification.user_id,
+                topic=topic,
+                payload=outbox_payload,
+                status="PENDING",
+                attempts=0,
+                available_at=now,
+                broadcast_id=broadcast_id,
+            )
+            outbox_records.append(outbox)
+            db.add(outbox)
+
+        # Single commit for entire batch
+        db.commit()
+
+        # Refresh all notifications to get final state
+        for notification in notifications:
+            db.refresh(notification)
+
+        # Best-effort publish all (non-blocking, failures stay PENDING for worker)
+        for outbox in outbox_records:
+            await self._best_effort_publish_and_mark_sent(db=db, outbox=outbox)
+
+        logger.info(f"[notifications] batch emitted {len(notifications)} notifications")
+        return public_notifications

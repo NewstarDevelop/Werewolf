@@ -41,9 +41,17 @@ async def startup_event():
     """Log startup information and initialize services."""
     logger.info("Werewolf AI Game API starting up...")
 
+    # A4-FIX: 生产环境安全配置 fail-fast
+    # 调用 settings 的安全配置校验，获取 warnings 和 errors
+    security_warnings, security_errors = settings._validate_security_config()
+
     # P1-4 Fix: Validate critical configuration at startup
     config_warnings = []
     config_errors = []
+
+    # A4-FIX: 将安全配置错误添加到 config_errors
+    config_warnings.extend(security_warnings)
+    config_errors.extend(security_errors)
 
     # Check JWT_SECRET_KEY (optional for development)
     if not settings.JWT_SECRET_KEY:
@@ -78,13 +86,18 @@ async def startup_event():
         logger.error(f"❌ Config Error: {error}")
 
     if config_errors:
-        logger.error("Critical configuration missing. Please check your .env file.")
         logger.error("=" * 60)
-        logger.error("FATAL: Cannot start server with missing critical configuration")
+        logger.error("FATAL: Security configuration errors detected")
+        logger.error("=" * 60)
+        for i, error in enumerate(config_errors, 1):
+            logger.error(f"  {i}. {error}")
+        logger.error("=" * 60)
+        logger.error("Please fix the above errors in your .env file before starting.")
+        logger.error("In development, set DEBUG=true to bypass strict validation.")
         logger.error("=" * 60)
         raise RuntimeError(
-            "Critical configuration missing. "
-            "Please set JWT_SECRET_KEY in .env file before starting the server."
+            f"Critical security configuration errors ({len(config_errors)} issues). "
+            "Check logs for details."
         )
 
     logger.info(f"LLM Model: {settings.LLM_MODEL}")
@@ -122,6 +135,36 @@ async def startup_event():
     # Initialize game logging
     init_game_logging()
     logger.info("Game logging initialized")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    A7-FIX: Clean up resources on shutdown.
+
+    Ensures LLM clients and other async resources are properly closed
+    to prevent resource leaks (unclosed httpx connection pools).
+    """
+    logger.info("Werewolf AI Game API shutting down...")
+
+    # Close game engine (which closes LLM clients)
+    from app.services.game_engine import game_engine
+    try:
+        await game_engine.close()
+        logger.info("Game engine closed successfully")
+    except Exception as e:
+        logger.warning(f"Error closing game engine: {e}")
+
+    # Close Redis connections if any
+    from app.services.notification_emitter import _publisher, _publisher_initialized
+    if _publisher_initialized and _publisher:
+        try:
+            await _publisher.close()
+            logger.info("Redis publisher closed successfully")
+        except Exception as e:
+            logger.warning(f"Error closing Redis publisher: {e}")
+
+    logger.info("Shutdown complete")
 
 
 @app.get("/")

@@ -83,6 +83,15 @@ class GameEngine:
     def __init__(self):
         self.llm = LLMService()
 
+    async def close(self) -> None:
+        """
+        A7-FIX: Close LLM service and release resources.
+
+        This should be called during application shutdown.
+        """
+        if self.llm:
+            await self.llm.close()
+
     async def step(self, game_id: str) -> dict:
         """
         Advance the game state by one step (WL-010: async).

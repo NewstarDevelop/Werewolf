@@ -217,6 +217,7 @@ class LLMService:
             max_concurrency_per_game=DEFAULT_PER_GAME_MAX_CONCURRENCY,
         )
         self._max_wait_seconds: float = DEFAULT_MAX_WAIT_SECONDS
+        self._closed = False  # A7-FIX: Track closed state
 
         # Initialize clients for all configured providers
         for name, provider in settings.get_all_providers().items():
@@ -249,6 +250,43 @@ class LLMService:
         if not self._clients and not self.use_mock:
             logger.warning("No LLM providers configured - using mock mode")
             self.use_mock = True
+
+    async def close(self) -> None:
+        """
+        A7-FIX: Close all LLM clients and release resources.
+
+        This should be called during application shutdown to prevent
+        resource leaks (unclosed httpx connection pools).
+        """
+        if self._closed:
+            return
+
+        self._closed = True
+        close_errors = []
+
+        for name, client in self._clients.items():
+            try:
+                await client.close()
+                logger.debug(f"Closed LLM client for provider: {name}")
+            except Exception as e:
+                close_errors.append(f"{name}: {e}")
+                logger.warning(f"Error closing LLM client {name}: {e}")
+
+        self._clients.clear()
+        self._provider_limiters.clear()
+
+        if close_errors:
+            logger.warning(f"LLM client cleanup completed with errors: {close_errors}")
+        else:
+            logger.info("LLM clients closed successfully")
+
+    async def __aenter__(self) -> "LLMService":
+        """A7-FIX: Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """A7-FIX: Async context manager exit - ensures cleanup."""
+        await self.close()
 
     def _get_limiter(self, provider: AIProviderConfig) -> TokenBucketLimiter:
         """Get or create rate limiter for a provider."""

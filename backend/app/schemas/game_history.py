@@ -2,6 +2,7 @@
 from typing import List
 from datetime import datetime
 from pydantic import BaseModel, Field
+from .message import MessageInGame
 
 
 class PlayerInfo(BaseModel):
@@ -41,3 +42,12 @@ class GameHistoryListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class GameReplayResponse(BaseModel):
+    """Game replay response (MVP: persisted message timeline only)."""
+    game_id: str
+    total: int
+    offset: int
+    limit: int
+    messages: List[MessageInGame]

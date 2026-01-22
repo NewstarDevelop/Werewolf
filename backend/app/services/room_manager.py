@@ -430,8 +430,8 @@ class RoomManager:
 
     def finish_game(self, db: Session, room_id: str):
         """游戏结束，更新房间状态并记录游戏历史"""
-        from app.models.game_history import GameSession, GameParticipant
-        from app.schemas.enums import Winner
+        from app.models.game_history import GameSession, GameParticipant, GameMessage
+        from app.schemas.enums import Winner, MessageType
         from app.models.room import RoomStatus
 
         # 幂等性检查：防止重复处理
@@ -524,6 +524,25 @@ class RoomManager:
                     is_winner=is_winner
                 )
                 db.add(participant)
+
+            # MVP: 持久化消息记录用于回放（排除内部投票思考）
+            if game.messages:
+                persisted_messages = []
+                for msg in game.messages:
+                    # 过滤内部投票思考消息
+                    if msg.msg_type == MessageType.VOTE_THOUGHT:
+                        continue
+                    persisted_messages.append(
+                        GameMessage(
+                            game_id=session.id,
+                            seq=msg.id,
+                            day=msg.day,
+                            seat_id=msg.seat_id,
+                            content=msg.content,
+                            msg_type=msg.msg_type.value,
+                        )
+                    )
+                db.add_all(persisted_messages)
 
         db.commit()
         logger.info(f"Game finished in room {room_id}")

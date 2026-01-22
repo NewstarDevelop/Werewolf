@@ -222,6 +222,7 @@
     "winner_villager": "Villager Won",
     "filter_by_winner": "Filter by Winner",
     "view_detail": "View Details",
+    "view_replay": "View Replay",
     "game_time": "Game Time",
     "duration": "Duration",
     "hours": "hrs",
@@ -231,7 +232,14 @@
     "players": "Players",
     "winner": "Winner",
     "game_detail": "Game Details",
-    "page_info": "Total {{total}} records"
+    "page_info": "Total {{total}} records",
+    "game_replay": "Game Replay",
+    "message_timeline": "Message Timeline",
+    "messages": "messages",
+    "your_role": "Your Role",
+    "victory": "Victory",
+    "defeat": "Defeat",
+    "replay_not_available": "Replay data not available. This may be an old game or the data has been cleaned up."
   },
   "settings": {
     "title": "Settings",

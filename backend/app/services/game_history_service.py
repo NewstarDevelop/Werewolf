@@ -3,7 +3,7 @@ from typing import Tuple, List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
-from app.models.game_history import GameSession, GameParticipant
+from app.models.game_history import GameSession, GameParticipant, GameMessage
 from app.models.room import Room
 
 
@@ -137,3 +137,50 @@ class GameHistoryService:
         return db.query(GameParticipant).filter(
             GameParticipant.game_id == game_id
         ).all()
+
+    @staticmethod
+    def get_game_replay_messages(
+        db: Session,
+        game_id: str,
+        user_id: str,
+        offset: int = 0,
+        limit: int = 2000,
+    ) -> Optional[Tuple[List[GameMessage], int]]:
+        """
+        Get persisted replay messages with permission check.
+
+        MVP scope: messages only (no actions/state snapshots).
+
+        Args:
+            db: Database session
+            game_id: Game ID
+            user_id: User ID (for permission check)
+            offset: Pagination offset
+            limit: Pagination limit
+
+        Returns:
+            (messages, total) if user can access the game, otherwise None.
+        """
+        # Permission check: user must have participated in the game
+        game = GameHistoryService.get_game_detail(db, game_id, user_id)
+        if not game:
+            return None
+
+        # Get total count
+        total = (
+            db.query(func.count(GameMessage.id))
+            .filter(GameMessage.game_id == game_id)
+            .scalar()
+        ) or 0
+
+        # Get messages with pagination
+        messages = (
+            db.query(GameMessage)
+            .filter(GameMessage.game_id == game_id)
+            .order_by(GameMessage.seq.asc(), GameMessage.id.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        return (messages, total)

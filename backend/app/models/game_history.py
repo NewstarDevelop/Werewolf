@@ -1,5 +1,5 @@
 """Game history models for user statistics."""
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Index
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Index, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
@@ -19,6 +19,7 @@ class GameSession(Base):
 
     # Relationships
     participants = relationship("GameParticipant", back_populates="game_session", cascade="all, delete-orphan")
+    messages = relationship("GameMessage", back_populates="game_session", cascade="all, delete-orphan")
 
 
 class GameParticipant(Base):
@@ -44,3 +45,28 @@ class GameParticipant(Base):
     # Relationships
     game_session = relationship("GameSession", back_populates="participants")
     user = relationship("User", back_populates="game_participations")
+
+
+class GameMessage(Base):
+    """游戏消息持久化模型 - 用于回放功能（MVP：仅消息）"""
+    __tablename__ = "game_messages"
+
+    __table_args__ = (
+        UniqueConstraint("game_id", "seq", name="uq_game_messages_game_seq"),
+        Index("idx_game_messages_game_seq", "game_id", "seq"),
+        Index("idx_game_messages_game_day", "game_id", "day"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    game_id = Column(String(36), ForeignKey("game_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # seq 是游戏内消息序号（对应内存 Message.id），用于稳定排序
+    seq = Column(Integer, nullable=False)
+    day = Column(Integer, nullable=False, index=True)
+    seat_id = Column(Integer, nullable=False)  # 0 表示系统
+    content = Column(Text, nullable=False)
+    msg_type = Column(String(32), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    game_session = relationship("GameSession", back_populates="messages")

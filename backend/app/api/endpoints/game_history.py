@@ -13,8 +13,10 @@ from app.schemas.game_history import (
     GameHistoryListResponse,
     GameHistoryItem,
     GameHistoryDetail,
-    PlayerInfo
+    PlayerInfo,
+    GameReplayResponse,
 )
+from app.schemas.message import MessageInGame
 
 router = APIRouter(prefix="/game-history", tags=["game-history"])
 
@@ -157,4 +159,48 @@ async def get_game_history_detail(
         is_winner=is_winner,
         players=players,
         duration_seconds=duration_seconds
+    )
+
+
+@router.get("/{game_id}/replay", response_model=GameReplayResponse)
+async def get_game_replay(
+    game_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(2000, ge=1, le=5000, description="Pagination limit (max 5000)"),
+):
+    """
+    Get replay data for a finished game (MVP: persisted messages only).
+
+    Requires: JWT authentication
+    Permissions: User must have participated in the game
+    Returns: Game replay with message timeline
+    """
+    user_id = current_user["user_id"]
+
+    result = GameHistoryService.get_game_replay_messages(db, game_id, user_id, offset=offset, limit=limit)
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Game not found or you don't have permission to view it"
+        )
+
+    db_messages, total = result
+    messages = [
+        MessageInGame(
+            seat_id=m.seat_id,
+            text=m.content,
+            type=m.msg_type,
+            day=m.day,
+        )
+        for m in db_messages
+    ]
+
+    return GameReplayResponse(
+        game_id=game_id,
+        total=total,
+        offset=offset,
+        limit=limit,
+        messages=messages,
     )

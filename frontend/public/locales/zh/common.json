@@ -222,6 +222,7 @@
     "winner_villager": "村民胜",
     "filter_by_winner": "按胜负筛选",
     "view_detail": "查看详情",
+    "view_replay": "查看回放",
     "game_time": "对局时间",
     "duration": "游戏时长",
     "hours": "小时",
@@ -231,7 +232,14 @@
     "players": "玩家列表",
     "winner": "胜利",
     "game_detail": "对局详情",
-    "page_info": "共 {{total}} 条记录"
+    "page_info": "共 {{total}} 条记录",
+    "game_replay": "游戏回放",
+    "message_timeline": "消息时间线",
+    "messages": "条消息",
+    "your_role": "你的角色",
+    "victory": "胜利",
+    "defeat": "失败",
+    "replay_not_available": "回放数据不可用，可能是旧对局或数据已被清理"
   },
   "settings": {
     "title": "设置",

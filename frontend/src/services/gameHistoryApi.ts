@@ -3,6 +3,7 @@
  */
 
 import { authorizedFetch } from '@/services/api';
+import type { MessageInGame } from '@/services/api';
 
 export interface PlayerInfo {
   nickname: string;
@@ -57,4 +58,29 @@ export async function getGameHistory(
  */
 export async function getGameHistoryDetail(gameId: string): Promise<GameHistoryDetail> {
   return authorizedFetch<GameHistoryDetail>(`/api/game-history/${gameId}`);
+}
+
+export interface GameReplayResponse {
+  game_id: string;
+  total: number;
+  offset: number;
+  limit: number;
+  messages: MessageInGame[];
+}
+
+/**
+ * Get replay data for a finished game (MVP: persisted messages only)
+ */
+export async function getGameReplay(
+  gameId: string,
+  offset: number = 0,
+  limit: number = 2000
+): Promise<GameReplayResponse> {
+  const params = new URLSearchParams();
+  params.append('offset', offset.toString());
+  params.append('limit', limit.toString());
+
+  return authorizedFetch<GameReplayResponse>(
+    `/api/game-history/${gameId}/replay?${params.toString()}`
+  );
 }

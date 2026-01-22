@@ -20,6 +20,7 @@ const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
 const OAuthCallback = lazy(() => import("./pages/auth/OAuthCallback"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const ReplayPage = lazy(() => import("./pages/ReplayPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -76,6 +77,7 @@ const App = () => (
                     <Route path="/room/:roomId/waiting" element={<RoomWaiting />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/history/:gameId/replay" element={<ReplayPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/admin" element={<AdminPage />} />
                   </Route>

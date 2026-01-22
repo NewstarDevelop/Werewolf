@@ -407,6 +407,7 @@ async def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
     Call AI to generate analysis with quality detection and retry.
 
     T-PERF-001: Now async to prevent blocking main event loop.
+    FIX: Now uses LLMService rate limiting to respect global quotas.
     """
 
     max_attempts = 2
@@ -421,6 +422,12 @@ async def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
         )
         return _generate_fallback_analysis(language)
 
+    # FIX: Import and use LLMService for rate limiting
+    from app.services.llm import llm_service
+
+    # FIX: Get rate limiter for this provider
+    limiter = await llm_service._get_limiter(provider)
+
     # T-PERF-001: Use async client to prevent blocking
     # Use default_headers for User-Agent (consistent with llm.py game requests)
     client = AsyncOpenAI(
@@ -434,21 +441,23 @@ async def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
         try:
             logger.info(f"Analysis attempt {attempt + 1}/{max_attempts} using {provider.name}")
 
-            response = await client.chat.completions.create(
-                model=provider.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a professional Werewolf game analyst. Provide detailed, insightful analysis."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                temperature=provider.temperature,
-                max_tokens=provider.max_tokens
-            )
+            # FIX: Apply rate limiting before API call
+            async with limiter.limit(max_wait_seconds=30.0):
+                response = await client.chat.completions.create(
+                    model=provider.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a professional Werewolf game analyst. Provide detailed, insightful analysis."
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=provider.temperature,
+                    max_tokens=provider.max_tokens
+                )
 
             analysis_text = response.choices[0].message.content or ""
 
@@ -460,6 +469,9 @@ async def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
                     continue
 
             logger.info(f"Analysis generated successfully ({len(analysis_text)} chars)")
+
+            # FIX: Close client after use to prevent connection leak
+            await client.close()
             return analysis_text
 
         except Exception as e:
@@ -475,7 +487,12 @@ async def _call_ai_analyzer(prompt: str, language: str, mode: str) -> str:
                 logger.info("Retrying...")
                 continue
 
-    # All attempts failed
+    # All attempts failed - close client before returning
+    try:
+        await client.close()
+    except:
+        pass
+
     logger.error("All analysis attempts failed, returning fallback")
     return _generate_fallback_analysis(language)
 

@@ -1,4 +1,47 @@
 services:
+  # Update Agent Service (方案 B: Runner 容器)
+  #
+  # 功能：提供系统更新 API，通过 Runner 容器执行 git pull + docker compose up
+  # 安全说明：
+  # - 挂载 /var/run/docker.sock，拥有控制宿主机 Docker 的权限
+  # - 仅在内部网络可达，不对外暴露端口
+  # - 需要配置 UPDATE_AGENT_TOKEN 进行鉴权
+  update-agent:
+    build:
+      context: ./ops/update-agent
+      dockerfile: Dockerfile
+    image: werewolf-update-agent
+    container_name: werewolf-update-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - UPDATE_AGENT_BIND_HOST=0.0.0.0
+      - UPDATE_AGENT_BIND_PORT=9999
+      - UPDATE_AGENT_REPO_PATH=${WEREWOLF_ROOT:?WEREWOLF_ROOT is required}
+      - UPDATE_AGENT_RUNNER_IMAGE=werewolf-update-agent
+      - UPDATE_AGENT_COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-werewolf}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      # 将仓库挂载到容器内相同路径（Runner 执行 docker compose 时需要一致的路径）
+      - "${WEREWOLF_ROOT:?WEREWOLF_ROOT is required}:${WEREWOLF_ROOT:?WEREWOLF_ROOT is required}"
+    networks:
+      - werewolf-network
+    # 安全加固
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
   # Backend API Service
   # T-STAB-006: IMPORTANT - Single instance only!
   # Game state is stored in-memory. Do NOT scale replicas or use multiple workers.

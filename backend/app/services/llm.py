@@ -212,6 +212,7 @@ class LLMService:
         self.use_mock = settings.LLM_USE_MOCK
         self._clients: dict[str, AsyncOpenAI] = {}
         self._provider_limiters: dict[str, TokenBucketLimiter] = {}
+        self._limiter_lock = asyncio.Lock()  # FIX: Lock for thread-safe limiter creation
         self._per_game_limiter = PerGameSoftLimiter(
             min_interval_seconds=DEFAULT_PER_GAME_MIN_INTERVAL,
             max_concurrency_per_game=DEFAULT_PER_GAME_MAX_CONCURRENCY,
@@ -288,10 +289,23 @@ class LLMService:
         """A7-FIX: Async context manager exit - ensures cleanup."""
         await self.close()
 
-    def _get_limiter(self, provider: AIProviderConfig) -> TokenBucketLimiter:
-        """Get or create rate limiter for a provider."""
-        limiter = self._provider_limiters.get(provider.name)
-        if limiter is None:
+    async def _get_limiter(self, provider: AIProviderConfig) -> TokenBucketLimiter:
+        """Get or create rate limiter for a provider (thread-safe).
+
+        FIX: Uses double-check locking pattern to prevent race conditions
+        during concurrent limiter initialization.
+        """
+        # Fast path: limiter already exists
+        if provider.name in self._provider_limiters:
+            return self._provider_limiters[provider.name]
+
+        # Slow path: need to create limiter with lock protection
+        async with self._limiter_lock:
+            # Double-check: another coroutine might have created it
+            if provider.name in self._provider_limiters:
+                return self._provider_limiters[provider.name]
+
+            # Create new limiter
             limiter = TokenBucketLimiter(
                 requests_per_minute=provider.requests_per_minute,
                 burst=provider.burst,
@@ -299,7 +313,11 @@ class LLMService:
             )
             limiter._provider_name = provider.name
             self._provider_limiters[provider.name] = limiter
-        return limiter
+            logger.info(
+                f"Dynamically created rate limiter for {provider.name}: "
+                f"RPM={provider.requests_per_minute}, concurrency={provider.max_concurrency}, burst={provider.burst}"
+            )
+            return limiter
 
     def _get_client_for_player(self, seat_id: int) -> tuple[Optional[AsyncOpenAI], Optional[AIProviderConfig]]:
         """Get the appropriate client and config for a player."""
@@ -342,7 +360,7 @@ class LLMService:
         Returns:
             Raw response content from the LLM
         """
-        limiter = self._get_limiter(provider)
+        limiter = await self._get_limiter(provider)  # FIX: Now async
         effective_wait = self._max_wait_seconds if max_wait_seconds is None else float(max_wait_seconds)
 
         # Build request params - don't set max_tokens to let API use default

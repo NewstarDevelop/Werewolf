@@ -145,6 +145,11 @@ class Settings:
             p.strip() for p in trusted_proxies_str.split(",") if p.strip()
         ]
 
+        # FIX: Maximum allowed proxy hops in X-Forwarded-For chain
+        # Prevents attackers from injecting long XFF chains to bypass detection
+        # Typical setup: client -> CDN -> load balancer = 2 hops
+        self.MAX_PROXY_HOPS: int = int(os.getenv("MAX_PROXY_HOPS", "5"))
+
         # T-SEC-005: CORS configuration
         # CORS_ORIGINS: comma-separated list of allowed origins, or "*" for all
         # Example: "http://localhost:3000,https://example.com"
@@ -293,6 +298,7 @@ class Settings:
             self._providers["default"] = default_provider
 
         # Load named providers: OPENAI_*, ANTHROPIC_*, DEEPSEEK_*, etc.
+        # FIX: Unified burst default to match max_concurrency (was 1, now 5)
         named_providers = ["OPENAI", "ANTHROPIC", "DEEPSEEK", "MOONSHOT", "QWEN", "GLM", "DOUBAO", "MINIMAX"]
         for provider_name in named_providers:
             api_key = os.getenv(f"{provider_name}_API_KEY")
@@ -307,7 +313,7 @@ class Settings:
                     max_tokens=int(os.getenv(f"{provider_name}_MAX_TOKENS", "500")),
                     requests_per_minute=int(os.getenv(f"{provider_name}_REQUESTS_PER_MINUTE", "60")),
                     max_concurrency=int(os.getenv(f"{provider_name}_MAX_CONCURRENCY", "5")),
-                    burst=int(os.getenv(f"{provider_name}_BURST", "1")),
+                    burst=int(os.getenv(f"{provider_name}_BURST", "5")),  # FIX: Changed from 1 to 5
                 )
                 self._providers[provider_name.lower()] = provider
 
@@ -325,6 +331,7 @@ class Settings:
         # Format: AI_PLAYER_2_API_KEY, AI_PLAYER_2_MODEL, etc.
         # These create dedicated providers named "player_{seat_id}"
         # Note: Mapping is NOT established here, only provider definition is created
+        # FIX: Unified burst default to match max_concurrency (was 1, now 5)
         for seat_id in range(2, 10):
             prefix = f"AI_PLAYER_{seat_id}"
             api_key = os.getenv(f"{prefix}_API_KEY")
@@ -342,7 +349,7 @@ class Settings:
                     max_tokens=int(os.getenv(f"{prefix}_MAX_TOKENS", "500")),
                     requests_per_minute=int(os.getenv(f"{prefix}_REQUESTS_PER_MINUTE", "60")),
                     max_concurrency=int(os.getenv(f"{prefix}_MAX_CONCURRENCY", "5")),
-                    burst=int(os.getenv(f"{prefix}_BURST", "1")),
+                    burst=int(os.getenv(f"{prefix}_BURST", "5")),  # FIX: Changed from 1 to 5
                 )
                 if provider.is_valid():
                     self._providers[provider_name] = provider
@@ -509,12 +516,28 @@ class Settings:
         """Log configuration summary for debugging."""
         logger.info(f"AI Configuration loaded: {len(self._providers)} providers configured")
 
-        # Log all providers
+        # FIX: Validate burst vs max_concurrency for all providers
+        burst_warnings = []
         for name, provider in self._providers.items():
             logger.info(
                 f"  Provider '{name}': model={provider.model}, "
                 f"base_url={provider.base_url or 'default'}"
             )
+
+            # FIX: Warn if burst < max_concurrency
+            if provider.burst < provider.max_concurrency:
+                burst_warnings.append(
+                    f"Provider '{name}': burst ({provider.burst}) < max_concurrency ({provider.max_concurrency}). "
+                    f"This may cause unexpected throttling. Consider setting burst >= max_concurrency."
+                )
+
+        # Log burst warnings
+        if burst_warnings:
+            logger.warning("=" * 50)
+            logger.warning("Rate Limiter Configuration Warnings:")
+            for warning in burst_warnings:
+                logger.warning(f"  ⚠️  {warning}")
+            logger.warning("=" * 50)
 
         # Log player mappings
         if self._player_mappings:

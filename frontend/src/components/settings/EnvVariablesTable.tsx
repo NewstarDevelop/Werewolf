@@ -27,11 +27,21 @@ const ENV_VAR_LABELS: Record<string, string> = {
   LOG_LEVEL: '日志级别',
   DATA_DIR: '数据存储目录',
 
+  // 数据库配置
+  DATABASE_URL: '数据库连接 URL',
+  RUN_DB_MIGRATIONS: '启动时运行迁移',
+
+  // 网络配置
+  FRONTEND_URL: '前端站点 URL',
+  ALLOWED_WS_ORIGINS: 'WebSocket 允许来源',
+
   // 管理功能配置
   ENV_MANAGEMENT_ENABLED: '环境变量管理开关',
 
   // 安全配置
   ADMIN_PASSWORD: '管理员密码',
+  ADMIN_KEY: '管理员密钥',
+  ADMIN_KEY_ENABLED: '管理员密钥开关',
   DEBUG_MODE: '调试接口开关',
   TRUSTED_PROXIES: '可信代理列表',
   CORS_ORIGINS: 'CORS 允许来源',
@@ -49,6 +59,15 @@ const ENV_VAR_LABELS: Record<string, string> = {
   LINUXDO_USERINFO_URL: 'LinuxDo 用户信息 URL',
   LINUXDO_SCOPES: 'LinuxDo 授权范围',
 
+  // 更新代理配置
+  UPDATE_AGENT_ENABLED: '更新代理开关',
+  UPDATE_AGENT_URL: '更新代理 URL',
+  UPDATE_AGENT_TOKEN: '更新代理令牌',
+  UPDATE_AGENT_TIMEOUT_SECONDS: '更新代理超时秒数',
+  UPDATE_BLOCK_IF_PLAYING_ROOMS: '有进行中房间时阻止更新',
+  UPDATE_BLOCK_IF_ACTIVE_GAME_WS: '有活跃 WebSocket 时阻止更新',
+  UPDATE_FORCE_CONFIRM_PHRASE: '强制更新确认短语',
+
   // AI 游戏分析配置
   ANALYSIS_PROVIDER: '分析服务商',
   ANALYSIS_MODEL: '分析模型',
@@ -58,6 +77,15 @@ const ENV_VAR_LABELS: Record<string, string> = {
   ANALYSIS_MAX_TOKENS: '分析最大令牌数',
   ANALYSIS_TEMPERATURE: '分析温度参数',
 
+  // 多服务商配置 - OpenAI
+  OPENAI_MODEL: 'OpenAI 模型',
+  OPENAI_MAX_RETRIES: 'OpenAI 重试次数',
+  OPENAI_TEMPERATURE: 'OpenAI 温度',
+  OPENAI_MAX_TOKENS: 'OpenAI 最大令牌',
+  OPENAI_REQUESTS_PER_MINUTE: 'OpenAI 每分钟请求数',
+  OPENAI_MAX_CONCURRENCY: 'OpenAI 最大并发数',
+  OPENAI_BURST: 'OpenAI 突发请求数',
+
   // 多服务商配置 - DeepSeek
   DEEPSEEK_API_KEY: 'DeepSeek API 密钥',
   DEEPSEEK_BASE_URL: 'DeepSeek API 地址',
@@ -65,6 +93,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   DEEPSEEK_MAX_RETRIES: 'DeepSeek 重试次数',
   DEEPSEEK_TEMPERATURE: 'DeepSeek 温度',
   DEEPSEEK_MAX_TOKENS: 'DeepSeek 最大令牌',
+  DEEPSEEK_REQUESTS_PER_MINUTE: 'DeepSeek 每分钟请求数',
+  DEEPSEEK_MAX_CONCURRENCY: 'DeepSeek 最大并发数',
+  DEEPSEEK_BURST: 'DeepSeek 突发请求数',
 
   // 多服务商配置 - Anthropic
   ANTHROPIC_API_KEY: 'Anthropic API 密钥',
@@ -73,6 +104,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   ANTHROPIC_MAX_RETRIES: 'Anthropic 重试次数',
   ANTHROPIC_TEMPERATURE: 'Anthropic 温度',
   ANTHROPIC_MAX_TOKENS: 'Anthropic 最大令牌',
+  ANTHROPIC_REQUESTS_PER_MINUTE: 'Anthropic 每分钟请求数',
+  ANTHROPIC_MAX_CONCURRENCY: 'Anthropic 最大并发数',
+  ANTHROPIC_BURST: 'Anthropic 突发请求数',
 
   // 多服务商配置 - Moonshot
   MOONSHOT_API_KEY: '月之暗面 API 密钥',
@@ -81,6 +115,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   MOONSHOT_MAX_RETRIES: '月之暗面重试次数',
   MOONSHOT_TEMPERATURE: '月之暗面温度',
   MOONSHOT_MAX_TOKENS: '月之暗面最大令牌',
+  MOONSHOT_REQUESTS_PER_MINUTE: '月之暗面每分钟请求数',
+  MOONSHOT_MAX_CONCURRENCY: '月之暗面最大并发数',
+  MOONSHOT_BURST: '月之暗面突发请求数',
 
   // 多服务商配置 - Qwen
   QWEN_API_KEY: '通义千问 API 密钥',
@@ -89,6 +126,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   QWEN_MAX_RETRIES: '通义千问重试次数',
   QWEN_TEMPERATURE: '通义千问温度',
   QWEN_MAX_TOKENS: '通义千问最大令牌',
+  QWEN_REQUESTS_PER_MINUTE: '通义千问每分钟请求数',
+  QWEN_MAX_CONCURRENCY: '通义千问最大并发数',
+  QWEN_BURST: '通义千问突发请求数',
 
   // 多服务商配置 - GLM
   GLM_API_KEY: '智谱 API 密钥',
@@ -97,6 +137,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   GLM_MAX_RETRIES: '智谱重试次数',
   GLM_TEMPERATURE: '智谱温度',
   GLM_MAX_TOKENS: '智谱最大令牌',
+  GLM_REQUESTS_PER_MINUTE: '智谱每分钟请求数',
+  GLM_MAX_CONCURRENCY: '智谱最大并发数',
+  GLM_BURST: '智谱突发请求数',
 
   // 多服务商配置 - Doubao
   DOUBAO_API_KEY: '豆包 API 密钥',
@@ -105,6 +148,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   DOUBAO_MAX_RETRIES: '豆包重试次数',
   DOUBAO_TEMPERATURE: '豆包温度',
   DOUBAO_MAX_TOKENS: '豆包最大令牌',
+  DOUBAO_REQUESTS_PER_MINUTE: '豆包每分钟请求数',
+  DOUBAO_MAX_CONCURRENCY: '豆包最大并发数',
+  DOUBAO_BURST: '豆包突发请求数',
 
   // 多服务商配置 - MiniMax
   MINIMAX_API_KEY: 'MiniMax API 密钥',
@@ -113,6 +159,9 @@ const ENV_VAR_LABELS: Record<string, string> = {
   MINIMAX_MAX_RETRIES: 'MiniMax 重试次数',
   MINIMAX_TEMPERATURE: 'MiniMax 温度',
   MINIMAX_MAX_TOKENS: 'MiniMax 最大令牌',
+  MINIMAX_REQUESTS_PER_MINUTE: 'MiniMax 每分钟请求数',
+  MINIMAX_MAX_CONCURRENCY: 'MiniMax 最大并发数',
+  MINIMAX_BURST: 'MiniMax 突发请求数',
 
   // 速率限制配置
   DEFAULT_REQUESTS_PER_MINUTE: '默认每分钟请求数',
@@ -134,9 +183,6 @@ const ENV_VAR_LABELS: Record<string, string> = {
   VITE_SENTRY_ENABLE_REPLAY: 'Sentry 回放开关',
   VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE: 'Sentry 回放采样率',
   VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE: 'Sentry 错误回放采样率',
-
-  // 数据库配置
-  RUN_DB_MIGRATIONS: '启动时运行迁移',
 };
 
 // 获取变量的中文标签

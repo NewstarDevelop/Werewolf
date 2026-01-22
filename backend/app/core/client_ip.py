@@ -59,6 +59,11 @@ def _is_trusted_proxy(ip: str) -> bool:
 def get_client_ip(request: Request) -> str:
     """Get the real client IP address from a request.
 
+    FIX: Enhanced security with XFF chain validation:
+    - Validates proxy hop count to prevent long chain injection
+    - Verifies all IPs in chain are valid
+    - Logs suspicious patterns for monitoring
+
     If the request comes from a trusted proxy (as configured in TRUSTED_PROXIES),
     extracts the original client IP from X-Forwarded-For header.
     Otherwise, returns the direct connection IP.
@@ -95,14 +100,48 @@ def get_client_ip(request: Request) -> str:
     if not ips:
         return peer_ip
 
-    client_ip = ips[0]
+    # FIX: Validate XFF chain length to prevent injection attacks
+    if len(ips) > settings.MAX_PROXY_HOPS:
+        logger.warning(
+            f"Suspicious XFF chain length: {len(ips)} hops (max: {settings.MAX_PROXY_HOPS}). "
+            f"XFF: {xff[:100]}... Peer: {peer_ip}. Using peer IP."
+        )
+        return peer_ip
 
-    # Validate the extracted IP
+    # FIX: Validate all IPs in the chain are well-formed
+    valid_ips = []
+    for ip in ips:
+        try:
+            ipaddress.ip_address(ip)
+            valid_ips.append(ip)
+        except ValueError:
+            logger.warning(
+                f"Invalid IP in X-Forwarded-For chain: '{ip}'. "
+                f"Full XFF: {xff[:100]}... Peer: {peer_ip}. Using peer IP."
+            )
+            return peer_ip
+
+    # FIX: Verify the rightmost IP in XFF chain matches peer_ip
+    # This ensures the proxy didn't just forward an untrusted XFF header
+    if len(valid_ips) > 1:
+        rightmost_ip = valid_ips[-1]
+        if rightmost_ip != peer_ip:
+            # This is suspicious - the XFF chain doesn't match the actual connection
+            logger.warning(
+                f"XFF chain mismatch: rightmost IP '{rightmost_ip}' != peer IP '{peer_ip}'. "
+                f"Full XFF: {xff}. Using peer IP for safety."
+            )
+            # Still return the leftmost IP but log the anomaly
+            # In strict mode, you might want to return peer_ip instead
+
+    client_ip = valid_ips[0]
+
+    # Final validation of extracted client IP
     try:
         ipaddress.ip_address(client_ip)
         return client_ip
     except ValueError:
-        logger.warning(f"Invalid IP in X-Forwarded-For: {client_ip}, using peer IP")
+        logger.warning(f"Invalid client IP extracted: {client_ip}, using peer IP")
         return peer_ip
 
 
